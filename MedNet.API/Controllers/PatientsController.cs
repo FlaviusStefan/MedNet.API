@@ -1,9 +1,7 @@
 ﻿using MedNet.API.Models.Domain;
 using MedNet.API.Models.DTO;
 using MedNet.API.Repositories.Interface;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace MedNet.API.Controllers
 {
