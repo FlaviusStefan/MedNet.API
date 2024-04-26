@@ -28,7 +28,7 @@ namespace MedNet.API.Controllers
                 FirstName = request.FirstName,
                 LastName = request.LastName,
                 Specialization = request.Specialization,
-                DateOfBirth = request.DateOfBirth,
+                DateOfBirth = request.DateOfBirth.Date,
                 Gender = request.Gender,
             };
 
@@ -41,6 +41,7 @@ namespace MedNet.API.Controllers
                 FirstName = doctor.FirstName,
                 LastName = doctor.LastName,
                 Specialization = doctor.Specialization,
+                DateOfBirth = doctor.DateOfBirth.Date,
                 Gender = doctor.Gender
             };
 
