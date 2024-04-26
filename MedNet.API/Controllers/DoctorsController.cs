@@ -19,7 +19,7 @@ namespace MedNet.API.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateCategory(CreateDoctorRequestDto request)
+        public async Task<IActionResult> CreateDoctor(CreateDoctorRequestDto request)
         {
             // Map DTO -> Domain Model
 
