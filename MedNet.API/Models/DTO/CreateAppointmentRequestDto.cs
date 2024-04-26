@@ -1,13 +1,11 @@
-﻿namespace MedNet.API.Models.Domain
+﻿namespace MedNet.API.Models.DTO
 {
-    public class Appointment
+    public class CreateAppointmentRequestDto
     {
-        public Guid Id { get; set; }
         public Guid DoctorId { get; set; }
         public Guid PatientId { get; set; }
         public DateTime AppointmentDateTime { get; set; }
         public string Reason { get; set; }
-
 
     }
 }
