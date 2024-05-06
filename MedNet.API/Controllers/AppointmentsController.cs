@@ -25,6 +25,7 @@ namespace MedNet.API.Controllers
                 DoctorId = request.DoctorId,
                 PatientId = request.PatientId,
                 AppointmentDateTime = request.AppointmentDateTime,
+                Status = request.Status,
                 Reason = request.Reason
             };
 
@@ -36,6 +37,7 @@ namespace MedNet.API.Controllers
                 DoctorId = appointment.DoctorId,
                 PatientId = appointment.PatientId,
                 AppointmentDateTime = appointment.AppointmentDateTime,
+                Status = appointment.Status,
                 Reason = appointment.Reason
             };
 
