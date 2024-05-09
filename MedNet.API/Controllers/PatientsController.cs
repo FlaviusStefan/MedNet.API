@@ -17,7 +17,7 @@ namespace MedNet.API.Controllers
         }
 
         [HttpPost]
-        public async Task <IActionResult> CreatePatient(CreatePatientRequestDto request)
+        public async Task<IActionResult> CreatePatient(CreatePatientRequestDto request)
         {
             var patient = new Patient
             {
@@ -40,5 +40,7 @@ namespace MedNet.API.Controllers
 
             return Ok(response);
         }
+
+        
     }
 }

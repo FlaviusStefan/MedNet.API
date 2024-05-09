@@ -43,5 +43,30 @@ namespace MedNet.API.Controllers
 
             return Ok(response);
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAllAppointments()
+        {
+            var appointments = await appointmentRepository.GetAllAsync();
+
+            // Mapping: Domain model to DTO 
+
+            var response = new List<AppointmentDto>();
+            foreach (var appointment in appointments)
+            {
+                response.Add(new AppointmentDto
+                {
+                    Id = appointment.Id,
+                    DoctorId = appointment.DoctorId,
+                    PatientId = appointment.PatientId,
+                    AppointmentDateTime = appointment.AppointmentDateTime,
+                    Status = appointment.Status,
+                    Reason = appointment.Reason
+                });
+            }
+
+            return Ok(response);
+
+        }
     }
 }

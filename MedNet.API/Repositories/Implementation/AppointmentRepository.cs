@@ -20,5 +20,10 @@ namespace MedNet.API.Repositories.Implementation
 
             return appointment;
         }
+
+        public async Task<IEnumerable<Appointment>> GetAllAsync()
+        {
+            return await dbContext.Appointments.ToListAsync();
+        }
     }
 }
