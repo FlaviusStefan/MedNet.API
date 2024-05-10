@@ -47,5 +47,29 @@ namespace MedNet.API.Controllers
 
             return Ok(response);
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAllDoctors()
+        {
+            var doctors = await doctorRepository.GetAllAsync();
+
+            // Mapping: Domain model to DTO
+
+            var response = new List<DoctorDto>();               
+            foreach(var doctor in doctors) 
+            {
+                response.Add(new DoctorDto
+                {
+                    Id = doctor.Id,
+                    FirstName = doctor.FirstName,
+                    LastName = doctor.LastName,
+                    Specialization = doctor.Specialization,
+                    DateOfBirth= doctor.DateOfBirth.Date,
+                    Gender = doctor.Gender
+                });
+            }
+
+            return Ok(response);
+        }
     }
 }
