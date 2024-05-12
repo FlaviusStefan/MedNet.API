@@ -2,6 +2,7 @@
 using MedNet.API.Models.DTO;
 using MedNet.API.Repositories.Interface;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace MedNet.API.Controllers
 {
@@ -59,6 +60,29 @@ namespace MedNet.API.Controllers
                     Gender = patient.Gender
                 });
             }
+
+            return Ok(response);
+        }
+
+        [HttpGet]
+        [Route("{id:Guid}")]
+        public async Task<IActionResult> GetPatientById([FromRoute] Guid id)
+        {
+            var existingPatient = await patientRepository.GetById(id);
+
+            if(existingPatient is null)
+            {
+                return NotFound();
+            }
+
+            var response = new PatientDto
+            {
+                Id = existingPatient.Id,
+                FirstName = existingPatient.FirstName,
+                LastName = existingPatient.LastName,
+                DateOfBirth = existingPatient.DateOfBirth,
+                Gender = existingPatient.Gender
+            };
 
             return Ok(response);
         }
