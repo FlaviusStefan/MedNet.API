@@ -68,5 +68,29 @@ namespace MedNet.API.Controllers
             return Ok(response);
 
         }
+
+        [HttpGet]
+        [Route("{id:Guid}")]
+        public async Task<IActionResult> GetAppointmentById(Guid id)
+        {
+            var existingAppointment = await appointmentRepository.GetById(id);
+
+            if(existingAppointment is null)
+            {
+                return NotFound();
+            }
+
+            var response = new AppointmentDto
+            {
+                Id = existingAppointment.Id,
+                DoctorId = existingAppointment.DoctorId,
+                PatientId = existingAppointment.PatientId,
+                AppointmentDateTime = existingAppointment.AppointmentDateTime,
+                Status = existingAppointment.Status,
+                Reason = existingAppointment.Reason
+            };
+
+            return Ok(response);
+        }
     }
 }

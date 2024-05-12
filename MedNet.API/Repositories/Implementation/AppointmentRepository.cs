@@ -25,5 +25,10 @@ namespace MedNet.API.Repositories.Implementation
         {
             return await dbContext.Appointments.ToListAsync();
         }
+
+        public async Task<Appointment?> GetById(Guid id)
+        {
+            return await dbContext.Appointments.FirstOrDefaultAsync(x => x.Id == id);
+        }
     }
 }
