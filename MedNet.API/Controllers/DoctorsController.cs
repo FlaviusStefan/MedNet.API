@@ -64,10 +64,34 @@ namespace MedNet.API.Controllers
                     FirstName = doctor.FirstName,
                     LastName = doctor.LastName,
                     Specialization = doctor.Specialization,
-                    DateOfBirth= doctor.DateOfBirth.Date,
+                    DateOfBirth= doctor.DateOfBirth,
                     Gender = doctor.Gender
                 });
             }
+
+            return Ok(response);
+        }
+
+        [HttpGet]
+        [Route("{id:Guid}")]
+        public async Task<IActionResult> GetDoctorById([FromRoute] Guid id)
+        {
+            var existingDoctor = await doctorRepository.GetById(id);
+
+            if(existingDoctor is null)
+            {
+                return NotFound();
+            }
+
+            var response = new DoctorDto
+            {
+                Id = existingDoctor.Id,
+                FirstName = existingDoctor.FirstName,
+                LastName = existingDoctor.LastName,
+                Specialization = existingDoctor.Specialization,
+                DateOfBirth = existingDoctor.DateOfBirth,
+                Gender = existingDoctor.Gender
+            };
 
             return Ok(response);
         }

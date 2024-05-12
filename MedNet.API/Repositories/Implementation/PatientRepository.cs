@@ -1,6 +1,7 @@
 ﻿using MedNet.API.Data;
 using MedNet.API.Models.Domain;
 using MedNet.API.Repositories.Interface;
+using Microsoft.EntityFrameworkCore;
 
 namespace MedNet.API.Repositories.Implementation
 {
@@ -19,6 +20,11 @@ namespace MedNet.API.Repositories.Implementation
             await dbContext.SaveChangesAsync();
 
             return patient;
+        }
+
+        public async Task<IEnumerable<Patient>> GetAllAsync()
+        {
+            return await dbContext.Patients.ToListAsync();
         }
     }
 }

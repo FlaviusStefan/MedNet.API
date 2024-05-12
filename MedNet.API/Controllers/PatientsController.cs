@@ -41,6 +41,26 @@ namespace MedNet.API.Controllers
             return Ok(response);
         }
 
-        
+        [HttpGet]
+        public async Task<IActionResult> GetAllPatients()
+        {
+            var patients = await patientRepository.GetAllAsync();
+
+            // Mapping: Domain model to DTO 
+            var response = new List<PatientDto>();
+            foreach(var patient in patients)
+            {
+                response.Add(new PatientDto
+                {
+                    Id = patient.Id,
+                    FirstName = patient.FirstName,
+                    LastName = patient.LastName,
+                    DateOfBirth = patient.DateOfBirth,
+                    Gender = patient.Gender
+                });
+            }
+
+            return Ok(response);
+        }
     }
 }
