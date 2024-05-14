@@ -2,6 +2,7 @@
 using MedNet.API.Models.Domain;
 using MedNet.API.Repositories.Interface;
 using Microsoft.EntityFrameworkCore;
+using System.Numerics;
 
 namespace MedNet.API.Repositories.Implementation
 {
@@ -30,6 +31,20 @@ namespace MedNet.API.Repositories.Implementation
         public async Task<Patient> GetById(Guid id)
         {
             return await dbContext.Patients.FirstOrDefaultAsync(x => x.Id == id);
+        }
+
+        public async Task<Patient?> UpdateAsync(Patient patient)
+        {
+            var existingPatient = await dbContext.Patients.FirstOrDefaultAsync(x => x.Id == patient.Id);
+
+            if (existingPatient != null)
+            {
+                dbContext.Entry(existingPatient).CurrentValues.SetValues(patient);
+                await dbContext.SaveChangesAsync();
+                return patient;
+            }
+
+            return null;
         }
     }
 }

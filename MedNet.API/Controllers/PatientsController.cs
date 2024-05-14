@@ -86,5 +86,37 @@ namespace MedNet.API.Controllers
 
             return Ok(response);
         }
+
+        [HttpPut]
+        [Route("{id:Guid}")]
+        public async Task<IActionResult> UpdatePatient([FromRoute] Guid id, UpdatePatientRequestDto request)
+        {
+            var patient = new Patient
+            {
+                Id = id,
+                FirstName = request.FirstName,
+                LastName = request.LastName,
+                DateOfBirth = request.DateOfBirth,
+                Gender = request.Gender
+            };
+
+            patient = await patientRepository.UpdateAsync(patient);
+
+            if(patient == null)
+            {
+                return NotFound();
+            }
+
+            var response = new PatientDto
+            {
+                Id = patient.Id,
+                FirstName = patient.FirstName,
+                LastName = patient.LastName,
+                DateOfBirth = patient.DateOfBirth,
+                Gender = request.Gender
+            };
+
+            return Ok(response);
+        }
     }
 }
