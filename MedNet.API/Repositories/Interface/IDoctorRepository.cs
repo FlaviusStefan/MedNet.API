@@ -7,5 +7,6 @@ namespace MedNet.API.Repositories.Interface
         Task<Doctor> CreateAsync(Doctor doctor);
         Task<IEnumerable<Doctor>> GetAllAsync();
         Task<Doctor?> GetById(Guid id);
+        Task<Doctor?> UpdateAsync(Doctor doctor);
     }
 }

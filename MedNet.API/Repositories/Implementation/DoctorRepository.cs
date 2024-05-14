@@ -31,5 +31,19 @@ namespace MedNet.API.Repositories.Implementation
         {
             return await dbContext.Doctors.FirstOrDefaultAsync(x => x.Id == id);
         }
+
+        public async Task<Doctor?> UpdateAsync(Doctor doctor)
+        {
+            var existingDoctor = await dbContext.Doctors.FirstOrDefaultAsync(x => x.Id == doctor.Id);
+
+            if (existingDoctor != null)
+            {
+                dbContext.Entry(existingDoctor).CurrentValues.SetValues(doctor);
+                await dbContext.SaveChangesAsync();
+                return doctor;
+            }
+
+            return null;
+        }
     }
 }

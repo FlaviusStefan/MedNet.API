@@ -55,8 +55,8 @@ namespace MedNet.API.Controllers
 
             // Mapping: Domain model to DTO
 
-            var response = new List<DoctorDto>();               
-            foreach(var doctor in doctors) 
+            var response = new List<DoctorDto>();
+            foreach (var doctor in doctors)
             {
                 response.Add(new DoctorDto
                 {
@@ -64,7 +64,7 @@ namespace MedNet.API.Controllers
                     FirstName = doctor.FirstName,
                     LastName = doctor.LastName,
                     Specialization = doctor.Specialization,
-                    DateOfBirth= doctor.DateOfBirth,
+                    DateOfBirth = doctor.DateOfBirth,
                     Gender = doctor.Gender
                 });
             }
@@ -78,7 +78,7 @@ namespace MedNet.API.Controllers
         {
             var existingDoctor = await doctorRepository.GetById(id);
 
-            if(existingDoctor is null)
+            if (existingDoctor is null)
             {
                 return NotFound();
             }
@@ -95,5 +95,40 @@ namespace MedNet.API.Controllers
 
             return Ok(response);
         }
+
+        [HttpPut]
+        [Route("{id:Guid}")]
+        public async Task<IActionResult> UpdateDoctor([FromRoute] Guid id, UpdateDoctorRequestDto request)
+        {
+            var doctor = new Doctor
+            {
+                Id = id,
+                FirstName = request.FirstName,
+                LastName = request.LastName,
+                Specialization = request.Specialization,
+                DateOfBirth = request.DateOfBirth,
+                Gender = request.Gender
+            };
+
+            doctor = await doctorRepository.UpdateAsync(doctor);
+
+            if(doctor == null)
+            {
+                return NotFound();
+            }
+
+            var response = new DoctorDto
+            {
+                Id = doctor.Id,
+                FirstName = doctor.FirstName,
+                LastName = doctor.LastName,
+                Specialization = doctor.Specialization,
+                DateOfBirth = doctor.DateOfBirth,
+                Gender = doctor.Gender
+            };
+
+            return Ok(response);
+        }
+
     }
 }
