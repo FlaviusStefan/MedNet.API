@@ -8,5 +8,6 @@ namespace MedNet.API.Repositories.Interface
         Task<IEnumerable<Appointment>>GetAllAsync();
         Task<Appointment?> GetById(Guid id);
         Task<Appointment?> UpdateAsync(Appointment appointment);
+        Task<Appointment?> DeleteAsync(Guid id);
     }
 }

@@ -110,7 +110,7 @@ namespace MedNet.API.Controllers
 
             appointment = await appointmentRepository.UpdateAsync(appointment);
 
-            if(appointment == null)
+            if (appointment == null)
             {
                 return NotFound();
             }
@@ -124,6 +124,33 @@ namespace MedNet.API.Controllers
                 AppointmentDateTime = appointment.AppointmentDateTime,
                 Status = appointment.Status,
                 Reason = appointment.Reason
+            };
+
+            return Ok(response);
+        }
+
+        [HttpDelete]
+        [Route("{id:Guid}")]
+        public async Task<IActionResult> DeleteAppointment([FromRoute] Guid id)
+        {
+            var appointment = await appointmentRepository.DeleteAsync(id);
+
+            if (appointment is null)
+            {
+                return NotFound();
+            }
+
+            // Convert Domain Model to DTO
+
+            var response = new AppointmentDto
+            {
+                Id = appointment.Id,
+                DoctorId = appointment.DoctorId,
+                PatientId = appointment.PatientId,
+                AppointmentDateTime = appointment.AppointmentDateTime,
+                Status = appointment.Status,
+                Reason = appointment.Reason
+
             };
 
             return Ok(response);
