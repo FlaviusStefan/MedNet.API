@@ -118,5 +118,30 @@ namespace MedNet.API.Controllers
 
             return Ok(response);
         }
+
+        [HttpDelete]
+        [Route("{id:Guid}")]
+        public async Task<IActionResult> DeletePatient([FromRoute] Guid id)
+        {
+            var patient = await patientRepository.DeleteAsync(id);
+
+            if(patient is null)
+            {
+                return NotFound();
+            }
+
+            // Convert Domain Model to DTO
+
+            var response = new PatientDto
+            {
+                Id = patient.Id,
+                FirstName = patient.FirstName,
+                LastName = patient.LastName,
+                DateOfBirth = patient.DateOfBirth,
+                Gender = patient.Gender
+            };
+
+            return Ok(response);
+        }
     }
 }
