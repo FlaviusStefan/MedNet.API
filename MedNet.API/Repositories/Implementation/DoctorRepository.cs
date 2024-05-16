@@ -45,5 +45,20 @@ namespace MedNet.API.Repositories.Implementation
 
             return null;
         }
+
+        public async Task<Doctor?> DeleteAsync(Guid id)
+        {
+            var existingDoctor = await dbContext.Doctors.FirstOrDefaultAsync(x => x.Id == id);
+
+            if(existingDoctor is null)
+            {
+                return null;
+            }
+
+            dbContext.Doctors.Remove(existingDoctor);
+            await dbContext.SaveChangesAsync();
+            return existingDoctor;
+        }
+
     }
 }
