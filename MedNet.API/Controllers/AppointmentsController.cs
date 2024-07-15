@@ -3,6 +3,9 @@ using MedNet.API.Models.DTO;
 using MedNet.API.Repositories.Interface;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace MedNet.API.Controllers
 {
@@ -11,10 +14,14 @@ namespace MedNet.API.Controllers
     public class AppointmentsController : ControllerBase
     {
         private readonly IAppointmentRepository appointmentRepository;
+        private readonly IDoctorRepository doctorRepository;
+        private readonly IPatientRepository patientRepository;
 
-        public AppointmentsController(IAppointmentRepository appointmentRepository)
+        public AppointmentsController(IAppointmentRepository appointmentRepository, IDoctorRepository doctorRepository, IPatientRepository patientRepository)
         {
             this.appointmentRepository = appointmentRepository;
+            this.doctorRepository = doctorRepository;
+            this.patientRepository = patientRepository;
         }
 
         [HttpPost]
@@ -31,16 +38,7 @@ namespace MedNet.API.Controllers
 
             await appointmentRepository.CreateAsync(appointment);
 
-            var response = new AppointmentDto
-            {
-                Id = appointment.Id,
-                DoctorId = appointment.DoctorId,
-                PatientId = appointment.PatientId,
-                AppointmentDateTime = appointment.AppointmentDateTime,
-                Status = appointment.Status,
-                Reason = appointment.Reason
-            };
-
+            var response = await MapAppointmentToDto(appointment);
             return Ok(response);
         }
 
@@ -48,56 +46,36 @@ namespace MedNet.API.Controllers
         public async Task<IActionResult> GetAllAppointments()
         {
             var appointments = await appointmentRepository.GetAllAsync();
-
-            // Mapping: Domain model to DTO 
-
             var response = new List<AppointmentDto>();
+
             foreach (var appointment in appointments)
             {
-                response.Add(new AppointmentDto
-                {
-                    Id = appointment.Id,
-                    DoctorId = appointment.DoctorId,
-                    PatientId = appointment.PatientId,
-                    AppointmentDateTime = appointment.AppointmentDateTime,
-                    Status = appointment.Status,
-                    Reason = appointment.Reason
-                });
+                var appointmentDto = await MapAppointmentToDto(appointment);
+                response.Add(appointmentDto);
             }
 
             return Ok(response);
-
         }
 
         [HttpGet]
         [Route("{id:Guid}")]
         public async Task<IActionResult> GetAppointmentById([FromRoute] Guid id)
         {
-            var existingAppointment = await appointmentRepository.GetById(id);
+            var appointment = await appointmentRepository.GetById(id);
 
-            if (existingAppointment is null)
+            if (appointment == null)
             {
                 return NotFound();
             }
 
-            var response = new AppointmentDto
-            {
-                Id = existingAppointment.Id,
-                DoctorId = existingAppointment.DoctorId,
-                PatientId = existingAppointment.PatientId,
-                AppointmentDateTime = existingAppointment.AppointmentDateTime,
-                Status = existingAppointment.Status,
-                Reason = existingAppointment.Reason
-            };
-
-            return Ok(response);
+            var appointmentDto = await MapAppointmentToDto(appointment);
+            return Ok(appointmentDto);
         }
 
         [HttpPut]
         [Route("{id:Guid}")]
         public async Task<IActionResult> UpdateAppointment([FromRoute] Guid id, UpdateAppointmentRequestDto request)
         {
-            // DTO to Domain Model
             var appointment = new Appointment
             {
                 Id = id,
@@ -115,17 +93,7 @@ namespace MedNet.API.Controllers
                 return NotFound();
             }
 
-            // Domain Model to DTO
-            var response = new AppointmentDto
-            {
-                Id = appointment.Id,
-                PatientId = appointment.PatientId,
-                DoctorId = appointment.DoctorId,
-                AppointmentDateTime = appointment.AppointmentDateTime,
-                Status = appointment.Status,
-                Reason = appointment.Reason
-            };
-
+            var response = await MapAppointmentToDto(appointment);
             return Ok(response);
         }
 
@@ -135,25 +103,35 @@ namespace MedNet.API.Controllers
         {
             var appointment = await appointmentRepository.DeleteAsync(id);
 
-            if (appointment is null)
+            if (appointment == null)
             {
                 return NotFound();
             }
 
-            // Convert Domain Model to DTO
+            var response = await MapAppointmentToDto(appointment);
+            return Ok(response);
+        }
 
-            var response = new AppointmentDto
+        private async Task<AppointmentDto> MapAppointmentToDto(Appointment appointment)
+        {
+            var doctor = await doctorRepository.GetById(appointment.DoctorId);
+            var patient = await patientRepository.GetById(appointment.PatientId);
+
+            var appointmentDto = new AppointmentDto
             {
                 Id = appointment.Id,
                 DoctorId = appointment.DoctorId,
+                DoctorFirstName = doctor?.FirstName,
+                DoctorLastName = doctor?.LastName,
                 PatientId = appointment.PatientId,
+                PatientFirstName = patient?.FirstName,
+                PatientLastName = patient?.LastName,
                 AppointmentDateTime = appointment.AppointmentDateTime,
                 Status = appointment.Status,
                 Reason = appointment.Reason
-
             };
 
-            return Ok(response);
+            return appointmentDto;
         }
     }
 }
