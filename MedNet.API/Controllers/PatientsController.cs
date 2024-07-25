@@ -113,7 +113,7 @@ namespace MedNet.API.Controllers
                 FirstName = patient.FirstName,
                 LastName = patient.LastName,
                 DateOfBirth = patient.DateOfBirth,
-                Gender = request.Gender
+                Gender = patient.Gender
             };
 
             return Ok(response);
