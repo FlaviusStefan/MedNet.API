@@ -33,7 +33,8 @@ namespace MedNet.API.Controllers
                 PatientId = request.PatientId,
                 AppointmentDateTime = request.AppointmentDateTime,
                 Status = request.Status,
-                Reason = request.Reason
+                Reason = request.Reason,
+                Details = request.Details
             };
 
             await appointmentRepository.CreateAsync(appointment);
@@ -83,7 +84,8 @@ namespace MedNet.API.Controllers
                 PatientId = request.PatientId,
                 AppointmentDateTime = request.AppointmentDateTime,
                 Status = request.Status,
-                Reason = request.Reason
+                Reason = request.Reason,
+                Details = request.Details
             };
 
             appointment = await appointmentRepository.UpdateAsync(appointment);
@@ -128,7 +130,8 @@ namespace MedNet.API.Controllers
                 PatientLastName = patient?.LastName,
                 AppointmentDateTime = appointment.AppointmentDateTime,
                 Status = appointment.Status,
-                Reason = appointment.Reason
+                Reason = appointment.Reason,
+                Details = appointment.Details
             };
 
             return appointmentDto;
