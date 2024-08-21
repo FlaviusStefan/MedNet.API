@@ -1,11 +1,6 @@
-﻿using MedNet.API.Data;
-using MedNet.API.Models.Domain;
-using MedNet.API.Models.DTO;
-using MedNet.API.Repositories.Interface;
+﻿using MedNet.API.Models.DTO;
 using MedNet.API.Services;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-
 
 namespace MedNet.API.Controllers
 {
@@ -13,11 +8,11 @@ namespace MedNet.API.Controllers
     [ApiController]
     public class DoctorsController : ControllerBase
     {
-        private readonly IDoctorService _doctorService;
+        private readonly IDoctorService doctorService;
 
         public DoctorsController(IDoctorService doctorService)
         {
-            _doctorService = doctorService;
+            this.doctorService = doctorService;
         }
 
         [HttpPost]
@@ -30,7 +25,7 @@ namespace MedNet.API.Controllers
 
             try
             {
-                var response = await _doctorService.CreateDoctorAsync(request);
+                var response = await doctorService.CreateDoctorAsync(request);
                 return CreatedAtAction(nameof(GetDoctorById), new { id = response.Id }, response);
             }
             catch (Exception ex)
@@ -43,14 +38,14 @@ namespace MedNet.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllDoctors()
         {
-            var response = await _doctorService.GetAllDoctorsAsync();
+            var response = await doctorService.GetAllDoctorsAsync();
             return Ok(response);
         }
 
         [HttpGet("{id:Guid}")]
         public async Task<IActionResult> GetDoctorById(Guid id)
         {
-            var response = await _doctorService.GetDoctorByIdAsync(id);
+            var response = await doctorService.GetDoctorByIdAsync(id);
 
             if (response == null)
             {
@@ -63,7 +58,7 @@ namespace MedNet.API.Controllers
         [HttpPut("{id:Guid}")]
         public async Task<IActionResult> UpdateDoctor(Guid id, UpdateDoctorRequestDto request)
         {
-            var response = await _doctorService.UpdateDoctorAsync(id, request);
+            var response = await doctorService.UpdateDoctorAsync(id, request);
 
             if (response == null)
             {
@@ -76,7 +71,7 @@ namespace MedNet.API.Controllers
         [HttpDelete("{id:Guid}")]
         public async Task<IActionResult> DeleteDoctor(Guid id)
         {
-            var response = await _doctorService.DeleteDoctorAsync(id);
+            var response = await doctorService.DeleteDoctorAsync(id);
 
             if (response == null)
             {

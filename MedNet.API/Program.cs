@@ -20,7 +20,10 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<IDoctorRepository, DoctorRepository>();
 builder.Services.AddScoped<IPatientRepository, PatientRepository>();
 builder.Services.AddScoped<IAppointmentRepository, AppointmentRepository>();
+builder.Services.AddScoped<IAddressRepository, AddressRepository>();
+
 builder.Services.AddScoped<IDoctorService, DoctorService>();
+builder.Services.AddScoped<IAddressService, AddressService>();
 
 
 

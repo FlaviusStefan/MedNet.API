@@ -2,20 +2,16 @@
 using MedNet.API.Models.Domain;
 using MedNet.API.Models.DTO;
 using MedNet.API.Repositories.Interface;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace MedNet.API.Services
 {
     public class DoctorService : IDoctorService
     {
-        private readonly IDoctorRepository _doctorRepository;
+        private readonly IDoctorRepository doctorRepository;
 
         public DoctorService(IDoctorRepository doctorRepository)
         {
-            _doctorRepository = doctorRepository;
+            this.doctorRepository = doctorRepository;
         }
 
         public async Task<DoctorDto> CreateDoctorAsync(CreateDoctorRequestDto request)
@@ -30,7 +26,7 @@ namespace MedNet.API.Services
                 Gender = request.Gender
             };
 
-            await _doctorRepository.CreateAsync(doctor);
+            await doctorRepository.CreateAsync(doctor);
 
             return new DoctorDto
             {
@@ -45,7 +41,7 @@ namespace MedNet.API.Services
 
         public async Task<IEnumerable<DoctorDto>> GetAllDoctorsAsync()
         {
-            var doctors = await _doctorRepository.GetAllAsync();
+            var doctors = await doctorRepository.GetAllAsync();
 
             return doctors.Select(doctor => new DoctorDto
             {
@@ -60,7 +56,7 @@ namespace MedNet.API.Services
 
         public async Task<DoctorDto?> GetDoctorByIdAsync(Guid id)
         {
-            var doctor = await _doctorRepository.GetById(id);
+            var doctor = await doctorRepository.GetById(id);
 
             if (doctor == null) return null;
 
@@ -77,7 +73,7 @@ namespace MedNet.API.Services
 
         public async Task<DoctorDto?> UpdateDoctorAsync(Guid id, UpdateDoctorRequestDto request)
         {
-            var existingDoctor = await _doctorRepository.GetById(id);
+            var existingDoctor = await doctorRepository.GetById(id);
 
             if (existingDoctor == null) return null;
 
@@ -87,7 +83,7 @@ namespace MedNet.API.Services
             existingDoctor.DateOfBirth = request.DateOfBirth;
             existingDoctor.Gender = request.Gender;
 
-            var updatedDoctor = await _doctorRepository.UpdateAsync(existingDoctor);
+            var updatedDoctor = await doctorRepository.UpdateAsync(existingDoctor);
 
             if (updatedDoctor == null) return null;
 
@@ -104,7 +100,7 @@ namespace MedNet.API.Services
 
         public async Task<DoctorDto?> DeleteDoctorAsync(Guid id)
         {
-            var doctor = await _doctorRepository.DeleteAsync(id);
+            var doctor = await doctorRepository.DeleteAsync(id);
 
             if (doctor == null) return null;
 
