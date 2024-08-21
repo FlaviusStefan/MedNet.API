@@ -32,14 +32,32 @@ namespace MedNet.API.Repositories.Implementation
             return await dbContext.Contacts.FirstOrDefaultAsync(x => x.Id == id);
         }
 
-        public Task<Contact?> UpdateAsync(Contact contact)
+        public async Task<Contact?> UpdateAsync(Contact contact)
         {
-            throw new NotImplementedException();
+            var existingContact = await dbContext.Contacts.FirstOrDefaultAsync(x => x.Id == contact.Id);
+
+            if (existingContact != null)
+            {
+                dbContext.Entry(existingContact).CurrentValues.SetValues(contact);
+                await dbContext.SaveChangesAsync();
+                return contact;
+            }
+
+            return null;
         }
 
-        public Task<Contact?> DeleteAsync(Guid id)
+        public async Task<Contact?> DeleteAsync(Guid id)
         {
-            throw new NotImplementedException();
+            var existingContact = await dbContext.Contacts.FirstOrDefaultAsync(x => x.Id == id);
+
+            if (existingContact is null)
+            {
+                return null;
+            }
+
+            dbContext.Contacts.Remove(existingContact);
+            await dbContext.SaveChangesAsync();
+            return existingContact;
         }
     }
 }

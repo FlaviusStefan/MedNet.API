@@ -1,5 +1,6 @@
 ﻿using MedNet.API.Models.Domain;
 using MedNet.API.Models.DTO;
+using MedNet.API.Repositories.Implementation;
 using MedNet.API.Repositories.Interface;
 using MedNet.API.Services.Interface;
 
@@ -57,6 +58,44 @@ namespace MedNet.API.Services.Implementation
                 Id = contact.Id,
                 Phone = contact.Phone,
                 Email = contact.Email
+            };
+        }
+
+        public async Task<ContactDto?> UpdateContactAsync(Guid id, UpdateContactRequestDto request)
+        {
+            var existingContact = await contactRepository.GetById(id);
+
+            if (existingContact == null) return null;
+
+            existingContact.Email = request.Email;
+            existingContact.Phone = request.Phone;
+
+
+            var updatedContact = await contactRepository.UpdateAsync(existingContact);
+
+            if (updatedContact == null) return null;
+
+            return new ContactDto
+            {
+                Id = updatedContact.Id,
+                Email = updatedContact.Email,
+                Phone = updatedContact.Phone
+
+            };
+        }
+
+
+        public async Task<ContactDto> DeleteContactAsync(Guid id)
+        {
+            var contact = await contactRepository.DeleteAsync(id);
+            if (contact == null) return null;
+
+            return new ContactDto
+            {
+                Id = contact.Id,
+                Phone = contact.Phone,
+                Email = contact.Email,
+
             };
         }
     }

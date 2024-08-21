@@ -76,6 +76,50 @@ namespace MedNet.API.Services
             };
         }
 
-        
+        public async Task<AddressDto?> UpdateAddressAsync(Guid id, UpdateAddressRequestDto request)
+        {
+            var existingAddress = await addressRepository.GetById(id);
+
+            if (existingAddress == null) return null;
+
+            existingAddress.Street = request.Street;
+            existingAddress.StreetNr = request.StreetNr;
+            existingAddress.City = request.City;
+            existingAddress.State = request.State;
+            existingAddress.Country = request.Country;
+            existingAddress.PostalCode = request.PostalCode;
+
+            var updatedAddress = await addressRepository.UpdateAsync(existingAddress);
+
+            if (updatedAddress == null) return null;
+
+            return new AddressDto
+            {
+                Id = updatedAddress.Id,
+                Street = updatedAddress.Street,
+                StreetNr = updatedAddress.StreetNr,
+                City = updatedAddress.City,
+                State = updatedAddress.State,
+                Country = updatedAddress.Country,
+                PostalCode = updatedAddress.PostalCode
+            };
+        }
+
+        public async Task<AddressDto> DeleteAddressAsync(Guid id)
+        {
+            var address = await addressRepository.DeleteAsync(id);
+            if (address == null) return null;
+
+            return new AddressDto
+            {
+                Id = address.Id,
+                Street = address.Street,
+                StreetNr = address.StreetNr,
+                City = address.City,
+                State = address.State,
+                Country = address.Country,
+                PostalCode = address.PostalCode
+            };
+        }
     }
 }

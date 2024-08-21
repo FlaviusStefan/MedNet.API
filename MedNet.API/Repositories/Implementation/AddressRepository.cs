@@ -2,6 +2,7 @@
 using MedNet.API.Models.Domain;
 using MedNet.API.Repositories.Interface;
 using Microsoft.EntityFrameworkCore;
+using System.Numerics;
 
 namespace MedNet.API.Repositories.Implementation
 {
@@ -31,14 +32,32 @@ namespace MedNet.API.Repositories.Implementation
 
         }
 
-        public Task<Address?> UpdateAsync(Address address)
+        public async Task<Address?> UpdateAsync(Address address)
         {
-            throw new NotImplementedException();
+            var existingAddress = await dbContext.Addresses.FirstOrDefaultAsync(x => x.Id == address.Id);
+
+            if (existingAddress != null)
+            {
+                dbContext.Entry(existingAddress).CurrentValues.SetValues(address);
+                await dbContext.SaveChangesAsync();
+                return address;
+            }
+
+            return null;
         }
 
-        public Task<Address?> DeleteAsync(Guid id)
+        public async Task<Address?> DeleteAsync(Guid id)
         {
-            throw new NotImplementedException();
+            var existingAddress = await dbContext.Addresses.FirstOrDefaultAsync(x => x.Id == id);
+
+            if (existingAddress is null)
+            {
+                return null;
+            }
+
+            dbContext.Addresses.Remove(existingAddress);
+            await dbContext.SaveChangesAsync();
+            return existingAddress;
         }
     }
 }

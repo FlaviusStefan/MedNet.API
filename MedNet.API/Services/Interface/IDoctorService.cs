@@ -8,6 +8,6 @@ namespace MedNet.API.Services
         Task<IEnumerable<DoctorDto>> GetAllDoctorsAsync();
         Task<DoctorDto?> GetDoctorByIdAsync(Guid id);
         Task<DoctorDto?> UpdateDoctorAsync(Guid id, UpdateDoctorRequestDto request);
-        Task<DoctorDto?> DeleteDoctorAsync(Guid id);
+        Task<string?> DeleteDoctorAsync(Guid id);
     }
 }

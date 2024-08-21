@@ -49,13 +49,13 @@ namespace MedNet.API.Data
                 .HasOne(d => d.Address)
                 .WithMany(a => a.Doctors)
                 .HasForeignKey(d => d.AddressId)
-                .OnDelete(DeleteBehavior.SetNull); // Ensure AddressId is set to NULL when Address is deleted, not the Doctor
+                .OnDelete(DeleteBehavior.Cascade); // Ensure AddressId is set to NULL when Address is deleted, not the Doctor
 
             modelBuilder.Entity<Doctor>()
                 .HasOne(d => d.Contact)
                 .WithMany(c => c.Doctors)
                 .HasForeignKey(d => d.ContactId)
-                .OnDelete(DeleteBehavior.SetNull); // Ensure ContactId is set to NULL when Contact is deleted, not the Doctor
+                .OnDelete(DeleteBehavior.Cascade); // Ensure ContactId is set to NULL when Contact is deleted, not the Doctor
         }
     }
 }

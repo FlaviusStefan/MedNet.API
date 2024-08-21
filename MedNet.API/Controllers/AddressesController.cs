@@ -52,5 +52,30 @@ namespace MedNet.API.Controllers
 
             return Ok(addressDto);
         }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateAddress(Guid id,UpdateAddressRequestDto request)
+        {
+            var response = await addressService.UpdateAddressAsync(id, request);
+            if (response == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(response);
+        }
+
+        [HttpDelete("{id:Guid}")]
+        public async Task<IActionResult> DeleteAddress(Guid id)
+        {
+            var response = await addressService.DeleteAddressAsync(id);
+
+            if (response == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(response);
+        }
     }
 }
