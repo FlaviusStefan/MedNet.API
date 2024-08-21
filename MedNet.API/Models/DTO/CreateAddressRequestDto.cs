@@ -4,22 +4,22 @@ namespace MedNet.API.Models.DTO
 {
     public class CreateAddressRequestDto
     {
-        [Required]
+        [Required(ErrorMessage = "Street is required.")]
         public string Street { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Street Number is required.")]
         public int StreetNr { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "City is required.")]
         public string City { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "State is required.")]
         public string State { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Country number is required.")]
         public string Country { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Postal Code is required.")]
         public string PostalCode { get; set; }
     }
 }
