@@ -1,6 +1,7 @@
 using MedNet.API.Data;
 using MedNet.API.Repositories.Implementation;
 using MedNet.API.Repositories.Interface;
+using MedNet.API.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,6 +20,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<IDoctorRepository, DoctorRepository>();
 builder.Services.AddScoped<IPatientRepository, PatientRepository>();
 builder.Services.AddScoped<IAppointmentRepository, AppointmentRepository>();
+builder.Services.AddScoped<IDoctorService, DoctorService>();
+
 
 
 var app = builder.Build();

@@ -2,8 +2,10 @@
 using MedNet.API.Models.Domain;
 using MedNet.API.Models.DTO;
 using MedNet.API.Repositories.Interface;
+using MedNet.API.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+
 
 namespace MedNet.API.Controllers
 {
@@ -11,145 +13,76 @@ namespace MedNet.API.Controllers
     [ApiController]
     public class DoctorsController : ControllerBase
     {
-        private readonly IDoctorRepository doctorRepository;
+        private readonly IDoctorService _doctorService;
 
-        public DoctorsController(IDoctorRepository doctorRepository)
+        public DoctorsController(IDoctorService doctorService)
         {
-            this.doctorRepository = doctorRepository;
+            _doctorService = doctorService;
         }
 
         [HttpPost]
         public async Task<IActionResult> CreateDoctor(CreateDoctorRequestDto request)
         {
-            // Map DTO -> Domain Model
-
-            var doctor = new Doctor
+            if (!ModelState.IsValid)
             {
-                FirstName = request.FirstName,
-                LastName = request.LastName,
-                Specialization = request.Specialization,
-                DateOfBirth = request.DateOfBirth.Date,
-                Gender = request.Gender,
-            };
+                return BadRequest(ModelState);
+            }
 
-            await doctorRepository.CreateAsync(doctor);
-
-            // Domain Model to DTO
-            var response = new DoctorDto
+            try
             {
-                Id = doctor.Id,
-                FirstName = doctor.FirstName,
-                LastName = doctor.LastName,
-                Specialization = doctor.Specialization,
-                DateOfBirth = doctor.DateOfBirth.Date,
-                Gender = doctor.Gender
-            };
-
-            return Ok(response);
+                var response = await _doctorService.CreateDoctorAsync(request);
+                return CreatedAtAction(nameof(GetDoctorById), new { id = response.Id }, response);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception here if needed
+                return StatusCode(500, "An error occurred while creating the doctor.");
+            }
         }
+
 
         [HttpGet]
         public async Task<IActionResult> GetAllDoctors()
         {
-            var doctors = await doctorRepository.GetAllAsync();
+            var response = await _doctorService.GetAllDoctorsAsync();
+            return Ok(response);
+        }
 
-            // Mapping: Domain model to DTO
+        [HttpGet("{id:Guid}")]
+        public async Task<IActionResult> GetDoctorById(Guid id)
+        {
+            var response = await _doctorService.GetDoctorByIdAsync(id);
 
-            var response = new List<DoctorDto>();
-            foreach (var doctor in doctors)
+            if (response == null)
             {
-                response.Add(new DoctorDto
-                {
-                    Id = doctor.Id,
-                    FirstName = doctor.FirstName,
-                    LastName = doctor.LastName,
-                    Specialization = doctor.Specialization,
-                    DateOfBirth = doctor.DateOfBirth,
-                    Gender = doctor.Gender
-                });
+                return NotFound();
             }
 
             return Ok(response);
         }
 
-        [HttpGet]
-        [Route("{id:Guid}")]
-        public async Task<IActionResult> GetDoctorById([FromRoute] Guid id)
+        [HttpPut("{id:Guid}")]
+        public async Task<IActionResult> UpdateDoctor(Guid id, UpdateDoctorRequestDto request)
         {
-            var existingDoctor = await doctorRepository.GetById(id);
+            var response = await _doctorService.UpdateDoctorAsync(id, request);
 
-            if (existingDoctor is null)
+            if (response == null)
             {
                 return NotFound();
             }
-
-            var response = new DoctorDto
-            {
-                Id = existingDoctor.Id,
-                FirstName = existingDoctor.FirstName,
-                LastName = existingDoctor.LastName,
-                Specialization = existingDoctor.Specialization,
-                DateOfBirth = existingDoctor.DateOfBirth,
-                Gender = existingDoctor.Gender
-            };
 
             return Ok(response);
         }
 
-        [HttpPut]
-        [Route("{id:Guid}")]
-        public async Task<IActionResult> UpdateDoctor([FromRoute] Guid id, UpdateDoctorRequestDto request)
+        [HttpDelete("{id:Guid}")]
+        public async Task<IActionResult> DeleteDoctor(Guid id)
         {
-            var doctor = new Doctor
-            {
-                Id = id,
-                FirstName = request.FirstName,
-                LastName = request.LastName,
-                Specialization = request.Specialization,
-                DateOfBirth = request.DateOfBirth,
-                Gender = request.Gender
-            };
+            var response = await _doctorService.DeleteDoctorAsync(id);
 
-            doctor = await doctorRepository.UpdateAsync(doctor);
-
-            if(doctor == null)
+            if (response == null)
             {
                 return NotFound();
             }
-
-            var response = new DoctorDto
-            {
-                Id = doctor.Id,
-                FirstName = doctor.FirstName,
-                LastName = doctor.LastName,
-                Specialization = doctor.Specialization,
-                DateOfBirth = doctor.DateOfBirth,
-                Gender = doctor.Gender
-            };
-
-            return Ok(response);
-        }
-
-        [HttpDelete]
-        [Route("{id:Guid}")]
-        public async Task<IActionResult> DeleteDoctor([FromRoute] Guid id)
-        {
-            var doctor = await doctorRepository.DeleteAsync(id);
-
-            if(doctor is null)
-            {
-                return NotFound();
-            }
-
-            var response = new DoctorDto
-            {
-                Id = doctor.Id,
-                FirstName = doctor.FirstName,
-                LastName = doctor.LastName,
-                Specialization = doctor.Specialization,
-                DateOfBirth = doctor.DateOfBirth,
-                Gender = doctor.Gender
-            };
 
             return Ok(response);
         }
