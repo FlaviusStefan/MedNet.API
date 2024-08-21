@@ -29,7 +29,7 @@ namespace MedNet.API.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, "An error occurred while creating the doctor.");
+                return StatusCode(500, "An error occurred while creating the address.");
             }
         }
 
