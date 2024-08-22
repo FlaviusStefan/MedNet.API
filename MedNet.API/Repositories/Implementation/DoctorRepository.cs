@@ -27,6 +27,8 @@ namespace MedNet.API.Repositories.Implementation
             return await dbContext.Doctors
                 .Include(d => d.Address)
                 .Include(d => d.Contact)
+                .Include(d => d.DoctorSpecializations)
+                .ThenInclude(d => d.Specialization)
                 .ToListAsync();
         }
 
@@ -35,6 +37,8 @@ namespace MedNet.API.Repositories.Implementation
             return await dbContext.Doctors
                 .Include(d => d.Address)
                 .Include(d => d.Contact)
+                .Include(d => d.DoctorSpecializations)
+                .ThenInclude(d => d.Specialization)
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
 

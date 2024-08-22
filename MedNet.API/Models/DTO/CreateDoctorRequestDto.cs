@@ -10,9 +10,6 @@ namespace MedNet.API.Models.DTO
         [Required(ErrorMessage = "Last Name is required.")]
         public string LastName { get; set; }
 
-        [Required(ErrorMessage = "Specialization is required.")]
-        public string Specialization { get; set; }
-
         [Required(ErrorMessage = "Date of birth is required.")]
         public DateTime DateOfBirth { get; set; }
 
@@ -30,5 +27,8 @@ namespace MedNet.API.Models.DTO
 
         [Required(ErrorMessage = "Contact is required.")]
         public CreateContactRequestDto Contact { get; set; }
+
+        [Required(ErrorMessage = "SpecializationIds are required.")]
+        public ICollection<Guid> SpecializationIds { get; set; }
     }
 }

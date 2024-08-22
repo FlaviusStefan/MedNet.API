@@ -4,6 +4,7 @@ using MedNet.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MedNet.API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240822073353_SpecializationForDoctor")]
+    partial class SpecializationForDoctor
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -53,7 +56,7 @@ namespace MedNet.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Addresses", (string)null);
+                    b.ToTable("Addresses");
                 });
 
             modelBuilder.Entity("MedNet.API.Models.Domain.Appointment", b =>
@@ -85,7 +88,7 @@ namespace MedNet.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Appointments", (string)null);
+                    b.ToTable("Appointments");
                 });
 
             modelBuilder.Entity("MedNet.API.Models.Domain.Contact", b =>
@@ -104,7 +107,7 @@ namespace MedNet.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Contacts", (string)null);
+                    b.ToTable("Contacts");
                 });
 
             modelBuilder.Entity("MedNet.API.Models.Domain.Doctor", b =>
@@ -147,7 +150,7 @@ namespace MedNet.API.Migrations
 
                     b.HasIndex("ContactId");
 
-                    b.ToTable("Doctors", (string)null);
+                    b.ToTable("Doctors");
                 });
 
             modelBuilder.Entity("MedNet.API.Models.Domain.DoctorSpecialization", b =>
@@ -198,7 +201,7 @@ namespace MedNet.API.Migrations
 
                     b.HasIndex("ContactId");
 
-                    b.ToTable("Patients", (string)null);
+                    b.ToTable("Patients");
                 });
 
             modelBuilder.Entity("MedNet.API.Models.Domain.Specialization", b =>
@@ -217,7 +220,7 @@ namespace MedNet.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Specializations", (string)null);
+                    b.ToTable("Specializations");
                 });
 
             modelBuilder.Entity("MedNet.API.Models.Domain.Doctor", b =>

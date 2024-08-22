@@ -25,11 +25,13 @@ builder.Services.AddScoped<IPatientRepository, PatientRepository>();
 builder.Services.AddScoped<IAppointmentRepository, AppointmentRepository>();
 builder.Services.AddScoped<IAddressRepository, AddressRepository>();
 builder.Services.AddScoped<IContactRepository, ContactRepository>();
+builder.Services.AddScoped<ISpecializationRepository, SpecializationRepository>();
 
 // Services
 builder.Services.AddScoped<IDoctorService, DoctorService>();
 builder.Services.AddScoped<IAddressService, AddressService>();
 builder.Services.AddScoped<IContactService, ContactService>();
+builder.Services.AddScoped<ISpecializationService, SpecializationService>();
 
 
 

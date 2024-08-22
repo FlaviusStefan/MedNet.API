@@ -18,9 +18,16 @@ namespace MedNet.API.Data
         public DbSet<Address> Addresses { get; set; }
         public DbSet<Contact> Contacts { get; set; }
         public DbSet<Appointment> Appointments { get; set; }
+        public DbSet<Specialization> Specializations { get; set; }
+        public DbSet<DoctorSpecialization> DoctorSpecializations { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<DoctorSpecialization>()
+                .ToTable("DoctorSpecializations");
+
             // Address configuration
             modelBuilder.Entity<Address>()
                 .HasKey(a => a.Id);
@@ -56,6 +63,22 @@ namespace MedNet.API.Data
                 .WithMany(c => c.Doctors)
                 .HasForeignKey(d => d.ContactId)
                 .OnDelete(DeleteBehavior.Cascade); // Ensure ContactId is set to NULL when Contact is deleted, not the Doctor
+
+            modelBuilder.Entity<Doctor>()
+                .HasMany(d => d.DoctorSpecializations)
+                .WithOne(ds => ds.Doctor)
+                .HasForeignKey(ds => ds.DoctorId);
+
+            modelBuilder.Entity<Specialization>()
+                .HasMany(s => s.DoctorSpecializations)
+                .WithOne(ds => ds.Specialization)
+                .HasForeignKey(ds => ds.SpecializationId);
+
+            modelBuilder.Entity<DoctorSpecialization>()
+                .HasKey(ds => new { ds.DoctorId, ds.SpecializationId });
+
+            modelBuilder.Entity<Specialization>()
+                .HasKey(s => s.Id);
         }
     }
 }

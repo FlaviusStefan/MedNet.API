@@ -4,6 +4,7 @@ using MedNet.API.Models.Domain;
 using MedNet.API.Models.DTO;
 using MedNet.API.Repositories.Interface;
 using MedNet.API.Services.Interface;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using System.Data;
@@ -47,16 +48,22 @@ namespace MedNet.API.Services
                     Id = Guid.NewGuid(),
                     FirstName = request.FirstName,
                     LastName = request.LastName,
-                    Specialization = request.Specialization,
                     DateOfBirth = request.DateOfBirth,
                     Gender = request.Gender,
                     LicenseNumber = request.LicenseNumber,
                     YearsOfExperience = request.YearsOfExperience,
                     AddressId = addressDto.Id,
-                    ContactId = contactDto.Id
+                    ContactId = contactDto.Id,
+                    DoctorSpecializations = request.SpecializationIds.Select(sid => new DoctorSpecialization
+                    {
+                        DoctorId = Guid.NewGuid(),
+                        SpecializationId = sid
+                    }).ToList()
                 };
 
                 await doctorRepository.CreateAsync(doctor);
+                    
+                
 
                 // Commit transaction
                 await transaction.CommitAsync();
@@ -66,13 +73,13 @@ namespace MedNet.API.Services
                     Id = doctor.Id,
                     FirstName = doctor.FirstName,
                     LastName = doctor.LastName,
-                    Specialization = doctor.Specialization,
                     DateOfBirth = doctor.DateOfBirth,
                     Gender = doctor.Gender,
                     LicenseNumber = doctor.LicenseNumber,
                     YearsOfExperience = doctor.YearsOfExperience,
                     Address = addressDto,
-                    Contact = contactDto
+                    Contact = contactDto,
+                    SpecializationIds = request.SpecializationIds
                 };
             }
             catch (Exception ex)
@@ -92,7 +99,6 @@ namespace MedNet.API.Services
                 Id = doctor.Id,
                 FirstName = doctor.FirstName,
                 LastName = doctor.LastName,
-                Specialization = doctor.Specialization,
                 DateOfBirth = doctor.DateOfBirth,
                 Gender = doctor.Gender,
                 LicenseNumber = doctor.LicenseNumber,
@@ -112,10 +118,12 @@ namespace MedNet.API.Services
                     Id = doctor.Contact.Id,
                     Phone = doctor.Contact.Phone,
                     Email = doctor.Contact.Email
-                } : null
-
+                } : null,
+                SpecializationIds = doctor.DoctorSpecializations.Select(ds => ds.SpecializationId).ToList(),
+                Specializations = doctor.DoctorSpecializations.Select(ds => ds.Specialization.Name).ToList()
             });
         }
+
 
         public async Task<DoctorDto?> GetDoctorByIdAsync(Guid id)
         {
@@ -141,18 +149,23 @@ namespace MedNet.API.Services
                 Email = doctor.Contact.Email
             } : null;
 
+            var specializationIds = doctor.DoctorSpecializations
+                                  .Select(ds => ds.SpecializationId)
+                                  .ToList();
+
             return new DoctorDto
             {
                 Id = doctor.Id,
                 FirstName = doctor.FirstName,
                 LastName = doctor.LastName,
-                Specialization = doctor.Specialization,
                 DateOfBirth = doctor.DateOfBirth,
                 Gender = doctor.Gender,
                 LicenseNumber = doctor.LicenseNumber,
                 YearsOfExperience = doctor.YearsOfExperience,
                 Address = addressDto,
-                Contact = contactDto
+                Contact = contactDto,
+                SpecializationIds = specializationIds,
+                Specializations = doctor.DoctorSpecializations.Select(ds => ds.Specialization.Name).ToList()
             };
         }
 
@@ -162,30 +175,53 @@ namespace MedNet.API.Services
 
             if (existingDoctor == null) return null;
 
+            // Update basic doctor information
             existingDoctor.FirstName = request.FirstName;
             existingDoctor.LastName = request.LastName;
-            existingDoctor.Specialization = request.Specialization;
             existingDoctor.DateOfBirth = request.DateOfBirth;
             existingDoctor.Gender = request.Gender;
             existingDoctor.LicenseNumber = request.LicenseNumber;
             existingDoctor.YearsOfExperience = request.YearsOfExperience;
 
-            var updatedDoctor = await doctorRepository.UpdateAsync(existingDoctor);
+            // Handle specializations
+            var currentSpecializations = dbContext.DoctorSpecializations
+                                                  .Where(ds => ds.DoctorId == id)
+                                                  .ToList();
 
-            if (updatedDoctor == null) return null;
+            // Remove existing specializations
+            dbContext.DoctorSpecializations.RemoveRange(currentSpecializations);
 
+            // Add new specializations
+            foreach (var specializationId in request.SpecializationIds)
+            {
+                var doctorSpecialization = new DoctorSpecialization
+                {
+                    DoctorId = id,
+                    SpecializationId = specializationId
+                };
+                await dbContext.DoctorSpecializations.AddAsync(doctorSpecialization);
+            }
+
+            // Save changes to the database
+            await dbContext.SaveChangesAsync();
+
+            // Map updated doctor to DTO
             return new DoctorDto
             {
-                Id = updatedDoctor.Id,
-                FirstName = updatedDoctor.FirstName,
-                LastName = updatedDoctor.LastName,
-                Specialization = updatedDoctor.Specialization,
-                DateOfBirth = updatedDoctor.DateOfBirth,
-                Gender = updatedDoctor.Gender,
-                LicenseNumber = updatedDoctor.LicenseNumber,
-                YearsOfExperience = updatedDoctor.YearsOfExperience
+                Id = existingDoctor.Id,
+                FirstName = existingDoctor.FirstName,
+                LastName = existingDoctor.LastName,
+                DateOfBirth = existingDoctor.DateOfBirth,
+                Gender = existingDoctor.Gender,
+                LicenseNumber = existingDoctor.LicenseNumber,
+                YearsOfExperience = existingDoctor.YearsOfExperience,
+                SpecializationIds = dbContext.DoctorSpecializations
+                                              .Where(ds => ds.DoctorId == id)
+                                              .Select(ds => ds.SpecializationId)
+                                              .ToList()
             };
         }
+
 
         public async Task<string?> DeleteDoctorAsync(Guid id)
         {
@@ -219,7 +255,7 @@ namespace MedNet.API.Services
                 await transaction.CommitAsync();
 
                 return "Doctor has been deleted succesfully!";
-                
+
             }
             catch (Exception ex)
             {
@@ -227,8 +263,6 @@ namespace MedNet.API.Services
                 throw new CustomException("An unexpected error occurred while deleting the doctor: " + ex.Message, ex);
             }
         }
-
-
 
     }
 }
