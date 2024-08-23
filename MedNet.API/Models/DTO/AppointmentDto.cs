@@ -9,7 +9,7 @@
         public Guid PatientId { get; set; }
         public string PatientFirstName { get; set; }
         public string PatientLastName { get; set; }
-        public DateTime AppointmentDateTime { get; set; }
+        public DateTime Date { get; set; }
         public string Status { get; set; }
         public string Reason { get; set; }
         public string Details { get; set; }
