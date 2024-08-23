@@ -1,48 +1,59 @@
-﻿using MedNet.API.Data;
-using MedNet.API.Exceptions;
+﻿using MedNet.API.Exceptions;
 using MedNet.API.Models.Domain;
 using MedNet.API.Models.DTO;
 using MedNet.API.Repositories.Interface;
+using MedNet.API.Services.Implementation;
 using MedNet.API.Services.Interface;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
-using System.Data;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace MedNet.API.Services
 {
     public class DoctorService : IDoctorService
     {
-        private readonly IDoctorRepository doctorRepository;
-        private readonly IAddressService addressService;
-        private readonly IContactService contactService;
-        private readonly ApplicationDbContext dbContext;
+        private readonly IDoctorRepository _doctorRepository;
+        private readonly IAddressService _addressService;
+        private readonly IContactService _contactService;
+        private readonly ISpecializationService specializationService;
 
         public DoctorService(
             IDoctorRepository doctorRepository,
             IAddressService addressService,
             IContactService contactService,
-            ApplicationDbContext dbContext)
+            ISpecializationService specializationService)
         {
-            this.doctorRepository = doctorRepository;
-            this.addressService = addressService;
-            this.contactService = contactService;
-            this.dbContext = dbContext;
+            _doctorRepository = doctorRepository;
+            _addressService = addressService;
+            _contactService = contactService;
+            this.specializationService = specializationService;
         }
 
         public async Task<DoctorDto> CreateDoctorAsync(CreateDoctorRequestDto request)
         {
-            using var transaction = await dbContext.Database.BeginTransactionAsync();
+            using var transaction = await _doctorRepository.BeginTransactionAsync();
 
             try
             {
-                // Create Address
-                var addressDto = await addressService.CreateAddressAsync(request.Address);
+                if (request.SpecializationIds == null || !request.SpecializationIds.Any())
+                {
+                    throw new ArgumentException("At least one specialization ID is required.");
+                }
 
-                // Create Contact
-                var contactDto = await contactService.CreateContactAsync(request.Contact);
+                var specializationDtos = await specializationService.GetAllSpecializationsAsync();
 
-                // Create Doctor
+                var validSpecializationIds = request.SpecializationIds
+                    .Where(id => specializationDtos.Any(dto => dto.Id == id))
+                    .ToList();
+
+                if (!validSpecializationIds.Any())
+                {
+                    throw new ArgumentException("None of the provided specialization IDs are valid.");
+                }
+
+                var addressDto = await _addressService.CreateAddressAsync(request.Address);
+
+                var contactDto = await _contactService.CreateContactAsync(request.Contact);
+
                 var doctor = new Doctor
                 {
                     Id = Guid.NewGuid(),
@@ -54,16 +65,14 @@ namespace MedNet.API.Services
                     YearsOfExperience = request.YearsOfExperience,
                     AddressId = addressDto.Id,
                     ContactId = contactDto.Id,
-                    DoctorSpecializations = request.SpecializationIds.Select(sid => new DoctorSpecialization
+                    DoctorSpecializations = validSpecializationIds.Select(sid => new DoctorSpecialization
                     {
                         DoctorId = Guid.NewGuid(),
                         SpecializationId = sid
                     }).ToList()
                 };
 
-                await doctorRepository.CreateAsync(doctor);
-                    
-                
+                await _doctorRepository.CreateAsync(doctor);
 
                 // Commit transaction
                 await transaction.CommitAsync();
@@ -79,20 +88,20 @@ namespace MedNet.API.Services
                     YearsOfExperience = doctor.YearsOfExperience,
                     Address = addressDto,
                     Contact = contactDto,
-                    SpecializationIds = request.SpecializationIds
+                    SpecializationIds = validSpecializationIds
                 };
             }
             catch (Exception ex)
             {
-                // Rollback transaction
                 await transaction.RollbackAsync();
                 throw new CustomException("An unexpected error occurred: " + ex.Message, ex);
             }
         }
 
+
         public async Task<IEnumerable<DoctorDto>> GetAllDoctorsAsync()
         {
-            var doctors = await doctorRepository.GetAllAsync();
+            var doctors = await _doctorRepository.GetAllAsync();
 
             return doctors.Select(doctor => new DoctorDto
             {
@@ -124,10 +133,9 @@ namespace MedNet.API.Services
             });
         }
 
-
         public async Task<DoctorDto?> GetDoctorByIdAsync(Guid id)
         {
-            var doctor = await doctorRepository.GetById(id);
+            var doctor = await _doctorRepository.GetById(id);
 
             if (doctor == null) return null;
 
@@ -171,11 +179,10 @@ namespace MedNet.API.Services
 
         public async Task<DoctorDto?> UpdateDoctorAsync(Guid id, UpdateDoctorRequestDto request)
         {
-            var existingDoctor = await doctorRepository.GetById(id);
+            var existingDoctor = await _doctorRepository.GetById(id);
 
             if (existingDoctor == null) return null;
 
-            // Update basic doctor information
             existingDoctor.FirstName = request.FirstName;
             existingDoctor.LastName = request.LastName;
             existingDoctor.DateOfBirth = request.DateOfBirth;
@@ -183,29 +190,17 @@ namespace MedNet.API.Services
             existingDoctor.LicenseNumber = request.LicenseNumber;
             existingDoctor.YearsOfExperience = request.YearsOfExperience;
 
-            // Handle specializations
-            var currentSpecializations = dbContext.DoctorSpecializations
-                                                  .Where(ds => ds.DoctorId == id)
-                                                  .ToList();
+            var specializationDtos = await specializationService.GetAllSpecializationsAsync();
+            var validSpecializationIds = request.SpecializationIds
+                .Where(id => specializationDtos.Any(dto => dto.Id == id))
+                .ToList();
 
-            // Remove existing specializations
-            dbContext.DoctorSpecializations.RemoveRange(currentSpecializations);
-
-            // Add new specializations
-            foreach (var specializationId in request.SpecializationIds)
+            if (validSpecializationIds.Count != request.SpecializationIds.Count())
             {
-                var doctorSpecialization = new DoctorSpecialization
-                {
-                    DoctorId = id,
-                    SpecializationId = specializationId
-                };
-                await dbContext.DoctorSpecializations.AddAsync(doctorSpecialization);
             }
 
-            // Save changes to the database
-            await dbContext.SaveChangesAsync();
+            await _doctorRepository.UpdateDoctorSpecializationsAsync(id, validSpecializationIds);
 
-            // Map updated doctor to DTO
             return new DoctorDto
             {
                 Id = existingDoctor.Id,
@@ -215,13 +210,9 @@ namespace MedNet.API.Services
                 Gender = existingDoctor.Gender,
                 LicenseNumber = existingDoctor.LicenseNumber,
                 YearsOfExperience = existingDoctor.YearsOfExperience,
-                SpecializationIds = dbContext.DoctorSpecializations
-                                              .Where(ds => ds.DoctorId == id)
-                                              .Select(ds => ds.SpecializationId)
-                                              .ToList()
+                SpecializationIds = validSpecializationIds
             };
         }
-
 
         public async Task<string?> DeleteDoctorAsync(Guid id)
         {
@@ -230,32 +221,31 @@ namespace MedNet.API.Services
                 throw new ArgumentException("Invalid ID", nameof(id));
             }
 
-            var doctor = await doctorRepository.GetById(id);
+            var doctor = await _doctorRepository.GetById(id);
             if (doctor == null)
             {
                 return null;
             }
 
-            using var transaction = await dbContext.Database.BeginTransactionAsync();
+            using var transaction = await _doctorRepository.BeginTransactionAsync();
 
             try
             {
                 if (doctor.Address != null)
                 {
-                    await addressService.DeleteAddressAsync(doctor.Address.Id);
+                    await _addressService.DeleteAddressAsync(doctor.Address.Id);
                 }
 
                 if (doctor.Contact != null)
                 {
-                    await contactService.DeleteContactAsync(doctor.Contact.Id);
+                    await _contactService.DeleteContactAsync(doctor.Contact.Id);
                 }
 
-                var deletedDoctor = await doctorRepository.DeleteAsync(id);
+                await _doctorRepository.DeleteAsync(id);
 
                 await transaction.CommitAsync();
 
-                return "Doctor has been deleted succesfully!";
-
+                return "Doctor has been deleted successfully!";
             }
             catch (Exception ex)
             {
@@ -263,6 +253,5 @@ namespace MedNet.API.Services
                 throw new CustomException("An unexpected error occurred while deleting the doctor: " + ex.Message, ex);
             }
         }
-
     }
 }

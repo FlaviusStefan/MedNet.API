@@ -2,6 +2,7 @@
 using MedNet.API.Models.Domain;
 using MedNet.API.Repositories.Interface;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace MedNet.API.Repositories.Implementation
 {
@@ -68,6 +69,29 @@ namespace MedNet.API.Repositories.Implementation
             dbContext.Doctors.Remove(existingDoctor);
             await dbContext.SaveChangesAsync();
             return existingDoctor;
+        }
+
+        public async Task UpdateDoctorSpecializationsAsync(Guid doctorId, IEnumerable<Guid> specializationIds)
+        {
+            var currentSpecializations = dbContext.DoctorSpecializations
+                .Where(ds => ds.DoctorId == doctorId)
+                .ToList();
+
+            dbContext.DoctorSpecializations.RemoveRange(currentSpecializations);
+
+            var newSpecializations = specializationIds.Select(sid => new DoctorSpecialization
+            {
+                DoctorId = doctorId,
+                SpecializationId = sid
+            });
+
+            await dbContext.DoctorSpecializations.AddRangeAsync(newSpecializations);
+            await dbContext.SaveChangesAsync();
+        }
+
+        public async Task<IDbContextTransaction> BeginTransactionAsync()
+        {
+            return await dbContext.Database.BeginTransactionAsync();
         }
 
     }
