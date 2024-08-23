@@ -37,7 +37,7 @@ namespace MedNet.API.Data
                 .HasMany(a => a.Doctors)
                 .WithOne(d => d.Address)
                 .HasForeignKey(d => d.AddressId)
-                .OnDelete(DeleteBehavior.SetNull); 
+                .OnDelete(DeleteBehavior.Restrict); 
 
             modelBuilder.Entity<Address>()
                 .HasMany(a => a.Patients)
@@ -53,7 +53,7 @@ namespace MedNet.API.Data
                 .HasMany(c => c.Doctors)
                 .WithOne(d => d.Contact)
                 .HasForeignKey(d => d.ContactId)
-                .OnDelete(DeleteBehavior.SetNull); 
+                .OnDelete(DeleteBehavior.Restrict); 
 
             modelBuilder.Entity<Contact>()
                 .HasMany(c => c.Patients)
@@ -69,13 +69,13 @@ namespace MedNet.API.Data
                 .HasOne(d => d.Address)
                 .WithMany(a => a.Doctors)
                 .HasForeignKey(d => d.AddressId)
-                .OnDelete(DeleteBehavior.Restrict); 
+                .OnDelete(DeleteBehavior.Cascade); 
 
             modelBuilder.Entity<Doctor>()
                 .HasOne(d => d.Contact)
                 .WithMany(c => c.Doctors)
                 .HasForeignKey(d => d.ContactId)
-                .OnDelete(DeleteBehavior.Restrict); 
+                .OnDelete(DeleteBehavior.Cascade); 
 
             modelBuilder.Entity<Doctor>()
                 .HasMany(d => d.DoctorSpecializations)
