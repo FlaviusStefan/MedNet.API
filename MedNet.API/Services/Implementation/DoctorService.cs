@@ -11,9 +11,9 @@ namespace MedNet.API.Services
 {
     public class DoctorService : IDoctorService
     {
-        private readonly IDoctorRepository _doctorRepository;
-        private readonly IAddressService _addressService;
-        private readonly IContactService _contactService;
+        private readonly IDoctorRepository doctorRepository;
+        private readonly IAddressService addressService;
+        private readonly IContactService contactService;
         private readonly ISpecializationService specializationService;
 
         public DoctorService(
@@ -22,15 +22,15 @@ namespace MedNet.API.Services
             IContactService contactService,
             ISpecializationService specializationService)
         {
-            _doctorRepository = doctorRepository;
-            _addressService = addressService;
-            _contactService = contactService;
+            this.doctorRepository = doctorRepository;
+            this.addressService = addressService;
+            this.contactService = contactService;
             this.specializationService = specializationService;
         }
 
         public async Task<DoctorDto> CreateDoctorAsync(CreateDoctorRequestDto request)
         {
-            using var transaction = await _doctorRepository.BeginTransactionAsync();
+            using var transaction = await doctorRepository.BeginTransactionAsync();
 
             try
             {
@@ -50,9 +50,9 @@ namespace MedNet.API.Services
                     throw new ArgumentException("None of the provided specialization IDs are valid.");
                 }
 
-                var addressDto = await _addressService.CreateAddressAsync(request.Address);
+                var addressDto = await addressService.CreateAddressAsync(request.Address);
 
-                var contactDto = await _contactService.CreateContactAsync(request.Contact);
+                var contactDto = await contactService.CreateContactAsync(request.Contact);
 
                 var doctor = new Doctor
                 {
@@ -72,7 +72,7 @@ namespace MedNet.API.Services
                     }).ToList()
                 };
 
-                await _doctorRepository.CreateAsync(doctor);
+                await doctorRepository.CreateAsync(doctor);
 
                 // Commit transaction
                 await transaction.CommitAsync();
@@ -101,7 +101,7 @@ namespace MedNet.API.Services
 
         public async Task<IEnumerable<DoctorDto>> GetAllDoctorsAsync()
         {
-            var doctors = await _doctorRepository.GetAllAsync();
+            var doctors = await doctorRepository.GetAllAsync();
 
             return doctors.Select(doctor => new DoctorDto
             {
@@ -135,7 +135,7 @@ namespace MedNet.API.Services
 
         public async Task<DoctorDto?> GetDoctorByIdAsync(Guid id)
         {
-            var doctor = await _doctorRepository.GetById(id);
+            var doctor = await doctorRepository.GetById(id);
 
             if (doctor == null) return null;
 
@@ -179,7 +179,7 @@ namespace MedNet.API.Services
 
         public async Task<DoctorDto?> UpdateDoctorAsync(Guid id, UpdateDoctorRequestDto request)
         {
-            var existingDoctor = await _doctorRepository.GetById(id);
+            var existingDoctor = await doctorRepository.GetById(id);
 
             if (existingDoctor == null) return null;
 
@@ -199,7 +199,7 @@ namespace MedNet.API.Services
             {
             }
 
-            await _doctorRepository.UpdateDoctorSpecializationsAsync(id, validSpecializationIds);
+            await doctorRepository.UpdateDoctorSpecializationsAsync(id, validSpecializationIds);
 
             return new DoctorDto
             {
@@ -221,27 +221,27 @@ namespace MedNet.API.Services
                 throw new ArgumentException("Invalid ID", nameof(id));
             }
 
-            var doctor = await _doctorRepository.GetById(id);
+            var doctor = await doctorRepository.GetById(id);
             if (doctor == null)
             {
                 return null;
             }
 
-            using var transaction = await _doctorRepository.BeginTransactionAsync();
+            using var transaction = await doctorRepository.BeginTransactionAsync();
 
             try
             {
                 if (doctor.Address != null)
                 {
-                    await _addressService.DeleteAddressAsync(doctor.Address.Id);
+                    await addressService.DeleteAddressAsync(doctor.Address.Id);
                 }
 
                 if (doctor.Contact != null)
                 {
-                    await _contactService.DeleteContactAsync(doctor.Contact.Id);
+                    await contactService.DeleteContactAsync(doctor.Contact.Id);
                 }
 
-                await _doctorRepository.DeleteAsync(id);
+                await doctorRepository.DeleteAsync(id);
 
                 await transaction.CommitAsync();
 

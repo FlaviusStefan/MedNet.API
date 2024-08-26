@@ -29,7 +29,7 @@ namespace MedNet.API.Repositories.Implementation
 
         public async Task<Specialization?> GetById(Guid id)
         {
-            return await dbContext.Specializations.FirstOrDefaultAsync();
+            return await dbContext.Specializations.FirstOrDefaultAsync(x => x.Id == id);
 
         }
 

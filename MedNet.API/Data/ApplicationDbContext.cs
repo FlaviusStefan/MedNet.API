@@ -20,6 +20,7 @@ namespace MedNet.API.Data
         public DbSet<Appointment> Appointments { get; set; }
         public DbSet<Specialization> Specializations { get; set; }
         public DbSet<DoctorSpecialization> DoctorSpecializations { get; set; }
+        public DbSet<Qualification> Qualifications { get; set; }
 
 
 
@@ -43,7 +44,7 @@ namespace MedNet.API.Data
                 .HasMany(a => a.Patients)
                 .WithOne(d => d.Address)
                 .HasForeignKey(d => d.AddressId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
 
             // Contact configuration
             modelBuilder.Entity<Contact>()
@@ -59,7 +60,7 @@ namespace MedNet.API.Data
                 .HasMany(c => c.Patients)
                 .WithOne(d => d.Contact)
                 .HasForeignKey(d => d.ContactId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
 
             // Doctor configuration
             modelBuilder.Entity<Doctor>()
@@ -87,8 +88,15 @@ namespace MedNet.API.Data
                 .WithOne(ds => ds.Specialization)
                 .HasForeignKey(ds => ds.SpecializationId);
 
+
             modelBuilder.Entity<DoctorSpecialization>()
                 .HasKey(ds => new { ds.DoctorId, ds.SpecializationId });
+
+            modelBuilder.Entity<Doctor>()
+                .HasMany(d => d.Qualifications)
+                .WithOne(q => q.Doctor)
+                .HasForeignKey(q => q.DoctorId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // Patient configuration
             modelBuilder.Entity<Patient>()
@@ -104,6 +112,16 @@ namespace MedNet.API.Data
                 .HasOne(d => d.Contact)
                 .WithMany(c => c.Patients)
                 .HasForeignKey(d => d.ContactId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Configuration for Qualification entity
+            modelBuilder.Entity<Qualification>()
+                .HasKey(q => q.Id);
+
+            modelBuilder.Entity<Qualification>()
+                .HasOne(q => q.Doctor)
+                .WithMany(d => d.Qualifications)
+                .HasForeignKey(q => q.DoctorId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }
