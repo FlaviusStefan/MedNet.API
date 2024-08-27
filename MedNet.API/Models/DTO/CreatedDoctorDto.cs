@@ -1,6 +1,6 @@
 ﻿namespace MedNet.API.Models.DTO
 {
-    public class DoctorDto
+    public class CreatedDoctorDto
     {
         public Guid Id { get; set; }
         public string FirstName { get; set; }
@@ -11,8 +11,6 @@
         public int YearsOfExperience { get; set; }
         public AddressDto Address { get; set; }
         public ContactDto Contact { get; set; }
-        public ICollection<string> Specializations { get; set; }
-        public ICollection<QualificationDto> Qualifications { get; set; }
-
+        public List<string> Specializations { get; set; }
     }
 }

@@ -96,7 +96,7 @@ namespace MedNet.API.Data
                 .HasMany(d => d.Qualifications)
                 .WithOne(q => q.Doctor)
                 .HasForeignKey(q => q.DoctorId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
             // Patient configuration
             modelBuilder.Entity<Patient>()
