@@ -11,5 +11,6 @@
         public string PostalCode { get; set; }
         public ICollection<Doctor> Doctors { get; set; }
         public ICollection<Patient> Patients { get; set; }
+        public ICollection<Hospital> Hospitals { get; set; }
     }
 }
