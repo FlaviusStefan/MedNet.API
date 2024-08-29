@@ -24,13 +24,19 @@ namespace MedNet.API.Repositories.Implementation
 
         public async Task<IEnumerable<Hospital>> GetAllAsync()
         {
-            return await dbContext.Hospitals.ToListAsync();
+            return await dbContext.Hospitals
+                .Include(h => h.Address)
+                .Include(h => h.Contact)
+                .ToListAsync();
 
         }
 
         public async Task<Hospital?> GetById(Guid id)
         {
-            return await dbContext.Hospitals.FirstOrDefaultAsync(x => x.Id == id);
+            return await dbContext.Hospitals
+                .Include(h => h.Address)
+                .Include(h => h.Contact)
+                .FirstOrDefaultAsync(x => x.Id == id);
         }
 
         public async Task<Hospital?> UpdateAsync(Hospital hospital)

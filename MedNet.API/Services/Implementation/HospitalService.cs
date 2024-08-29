@@ -112,13 +112,13 @@ namespace MedNet.API.Services.Implementation
 
         public async Task<string?> DeleteHospitalAsync(Guid id)
         {
-            if(id == Guid.Empty)
+            if (id == Guid.Empty)
             {
                 throw new ArgumentException("Invalid ID", nameof(id));
             }
 
             var hospital = await hospitalRepository.GetById(id);
-            if(hospital == null)
+            if (hospital == null)
             {
                 return null;
             }
@@ -127,7 +127,11 @@ namespace MedNet.API.Services.Implementation
 
             try
             {
-                if(hospital.Address != null)
+                // First, delete the hospital entity
+                await hospitalRepository.DeleteAsync(id);
+
+                // Then, delete related entities if they exist
+                if (hospital.Address != null)
                 {
                     await addressService.DeleteAddressAsync(hospital.Address.Id);
                 }
@@ -137,17 +141,17 @@ namespace MedNet.API.Services.Implementation
                     await contactService.DeleteContactAsync(hospital.Contact.Id);
                 }
 
-                await hospitalRepository.DeleteAsync(id);
-
+                // Commit the transaction
                 await transaction.CommitAsync();
 
-                return "Hospital deleted succesfully!";
-
-            } catch (Exception ex)
+                return "Hospital deleted successfully!";
+            }
+            catch (Exception ex)
             {
                 await transaction.RollbackAsync();
                 throw new CustomException("An unexpected error occurred while deleting the hospital: " + ex.Message, ex);
             }
         }
+
     }
 }
