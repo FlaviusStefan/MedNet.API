@@ -1,6 +1,7 @@
 ﻿using MedNet.API.Exceptions;
 using MedNet.API.Models.Domain;
 using MedNet.API.Models.DTO;
+using MedNet.API.Repositories.Implementation;
 using MedNet.API.Repositories.Interface;
 using MedNet.API.Services.Interface;
 using System.Numerics;
@@ -139,9 +140,45 @@ namespace MedNet.API.Services.Implementation
                 Weight = updatedPatient.Weight
             };
         }
-        public Task<string?> DeletePatientAsync(Guid id)
+        public async Task<string?> DeletePatientAsync(Guid id)
         {
-            throw new NotImplementedException();
+            if(id == Guid.Empty)
+            {
+                throw new ArgumentException("Invalid ID", nameof(id));
+            }
+
+            var patient = await patientRepository.GetById(id);
+            if (patient == null)
+            {
+                return null;
+            }
+
+            using var transaction = await patientRepository.BeginTransactionAsync();
+
+            try
+            {
+                await patientRepository.DeleteAsync(id);
+
+                if (patient.Address != null)
+                {
+                    await addressService.DeleteAddressAsync(patient.Address.Id);
+                }
+
+                if (patient.Contact != null)
+                {
+                    await contactService.DeleteContactAsync(patient.Contact.Id);
+                }
+
+
+                await transaction.CommitAsync();
+
+                return "Patient has been deleted successfully!";
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                throw new CustomException("An unexpected error occurred while deleting the patient: " + ex.Message, ex);
+            }
         }
     }
 }
