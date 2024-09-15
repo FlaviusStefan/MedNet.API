@@ -11,6 +11,7 @@ namespace MedNet.API.Models.DTO
         public string Gender { get; set; }
         public string LicenseNumber { get; set; }
         public int YearsOfExperience { get; set; }
+
         [Required]
         public List<Guid> SpecializationIds { get; set; }
 

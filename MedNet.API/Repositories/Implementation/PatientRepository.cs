@@ -2,6 +2,7 @@
 using MedNet.API.Models.Domain;
 using MedNet.API.Repositories.Interface;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using System.Numerics;
 
 namespace MedNet.API.Repositories.Implementation
@@ -25,12 +26,18 @@ namespace MedNet.API.Repositories.Implementation
 
         public async Task<IEnumerable<Patient>> GetAllAsync()
         {
-            return await dbContext.Patients.ToListAsync();
+            return await dbContext.Patients
+                .Include(d => d.Address)
+                .Include(d => d.Contact)
+                .ToListAsync();
         }
 
-        public async Task<Patient> GetById(Guid id)
+        public async Task<Patient?> GetById(Guid id)
         {
-            return await dbContext.Patients.FirstOrDefaultAsync(x => x.Id == id);
+            return await dbContext.Patients
+                .Include(d => d.Address)
+                .Include(d => d.Contact)
+                .FirstOrDefaultAsync(x => x.Id == id);
         }
 
         public async Task<Patient?> UpdateAsync(Patient patient)
@@ -59,6 +66,11 @@ namespace MedNet.API.Repositories.Implementation
             dbContext.Patients.Remove(existingPatient);
             await dbContext.SaveChangesAsync();
             return existingPatient;
+        }
+
+        public async Task<IDbContextTransaction> BeginTransactionAsync()
+        {
+            return await dbContext.Database.BeginTransactionAsync();
         }
     }
 }

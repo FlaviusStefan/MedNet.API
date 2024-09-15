@@ -32,6 +32,7 @@ builder.Services.AddScoped<IDoctorHospitalRepository,  DoctorHospitalRepository>
 
 // Services
 builder.Services.AddScoped<IDoctorService, DoctorService>();
+builder.Services.AddScoped<IPatientService, PatientService>();
 builder.Services.AddScoped<IAddressService, AddressService>();
 builder.Services.AddScoped<IContactService, ContactService>();
 builder.Services.AddScoped<ISpecializationService, SpecializationService>();

@@ -1,6 +1,8 @@
 ﻿using MedNet.API.Models.Domain;
 using MedNet.API.Models.DTO;
 using MedNet.API.Repositories.Interface;
+using MedNet.API.Services;
+using MedNet.API.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,138 +12,65 @@ namespace MedNet.API.Controllers
     [ApiController]
     public class PatientsController : ControllerBase
     {
-        private readonly IPatientRepository patientRepository;
+        private readonly IPatientService patientService;
 
-        public PatientsController(IPatientRepository patientRepository)
+        public PatientsController(IPatientService patientService)
         {
-            this.patientRepository = patientRepository;
+            this.patientService = patientService;
         }
 
         [HttpPost]
         public async Task<IActionResult> CreatePatient(CreatePatientRequestDto request)
         {
-            var patient = new Patient
+            if (!ModelState.IsValid)
             {
-                FirstName = request.FirstName,
-                LastName = request.LastName,
-                DateOfBirth = request.DateOfBirth,
-                Gender = request.Gender
-            };
+                return BadRequest(ModelState);
+            }
 
-            await patientRepository.CreateAsync(patient);
-
-            var response = new PatientDto
+            try
             {
-                Id = patient.Id,
-                FirstName = patient.FirstName,
-                LastName = patient.LastName,
-                DateOfBirth = patient.DateOfBirth,
-                Gender = patient.Gender
-            };
-
-            return Ok(response);
+                var response = await patientService.CreatePatientAsync(request);
+                return CreatedAtAction(nameof(GetPatientById), new { id = response.Id }, response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while creating the patient.");
+            }
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAllPatients()
         {
-            var patients = await patientRepository.GetAllAsync();
-
-            // Mapping: Domain model to DTO 
-            var response = new List<PatientDto>();
-            foreach(var patient in patients)
-            {
-                response.Add(new PatientDto
-                {
-                    Id = patient.Id,
-                    FirstName = patient.FirstName,
-                    LastName = patient.LastName,
-                    DateOfBirth = patient.DateOfBirth,
-                    Gender = patient.Gender
-                });
-            }
-
+            var response = await patientService.GetAllPatientsAsync();
             return Ok(response);
         }
 
-        [HttpGet]
-        [Route("{id:Guid}")]
-        public async Task<IActionResult> GetPatientById([FromRoute] Guid id)
+        [HttpGet("{id:Guid}")]
+        public async Task<IActionResult> GetPatientById(Guid id)
         {
-            var existingPatient = await patientRepository.GetById(id);
+            var response = await patientService.GetPatientByIdAsync(id);
 
-            if(existingPatient is null)
+            if (response == null)
             {
                 return NotFound();
             }
 
-            var response = new PatientDto
-            {
-                Id = existingPatient.Id,
-                FirstName = existingPatient.FirstName,
-                LastName = existingPatient.LastName,
-                DateOfBirth = existingPatient.DateOfBirth,
-                Gender = existingPatient.Gender
-            };
-
             return Ok(response);
         }
 
-        [HttpPut]
-        [Route("{id:Guid}")]
-        public async Task<IActionResult> UpdatePatient([FromRoute] Guid id, UpdatePatientRequestDto request)
+        [HttpPut("{id:Guid}")]
+        public async Task<IActionResult> UpdatePatient(Guid id, UpdatePatientRequestDto request)
         {
-            var patient = new Patient
-            {
-                Id = id,
-                FirstName = request.FirstName,
-                LastName = request.LastName,
-                DateOfBirth = request.DateOfBirth,
-                Gender = request.Gender
-            };
+            var response = await patientService.UpdatePatientAsync(id, request);
 
-            patient = await patientRepository.UpdateAsync(patient);
-
-            if(patient == null)
+            if (response == null)
             {
                 return NotFound();
             }
 
-            var response = new PatientDto
-            {
-                Id = patient.Id,
-                FirstName = patient.FirstName,
-                LastName = patient.LastName,
-                DateOfBirth = patient.DateOfBirth,
-                Gender = patient.Gender
-            };
-
             return Ok(response);
         }
 
-        [HttpDelete]
-        [Route("{id:Guid}")]
-        public async Task<IActionResult> DeletePatient([FromRoute] Guid id)
-        {
-            var patient = await patientRepository.DeleteAsync(id);
 
-            if(patient is null)
-            {
-                return NotFound();
-            }
-
-            // Convert Domain Model to DTO
-
-            var response = new PatientDto
-            {
-                Id = patient.Id,
-                FirstName = patient.FirstName,
-                LastName = patient.LastName,
-                DateOfBirth = patient.DateOfBirth,
-                Gender = patient.Gender
-            };
-
-            return Ok(response);
-        }
     }
 }

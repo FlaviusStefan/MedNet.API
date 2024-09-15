@@ -1,4 +1,5 @@
 ﻿using MedNet.API.Models.Domain;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace MedNet.API.Repositories.Interface
 {
@@ -9,5 +10,7 @@ namespace MedNet.API.Repositories.Interface
         Task<Patient?> GetById(Guid id);
         Task<Patient?> UpdateAsync(Patient patient);
         Task<Patient?> DeleteAsync(Guid id);
+        Task<IDbContextTransaction> BeginTransactionAsync();
+
     }
 }
