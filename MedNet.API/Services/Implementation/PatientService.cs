@@ -13,12 +13,17 @@ namespace MedNet.API.Services.Implementation
         private readonly IPatientRepository patientRepository;
         private readonly IAddressService addressService;
         private readonly IContactService contactService;
+        private readonly IInsuranceService insuranceService;
 
-        public PatientService(IPatientRepository patientRepository, IAddressService addressService, IContactService contactService)
+        public PatientService(IPatientRepository patientRepository, 
+            IAddressService addressService, 
+            IContactService contactService,
+            IInsuranceService insuranceService)
         {
             this.patientRepository = patientRepository;
             this.addressService = addressService;
             this.contactService = contactService;
+            this.insuranceService = insuranceService;
         }
 
 
@@ -74,6 +79,8 @@ namespace MedNet.API.Services.Implementation
         public async Task<IEnumerable<PatientDto>> GetAllPatientsAsync()
         {
             var patients = await patientRepository.GetAllAsync();
+
+            var insuranceDtos = await insuranceService.GetAllInsurancesAsync();
             var addressDtos = await addressService.GetAllAddressesAsync();
             var contactDtos = await contactService.GetAllContactsAsync();
 
@@ -88,6 +95,16 @@ namespace MedNet.API.Services.Implementation
                 Weight = patient.Weight,
                 Address = addressDtos.FirstOrDefault(a => a.Id == patient.AddressId),
                 Contact = contactDtos.FirstOrDefault(c => c.Id == patient.ContactId),
+                Insurances = insuranceDtos
+                    .Where(dto => patient.Insurances.Select(i => i.Id).Contains(dto.Id))
+                    .Select(dto => new InsuranceDto
+                    {
+                        Id = dto.Id,
+                        Provider = dto.Provider,
+                        PolicyNumber = dto.PolicyNumber,
+                        CoverageStartDate = dto.CoverageStartDate,
+                        CoverageEndDate = dto.CoverageEndDate
+                    }).ToList()
             });
         }
 
@@ -97,6 +114,7 @@ namespace MedNet.API.Services.Implementation
 
             if (patient == null) return null;
 
+            var insuranceDtos = await insuranceService.GetAllInsurancesAsync();
             var addressDto = await addressService.GetAddressByIdAsync(patient.AddressId);
             var contactDto = await contactService.GetContactByIdAsync(patient.ContactId);
 
@@ -110,7 +128,17 @@ namespace MedNet.API.Services.Implementation
                 Height = patient.Height,
                 Weight = patient.Weight,
                 Address = addressDto,
-                Contact = contactDto
+                Contact = contactDto,
+                Insurances = insuranceDtos
+                    .Where(dto => patient.Insurances.Select(i => i.Id).Contains(dto.Id))
+                    .Select(dto => new InsuranceDto
+                    {
+                        Id = dto.Id,
+                        Provider = dto.Provider,
+                        PolicyNumber = dto.PolicyNumber,
+                        CoverageStartDate = dto.CoverageStartDate,
+                        CoverageEndDate = dto.CoverageEndDate
+                    }).ToList()
             };
         }
 

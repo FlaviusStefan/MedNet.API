@@ -11,5 +11,6 @@
         public double Weight { get; set; }
         public AddressDto Address { get; set; }
         public ContactDto Contact { get; set; }
+        public ICollection<InsuranceDto> Insurances { get; set; }
     }
 }
