@@ -14,16 +14,19 @@ namespace MedNet.API.Services.Implementation
         private readonly IAddressService addressService;
         private readonly IContactService contactService;
         private readonly IInsuranceService insuranceService;
+        private readonly IMedicationService medicationService;
 
         public PatientService(IPatientRepository patientRepository, 
             IAddressService addressService, 
             IContactService contactService,
-            IInsuranceService insuranceService)
+            IInsuranceService insuranceService,
+            IMedicationService medicationService)
         {
             this.patientRepository = patientRepository;
             this.addressService = addressService;
             this.contactService = contactService;
             this.insuranceService = insuranceService;
+            this.medicationService = medicationService;
         }
 
 
@@ -81,6 +84,7 @@ namespace MedNet.API.Services.Implementation
             var patients = await patientRepository.GetAllAsync();
 
             var insuranceDtos = await insuranceService.GetAllInsurancesAsync();
+            var medicationDtos = await medicationService.GetAllMedicationsAsync();
             var addressDtos = await addressService.GetAllAddressesAsync();
             var contactDtos = await contactService.GetAllContactsAsync();
 
@@ -104,7 +108,16 @@ namespace MedNet.API.Services.Implementation
                         PolicyNumber = dto.PolicyNumber,
                         CoverageStartDate = dto.CoverageStartDate,
                         CoverageEndDate = dto.CoverageEndDate
-                    }).ToList()
+                    }).ToList(),
+                //Medications = medicationDtos
+                //    .Where(dto => patient.CurrentMedications.Select(m => m.Id).Contains(dto.Id))
+                //    .Select(dto => new MedicationDto
+                //    {
+                //        Id = dto.Id,
+                //        Name = dto.Name,
+                //        Dosage = dto.Dosage,
+                //        Frequency = dto.Frequency
+                //    })
             });
         }
 

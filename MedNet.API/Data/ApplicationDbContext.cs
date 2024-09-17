@@ -184,7 +184,7 @@ namespace MedNet.API.Data
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Patient>()
-                .HasMany(p => p.CurrentMedications)
+                .HasMany(p => p.Medications)
                 .WithOne(m => m.Patient)
                 .HasForeignKey(m => m.PatientId)
                 .OnDelete(DeleteBehavior.Restrict);
@@ -230,7 +230,7 @@ namespace MedNet.API.Data
 
             modelBuilder.Entity<Medication>()
                 .HasOne(m => m.Patient)
-                .WithMany(p => p.CurrentMedications)
+                .WithMany(p => p.Medications)
                 .HasForeignKey(m => m.PatientId)
                 .OnDelete(DeleteBehavior.Restrict);
 

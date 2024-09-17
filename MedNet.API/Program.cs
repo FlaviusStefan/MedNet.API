@@ -30,6 +30,7 @@ builder.Services.AddScoped<IQualificationRepository, QualificationRepository>();
 builder.Services.AddScoped<IHospitalRepository, HospitalRepository>();
 builder.Services.AddScoped<IDoctorHospitalRepository,  DoctorHospitalRepository>();
 builder.Services.AddScoped<IInsuranceRepository, InsuranceRepository>();
+builder.Services.AddScoped<IMedicationRepository, MedicationRepository>();
 
 // Services
 builder.Services.AddScoped<IDoctorService, DoctorService>();
@@ -41,6 +42,7 @@ builder.Services.AddScoped<IQualificationService, QualificationService>();
 builder.Services.AddScoped<IHospitalService, HospitalService>();
 builder.Services.AddScoped<IDoctorHospitalService,  DoctorHospitalService>();
 builder.Services.AddScoped<IInsuranceService, InsuranceService>();
+builder.Services.AddScoped<IMedicationService, MedicationService>();
 
 
 
