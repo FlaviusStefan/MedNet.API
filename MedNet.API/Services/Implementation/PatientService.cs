@@ -109,15 +109,15 @@ namespace MedNet.API.Services.Implementation
                         CoverageStartDate = dto.CoverageStartDate,
                         CoverageEndDate = dto.CoverageEndDate
                     }).ToList(),
-                //Medications = medicationDtos
-                //    .Where(dto => patient.CurrentMedications.Select(m => m.Id).Contains(dto.Id))
-                //    .Select(dto => new MedicationDto
-                //    {
-                //        Id = dto.Id,
-                //        Name = dto.Name,
-                //        Dosage = dto.Dosage,
-                //        Frequency = dto.Frequency
-                //    })
+                Medications = medicationDtos
+                    .Where(dto => patient.Medications.Select(m => m.Id).Contains(dto.Id))
+                    .Select(dto => new MedicationDto
+                    {
+                        Id = dto.Id,
+                        Name = dto.Name,
+                        Dosage = dto.Dosage,
+                        Frequency = dto.Frequency
+                    }).ToList()
             });
         }
 
@@ -128,6 +128,7 @@ namespace MedNet.API.Services.Implementation
             if (patient == null) return null;
 
             var insuranceDtos = await insuranceService.GetAllInsurancesAsync();
+            var medicationDtos = await medicationService.GetAllMedicationsAsync();
             var addressDto = await addressService.GetAddressByIdAsync(patient.AddressId);
             var contactDto = await contactService.GetContactByIdAsync(patient.ContactId);
 
@@ -151,6 +152,15 @@ namespace MedNet.API.Services.Implementation
                         PolicyNumber = dto.PolicyNumber,
                         CoverageStartDate = dto.CoverageStartDate,
                         CoverageEndDate = dto.CoverageEndDate
+                    }).ToList(),
+                Medications = medicationDtos
+                    .Where(dto => patient.Medications.Select(m => m.Id).Contains(dto.Id))
+                    .Select(dto => new MedicationDto
+                    {
+                        Id = dto.Id,
+                        Name = dto.Name,
+                        Dosage = dto.Dosage,
+                        Frequency = dto.Frequency
                     }).ToList()
             };
         }

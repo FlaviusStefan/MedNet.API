@@ -45,7 +45,7 @@ namespace MedNet.API.Services.Implementation
                 Id = medication.Id,
                 PatientId = medication.PatientId,
                 Name = medication.Name,
-                Dosage = medication.Name,
+                Dosage = medication.Dosage,
                 Frequency = medication.Frequency
             }).ToList();
         }
