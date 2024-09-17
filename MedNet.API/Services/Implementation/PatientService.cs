@@ -84,6 +84,8 @@ namespace MedNet.API.Services.Implementation
                 LastName = patient.LastName,
                 Gender = patient.Gender,
                 DateOfBirth = patient.DateOfBirth,
+                Height = patient.Height, 
+                Weight = patient.Weight,
                 Address = addressDtos.FirstOrDefault(a => a.Id == patient.AddressId),
                 Contact = contactDtos.FirstOrDefault(c => c.Id == patient.ContactId),
             });
