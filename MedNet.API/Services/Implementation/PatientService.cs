@@ -15,18 +15,21 @@ namespace MedNet.API.Services.Implementation
         private readonly IContactService contactService;
         private readonly IInsuranceService insuranceService;
         private readonly IMedicationService medicationService;
+        private readonly IMedicalFileService medicalFileService;
 
         public PatientService(IPatientRepository patientRepository, 
             IAddressService addressService, 
             IContactService contactService,
             IInsuranceService insuranceService,
-            IMedicationService medicationService)
+            IMedicationService medicationService,
+            IMedicalFileService medicalFileService)
         {
             this.patientRepository = patientRepository;
             this.addressService = addressService;
             this.contactService = contactService;
             this.insuranceService = insuranceService;
             this.medicationService = medicationService;
+            this.medicalFileService = medicalFileService;
         }
 
 
@@ -85,6 +88,7 @@ namespace MedNet.API.Services.Implementation
 
             var insuranceDtos = await insuranceService.GetAllInsurancesAsync();
             var medicationDtos = await medicationService.GetAllMedicationsAsync();
+            var medicalFileDtos = await medicalFileService.GetAllMedicalFilesAsync();
             var addressDtos = await addressService.GetAllAddressesAsync();
             var contactDtos = await contactService.GetAllContactsAsync();
 
@@ -117,6 +121,16 @@ namespace MedNet.API.Services.Implementation
                         Name = dto.Name,
                         Dosage = dto.Dosage,
                         Frequency = dto.Frequency
+                    }).ToList(),
+                MedicalFiles = medicalFileDtos
+                    .Where(dto => patient.MedicalFiles.Select(mf => mf.Id).Contains(dto.Id))
+                    .Select(dto => new MedicalFileDto
+                    {
+                        Id = dto.Id,
+                        FileName = dto.FileName,
+                        FileType = dto.FileType,
+                        FilePath = dto.FilePath,
+                        DateUploaded = dto.DateUploaded
                     }).ToList()
             });
         }
@@ -129,6 +143,7 @@ namespace MedNet.API.Services.Implementation
 
             var insuranceDtos = await insuranceService.GetAllInsurancesAsync();
             var medicationDtos = await medicationService.GetAllMedicationsAsync();
+            var medicalFileDtos = await medicalFileService.GetAllMedicalFilesAsync();
             var addressDto = await addressService.GetAddressByIdAsync(patient.AddressId);
             var contactDto = await contactService.GetContactByIdAsync(patient.ContactId);
 
@@ -161,6 +176,16 @@ namespace MedNet.API.Services.Implementation
                         Name = dto.Name,
                         Dosage = dto.Dosage,
                         Frequency = dto.Frequency
+                    }).ToList(),
+                MedicalFiles = medicalFileDtos
+                    .Where(dto => patient.MedicalFiles.Select(mf => mf.Id).Contains(dto.Id))
+                    .Select(dto => new MedicalFileDto
+                    {
+                        Id = dto.Id,
+                        FileName = dto.FileName,
+                        FileType = dto.FileType,
+                        FilePath = dto.FilePath,
+                        DateUploaded = dto.DateUploaded
                     }).ToList()
             };
         }

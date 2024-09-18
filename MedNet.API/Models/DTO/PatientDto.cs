@@ -13,5 +13,6 @@
         public ContactDto Contact { get; set; }
         public ICollection<InsuranceDto> Insurances { get; set; }
         public ICollection<MedicationDto> Medications { get; set; }
+        public ICollection<MedicalFileDto> MedicalFiles { get; set; }
     }
 }
