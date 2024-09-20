@@ -1,5 +1,4 @@
-﻿using MedNet.API.Models.Domain;
-
+﻿
 namespace MedNet.API.Models.DTO
 {
     public class LabAnalysisDto

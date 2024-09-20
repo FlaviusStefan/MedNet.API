@@ -32,6 +32,8 @@ builder.Services.AddScoped<IDoctorHospitalRepository,  DoctorHospitalRepository>
 builder.Services.AddScoped<IInsuranceRepository, InsuranceRepository>();
 builder.Services.AddScoped<IMedicationRepository, MedicationRepository>();
 builder.Services.AddScoped<IMedicalFileRepository, MedicalFileRepository>();
+builder.Services.AddScoped<ILabAnalysisRepository, LabAnalysisRepository>();
+builder.Services.AddScoped<ILabTestRepository, LabTestRepository>();     
 
 // Services
 builder.Services.AddScoped<IDoctorService, DoctorService>();
@@ -45,6 +47,8 @@ builder.Services.AddScoped<IDoctorHospitalService,  DoctorHospitalService>();
 builder.Services.AddScoped<IInsuranceService, InsuranceService>();
 builder.Services.AddScoped<IMedicationService, MedicationService>();
 builder.Services.AddScoped<IMedicalFileService, MedicalFileService>();
+builder.Services.AddScoped<ILabAnalysisService, LabAnalysisService>();
+builder.Services.AddScoped<ILabTestService, LabTestService>();
 
 
 

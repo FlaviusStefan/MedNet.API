@@ -14,6 +14,6 @@ namespace MedNet.API.Models.DTO
         public string AnalysisType { get; set; }
 
         [Required(ErrorMessage = "Lab Test is required.")]
-        public ICollection<LabTestDto> LabTests { get; set; }
+        public ICollection<CreateLabTestRequestDto> LabTests { get; set; }
     }
 }
