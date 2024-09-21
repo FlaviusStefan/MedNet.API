@@ -39,9 +39,18 @@ namespace MedNet.API.Services.Implementation
             };
         }
 
-        public Task<IEnumerable<LabTestDto>> GetAllLabTestsAsync()
+        public async Task<IEnumerable<LabTestDto>> GetAllLabTestsAsync()
         {
-            throw new NotImplementedException();
+            var labTests = await labTestRepository.GetAllAsync();
+
+            return labTests.Select(labTest => new LabTestDto
+            {
+                Id = labTest.Id,
+                TestName = labTest.TestName,
+                Result = labTest.Result,
+                Units = labTest.Units,
+                ReferenceRange = labTest.ReferenceRange
+            }).ToList();
         }
 
         public Task<LabTestDto> GetLabTestByIdAsync(Guid id)

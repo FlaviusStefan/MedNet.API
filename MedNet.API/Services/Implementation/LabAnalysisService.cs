@@ -62,14 +62,60 @@ namespace MedNet.API.Services.Implementation
 
 
 
-        public Task<IEnumerable<LabAnalysisDto>> GetAllLabAnalysesAsync()
+        public async Task<IEnumerable<LabAnalysisDto>> GetAllLabAnalysesAsync()
         {
-            throw new NotImplementedException();
+            var labAnalyses = await labAnalysisRepository.GetAllAsync();
+
+            var labTestDtos = await labTestService.GetAllLabTestsAsync();
+
+            return labAnalyses.Select(labAnalysis => new LabAnalysisDto
+            {
+                Id = labAnalysis.Id,
+                PatientId = labAnalysis.PatientId,
+                AnalysisDate = labAnalysis.AnalysisDate,
+                AnalysisType = labAnalysis.AnalysisType,
+                LabTests = labTestDtos
+                    .Where(dto => labAnalysis.LabTests.Select(lt => lt.Id).Contains(dto.Id))
+                    .Select(dto => new LabTestDto
+                    {
+                        Id = dto.Id,
+                        TestName = dto.TestName,
+                        Result = dto.Result,
+                        Units = dto.Units,
+                        ReferenceRange = dto.ReferenceRange
+                    }).ToList()
+            });
+            
         }
 
-        public Task<LabAnalysisDto?> GetLabAnalysisByIdAsync(Guid id)
+        public async Task<LabAnalysisDto?> GetLabAnalysisByIdAsync(Guid id)
         {
-            throw new NotImplementedException();
+            var labAnalysis = await labAnalysisRepository.GetById(id);
+            if(labAnalysis == null)
+            {
+                return null;
+            }
+
+            var labTestDtos = await labTestService.GetAllLabTestsAsync();
+
+
+            return new LabAnalysisDto
+            {
+                Id = labAnalysis.Id,
+                PatientId = labAnalysis.PatientId,
+                AnalysisDate = labAnalysis.AnalysisDate,
+                AnalysisType = labAnalysis.AnalysisType,
+                LabTests = labTestDtos
+                    .Where(dto => labAnalysis.LabTests.Select(lt => lt.Id).Contains(dto.Id))
+                    .Select(dto => new LabTestDto
+                    {
+                        Id = dto.Id,
+                        TestName = dto.TestName,
+                        Result = dto.Result,
+                        Units = dto.Units,
+                        ReferenceRange = dto.ReferenceRange
+                    }).ToList()
+            };
         }
 
         public Task<LabAnalysisDto> UpdateLabAnalysisAsync(Guid id, UpdateLabAnalysisRequestDto request)
