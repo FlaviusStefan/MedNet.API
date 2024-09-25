@@ -14,12 +14,12 @@ namespace MedNet.API.Services.Implementation
             this.labTestRepository = labTestRepository;
         }
 
-        public async Task<LabTestDto> CreateLabTestAsync(CreateLabTestRequestDto request,Guid labAnalysisId)
+        public async Task<LabTestDto> CreateLabTestAsync(CreateLabTestRequestDto request)
         {
             var labTest = new LabTest
             {
                 Id = Guid.NewGuid(),
-                LabAnalysisId = labAnalysisId,
+                LabAnalysisId = request.LabAnalysisId,
                 TestName = request.TestName,
                 Result = request.Result,
                 Units = request.Units,
@@ -30,7 +30,7 @@ namespace MedNet.API.Services.Implementation
 
             return new LabTestDto
             {
-                Id = createdLabTest.Id, 
+                Id = createdLabTest.Id,
                 LabAnalysisId = createdLabTest.LabAnalysisId,
                 TestName = createdLabTest.TestName,
                 Result = createdLabTest.Result,
@@ -53,18 +53,63 @@ namespace MedNet.API.Services.Implementation
             }).ToList();
         }
 
-        public Task<LabTestDto> GetLabTestByIdAsync(Guid id)
+        public async Task<LabTestDto> GetLabTestByIdAsync(Guid id)
         {
-            throw new NotImplementedException();
+            var labTest = await labTestRepository.GetById(id);
+            if (labTest == null)
+            {
+                return null;
+            }
+
+            return new LabTestDto
+            {
+                Id = labTest.Id,
+                TestName = labTest.TestName,
+                Result = labTest.Result,
+                Units = labTest.Units,
+                ReferenceRange = labTest.ReferenceRange
+            };
         }
 
-        public Task<LabTestDto> UpdateLabTestAsync(Guid id, UpdateLabTestRequestDto request)
+        public async Task<LabTestDto> UpdateLabTestAsync(Guid id, UpdateLabTestRequestDto request)
         {
-            throw new NotImplementedException();
+            var existingLabTest = await labTestRepository.GetById(id);
+            if (existingLabTest == null) return null;
+
+            existingLabTest.TestName = request.TestName;
+            existingLabTest.Result = request.Result;
+            existingLabTest.Units = request.Units;
+            existingLabTest.ReferenceRange = request.ReferenceRange;
+
+            var updatedLabTest = await labTestRepository.UpdateAsync(existingLabTest);
+
+            if (updatedLabTest == null) return null;
+
+            return new LabTestDto
+            {
+                Id = updatedLabTest.Id,
+                TestName = updatedLabTest.TestName,
+                Result = updatedLabTest.Result,
+                Units = updatedLabTest.Units,
+                ReferenceRange = updatedLabTest.ReferenceRange
+            };
         }
-        public Task<LabTestDto> DeleteLabTestAsync(Guid id)
+
+
+        public async Task<LabTestDto> DeleteLabTestAsync(Guid id)
         {
-            throw new NotImplementedException();
+            var labTest = await labTestRepository.DeleteAsync(id);
+
+            if (labTest == null) return null;
+
+            return new LabTestDto
+            {
+                Id = labTest.Id,
+                TestName = labTest.TestName,
+                Result = labTest.Result,
+                Units = labTest.Units,
+                ReferenceRange = labTest.ReferenceRange
+            };
         }
 
     }

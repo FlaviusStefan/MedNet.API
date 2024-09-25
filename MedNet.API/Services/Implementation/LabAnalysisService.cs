@@ -32,13 +32,14 @@ namespace MedNet.API.Services.Implementation
             {
                 var createTestRequest = new CreateLabTestRequestDto
                 {
+                    LabAnalysisId = createdLabAnalysis.Id,
                     TestName = testDto.TestName,
                     Result = testDto.Result,
                     Units = testDto.Units,
                     ReferenceRange = testDto.ReferenceRange
                 };
 
-                await labTestService.CreateLabTestAsync(createTestRequest, createdLabAnalysis.Id);
+                await labTestService.CreateLabTestAsync(createTestRequest);
             }
 
             var labAnalysisWithTests = await labAnalysisRepository.GetById(createdLabAnalysis.Id);
@@ -118,10 +119,28 @@ namespace MedNet.API.Services.Implementation
             };
         }
 
-        public Task<LabAnalysisDto> UpdateLabAnalysisAsync(Guid id, UpdateLabAnalysisRequestDto request)
+        public async Task<UpdatedLabAnalysisDto?> UpdateLabAnalysisAsync(Guid id, UpdateLabAnalysisRequestDto request)
         {
-            throw new NotImplementedException();
+            var existingLabAnalysis = await labAnalysisRepository.GetById(id);
+
+            if (existingLabAnalysis == null) return null;
+
+            existingLabAnalysis.AnalysisDate = request.AnalysisDate;
+            existingLabAnalysis.AnalysisType = request.AnalysisType;
+
+            var updatedLabAnalysis = await labAnalysisRepository.UpdateAsync(existingLabAnalysis);
+
+            if (updatedLabAnalysis == null) return null;
+
+            return new UpdatedLabAnalysisDto
+            {
+                Id = updatedLabAnalysis.Id,
+                AnalysisDate = updatedLabAnalysis.AnalysisDate,
+                AnalysisType = updatedLabAnalysis.AnalysisType
+            };
         }
+
+
         public Task<LabAnalysisDto> DeleteLabAnalysisAsync(Guid id)
         {
             throw new NotImplementedException();

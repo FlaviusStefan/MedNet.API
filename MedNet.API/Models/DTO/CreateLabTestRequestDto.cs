@@ -4,6 +4,8 @@ namespace MedNet.API.Models.DTO
 {
     public class CreateLabTestRequestDto
     {
+        [Required(ErrorMessage = "Lab Analysis ID is required.")]
+        public Guid LabAnalysisId;
 
         [Required(ErrorMessage = "Test name is required.")]
         public string TestName { get; set; }

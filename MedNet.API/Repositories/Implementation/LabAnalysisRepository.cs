@@ -36,7 +36,7 @@ namespace MedNet.API.Repositories.Implementation
         {
             var existingAnalysis = await dbContext.LabAnalyses.FirstOrDefaultAsync(x => x.Id == labAnalysis.Id);
 
-            if(existingAnalysis != null)
+            if (existingAnalysis != null)
             {
                 dbContext.Entry(existingAnalysis).CurrentValues.SetValues(labAnalysis);
                 await dbContext.SaveChangesAsync();
@@ -45,6 +45,7 @@ namespace MedNet.API.Repositories.Implementation
 
             return null;
         }
+
         public async Task<LabAnalysis?> DeletAsync(Guid id)
         {
             var existingAnalysis = await dbContext.LabAnalyses.FirstOrDefaultAsync(x => x.Id == id);
