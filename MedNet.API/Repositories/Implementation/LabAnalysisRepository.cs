@@ -46,7 +46,7 @@ namespace MedNet.API.Repositories.Implementation
             return null;
         }
 
-        public async Task<LabAnalysis?> DeletAsync(Guid id)
+        public async Task<LabAnalysis?> DeleteAsync(Guid id)
         {
             var existingAnalysis = await dbContext.LabAnalyses.FirstOrDefaultAsync(x => x.Id == id);
 

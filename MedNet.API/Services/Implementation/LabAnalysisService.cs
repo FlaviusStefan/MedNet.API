@@ -141,9 +141,18 @@ namespace MedNet.API.Services.Implementation
         }
 
 
-        public Task<LabAnalysisDto> DeleteLabAnalysisAsync(Guid id)
+        public async Task<LabAnalysisDto> DeleteLabAnalysisAsync(Guid id)
         {
-            throw new NotImplementedException();
+            var labAnalysis = await labAnalysisRepository.DeleteAsync(id);
+
+            if (labAnalysis == null) return null;
+
+            return new LabAnalysisDto
+            {
+                Id = labAnalysis.Id,
+                AnalysisDate = labAnalysis.AnalysisDate,
+                AnalysisType = labAnalysis.AnalysisType
+            };
         }
     }
 }

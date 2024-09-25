@@ -1,5 +1,6 @@
 ﻿using MedNet.API.Models.DTO;
 using MedNet.API.Services;
+using MedNet.API.Services.Implementation;
 using MedNet.API.Services.Interface;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -56,6 +57,29 @@ namespace MedNet.API.Controllers
             return Ok(response);
         }
 
+        [HttpPut("{id:Guid}")]
+        public async Task<IActionResult> UpdateLabAnalysis(Guid id, UpdateLabAnalysisRequestDto request)
+        {
+            var response = await labAnalysisService.UpdateLabAnalysisAsync(id, request);
+            if(response == null)
+            {
+                return NotFound();
+            }
 
+            return Ok(response);
+        }
+
+        [HttpDelete("{id:Guid}")]
+        public async Task<IActionResult> DeleteLabAnalysis(Guid id)
+        {
+            var response = await labAnalysisService.DeleteLabAnalysisAsync(id);
+
+            if (response == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(response);
+        }
     }
 }

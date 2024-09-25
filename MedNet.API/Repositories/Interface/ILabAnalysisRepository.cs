@@ -8,6 +8,6 @@ namespace MedNet.API.Repositories.Interface
         Task<IEnumerable<LabAnalysis>> GetAllAsync();
         Task<LabAnalysis> GetById(Guid id);
         Task<LabAnalysis> UpdateAsync(LabAnalysis labAnalysis);
-        Task<LabAnalysis?> DeletAsync(Guid id);
+        Task<LabAnalysis?> DeleteAsync(Guid id);
     }
 }
