@@ -55,5 +55,30 @@ namespace MedNet.API.Controllers
 
             return Ok(response);
         }
+
+        [HttpPut("{id:Guid}")]
+        public async Task<IActionResult> UpdateLabTesT(Guid id, UpdateLabTestRequestDto request)
+        {
+            var response = await labTestService.UpdateLabTestAsync(id, request);
+            if (response == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(response);
+        }
+
+        [HttpDelete("{id:Guid}")]
+        public async Task<IActionResult> DeleteLabTest(Guid id)
+        {
+            var response = await labTestService.DeleteLabTestAsync(id);
+
+            if (response == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(response);
+        }
     }
 }

@@ -55,5 +55,7 @@ namespace MedNet.API.Controllers
 
             return Ok(response);
         }
+
+
     }
 }
