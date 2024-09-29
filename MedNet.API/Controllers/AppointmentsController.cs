@@ -74,6 +74,19 @@ namespace MedNet.API.Controllers
             return Ok(response);
         }
 
+        [HttpDelete("{id:Guid}")]
+        public async Task<IActionResult> DeleteAppointment(Guid id)
+        {
+            var response = await appointmentService.DeleteAppointmentAsync(id);
+
+            if (response == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(response);
+        }
+
 
     }
 }

@@ -121,9 +121,19 @@ namespace MedNet.API.Services.Implementation
                 Details = updatedAppointment.Details,
             };
         }
-        public Task<AppointmentDto?> DeleteAppointmentAsync(Guid id)
+        public async Task<AppointmentDto?> DeleteAppointmentAsync(Guid id)
         {
-            throw new NotImplementedException();
+            var appointment = await appointmentRepository.DeleteAsync(id);
+            if(appointment == null) return null;
+
+            return new AppointmentDto
+            {
+                Id = appointment.Id,
+                Date = appointment.Date,
+                Status = appointment.Status,
+                Reason = appointment.Reason,
+                Details = appointment.Details,
+            };
         }
     }
 }
