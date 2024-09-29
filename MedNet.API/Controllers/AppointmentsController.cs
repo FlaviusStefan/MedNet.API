@@ -1,6 +1,8 @@
 ﻿using MedNet.API.Models.Domain;
 using MedNet.API.Models.DTO;
 using MedNet.API.Repositories.Interface;
+using MedNet.API.Services;
+using MedNet.API.Services.Interface;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -13,128 +15,52 @@ namespace MedNet.API.Controllers
     [ApiController]
     public class AppointmentsController : ControllerBase
     {
-        //private readonly IAppointmentRepository appointmentRepository;
-        //private readonly IDoctorRepository doctorRepository;
-        //private readonly IPatientRepository patientRepository;
+        private readonly IAppointmentService appointmentService;
 
-        //public AppointmentsController(IAppointmentRepository appointmentRepository, IDoctorRepository doctorRepository, IPatientRepository patientRepository)
-        //{
-        //    this.appointmentRepository = appointmentRepository;
-        //    this.doctorRepository = doctorRepository;
-        //    this.patientRepository = patientRepository;
-        //}
+        public AppointmentsController(IAppointmentService appointmentService)
+        {
+            this.appointmentService = appointmentService;
+        }
 
-        //[HttpPost]
-        //public async Task<IActionResult> CreateAppointment(CreateAppointmentRequestDto request)
-        //{
-        //    var appointment = new Appointment
-        //    {
-        //        DoctorId = request.DoctorId,
-        //        PatientId = request.PatientId,
-        //        Date = request.Date,
-        //        Status = request.Status,
-        //        Reason = request.Reason,
-        //        Details = request.Details
-        //    };
+        [HttpPost]
+        public async Task<IActionResult> CreateAppointment(CreateAppointmentRequestDto request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
 
-        //    await appointmentRepository.CreateAsync(appointment);
+            try
+            {
+                var response = await appointmentService.CreateAppointmentAsync(request);
+                return CreatedAtAction(nameof(GetAppointmentById), new { id = response.Id }, response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while creating the appointment.");
+            }
+        }
 
-        //    var response = await MapAppointmentToDto(appointment);
-        //    return Ok(response);
-        //}
+        [HttpGet]
+        public async Task<IActionResult> GetAllAppointments()
+        {
+            var response = await appointmentService.GetAllAppointmentsAsync();
+            return Ok(response);
+        }
 
-        //[HttpGet]
-        //public async Task<IActionResult> GetAllAppointments()
-        //{
-        //    var appointments = await appointmentRepository.GetAllAsync();
-        //    var response = new List<AppointmentDto>();
+        [HttpGet("{id:Guid}")]
+        public async Task<IActionResult> GetAppointmentById(Guid id)
+        {
+            var response = await appointmentService.GetAppointmentByIdAsync(id);
 
-        //    foreach (var appointment in appointments)
-        //    {
-        //        var appointmentDto = await MapAppointmentToDto(appointment);
-        //        response.Add(appointmentDto);
-        //    }
+            if (response == null)
+            {
+                return NotFound();
+            }
 
-        //    return Ok(response);
-        //}
+            return Ok(response);
+        }
 
-        //[HttpGet]
-        //[Route("{id:Guid}")]
-        //public async Task<IActionResult> GetAppointmentById([FromRoute] Guid id)
-        //{
-        //    var appointment = await appointmentRepository.GetById(id);
 
-        //    if (appointment == null)
-        //    {
-        //        return NotFound();
-        //    }
-
-        //    var appointmentDto = await MapAppointmentToDto(appointment);
-        //    return Ok(appointmentDto);
-        //}
-
-        //[HttpPut]
-        //[Route("{id:Guid}")]
-        //public async Task<IActionResult> UpdateAppointment([FromRoute] Guid id, UpdateAppointmentRequestDto request)
-        //{
-        //    var appointment = new Appointment
-        //    {
-        //        Id = id,
-        //        DoctorId = request.DoctorId,
-        //        PatientId = request.PatientId,
-        //        AppointmentDateTime = request.AppointmentDateTime,
-        //        Status = request.Status,
-        //        Reason = request.Reason,
-        //        Details = request.Details
-        //    };
-
-        //    appointment = await appointmentRepository.UpdateAsync(appointment);
-
-        //    if (appointment == null)
-        //    {
-        //        return NotFound();
-        //    }
-
-        //    var response = await MapAppointmentToDto(appointment);
-        //    return Ok(response);
-        //}
-
-        //[HttpDelete]
-        //[Route("{id:Guid}")]
-        //public async Task<IActionResult> DeleteAppointment([FromRoute] Guid id)
-        //{
-        //    var appointment = await appointmentRepository.DeleteAsync(id);
-
-        //    if (appointment == null)
-        //    {
-        //        return NotFound();
-        //    }
-
-        //    var response = await MapAppointmentToDto(appointment);
-        //    return Ok(response);
-        //}
-
-        //private async Task<AppointmentDto> MapAppointmentToDto(Appointment appointment)
-        //{
-        //    var doctor = await doctorRepository.GetById(appointment.DoctorId);
-        //    var patient = await patientRepository.GetById(appointment.PatientId);
-
-        //    var appointmentDto = new AppointmentDto
-        //    {
-        //        Id = appointment.Id,
-        //        DoctorId = appointment.DoctorId,
-        //        DoctorFirstName = doctor?.FirstName,
-        //        DoctorLastName = doctor?.LastName,
-        //        PatientId = appointment.PatientId,
-        //        PatientFirstName = patient?.FirstName,
-        //        PatientLastName = patient?.LastName,
-        //        AppointmentDateTime = appointment.AppointmentDateTime,
-        //        Status = appointment.Status,
-        //        Reason = appointment.Reason,
-        //        Details = appointment.Details
-        //    };
-
-        //    return appointmentDto;
-        //}
     }
 }
