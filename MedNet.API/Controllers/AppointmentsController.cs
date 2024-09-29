@@ -2,6 +2,7 @@
 using MedNet.API.Models.DTO;
 using MedNet.API.Repositories.Interface;
 using MedNet.API.Services;
+using MedNet.API.Services.Implementation;
 using MedNet.API.Services.Interface;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -53,6 +54,18 @@ namespace MedNet.API.Controllers
         {
             var response = await appointmentService.GetAppointmentByIdAsync(id);
 
+            if (response == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(response);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateAppointment(Guid id, UpdateAppointmentRequestDto request)
+        {
+            var response = await appointmentService.UpdateAppointmentAsync(id, request);
             if (response == null)
             {
                 return NotFound();

@@ -85,8 +85,6 @@ namespace MedNet.API.Services.Implementation
 
             if (appointment == null) return null;
 
-            var doctorDtos = await doctorService.GetAllDoctorsAsync();
-            var patientDtos = await patientService.GetAllPatientsAsync();
 
             return new AppointmentDto
             {
@@ -100,9 +98,28 @@ namespace MedNet.API.Services.Implementation
             };
         }
 
-        public Task<AppointmentDto?> UpdateAppointmentAsync(Guid id, UpdateAppointmentRequestDto request)
+        public async Task<AppointmentDto?> UpdateAppointmentAsync(Guid id, UpdateAppointmentRequestDto request)
         {
-            throw new NotImplementedException();
+            var existingAppointment = await appointmentRepository.GetById(id);
+            if(existingAppointment == null) return null;
+
+            existingAppointment.Date = request.Date;
+            existingAppointment.Status = request.Status;
+            existingAppointment.Reason = request.Reason;
+            existingAppointment.Details = request.Details;
+
+            var updatedAppointment = await appointmentRepository.UpdateAsync(existingAppointment);
+
+            if (updatedAppointment == null) return null;
+
+            return new AppointmentDto
+            {
+                Id = updatedAppointment.Id,
+                Date = updatedAppointment.Date,
+                Status = updatedAppointment.Status,
+                Reason = updatedAppointment.Reason,
+                Details = updatedAppointment.Details,
+            };
         }
         public Task<AppointmentDto?> DeleteAppointmentAsync(Guid id)
         {
