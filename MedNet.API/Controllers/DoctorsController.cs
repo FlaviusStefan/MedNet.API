@@ -67,14 +67,33 @@ namespace MedNet.API.Controllers
         [HttpPut("{id:Guid}")]
         public async Task<IActionResult> UpdateDoctor(Guid id, UpdateDoctorRequestDto request)
         {
-            var response = await doctorService.UpdateDoctorAsync(id, request);
-
-            if (response == null)
+            if (!ModelState.IsValid)
             {
-                return NotFound();
+                return BadRequest(ModelState);
             }
 
-            return Ok(response);
+            try
+            {
+                var updatedDoctor = await doctorService.UpdateDoctorAsync(id, request);
+
+                if (updatedDoctor == null)
+                {
+                    return NotFound("Doctor not found!");
+                }
+
+                // Return the message and the updated doctor object
+                var response = new
+                {
+                    message = "Doctor updated successfully!",
+                    doctor = updatedDoctor
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while updating the doctor!");
+            }
         }
 
         [HttpDelete("{id:Guid}")]
