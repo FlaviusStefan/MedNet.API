@@ -98,5 +98,21 @@ namespace MedNet.API.Services.Implementation
 
             };
         }
+
+        public async Task<Dictionary<Guid, string>> ValidateSpecializationsAsync(IEnumerable<Guid> specializationIds)
+        {
+            var allSpecializations = await GetAllSpecializationsAsync();
+            var validSpecializations = allSpecializations
+                .Where(s => specializationIds.Contains(s.Id))
+                .ToDictionary(s => s.Id, s => s.Name);
+
+            if (validSpecializations.Count != specializationIds.Count())
+            {
+                throw new ArgumentException("One or more specialization IDs are invalid.");
+            }
+
+            return validSpecializations;
+        }
+
     }
 }

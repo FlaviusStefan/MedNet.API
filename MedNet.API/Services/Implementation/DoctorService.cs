@@ -37,24 +37,9 @@ namespace MedNet.API.Services
 
             try
             {
-                if (request.SpecializationIds == null || !request.SpecializationIds.Any())
-                {
-                    throw new ArgumentException("At least one specialization ID is required.");
-                }
-
-                var specializationDtos = await specializationService.GetAllSpecializationsAsync();
-
-                var validSpecializationIds = request.SpecializationIds
-                    .Where(id => specializationDtos.Any(dto => dto.Id == id))
-                    .ToList();
-
-                if (!validSpecializationIds.Any())
-                {
-                    throw new ArgumentException("None of the provided specialization IDs are valid.");
-                }
+                var validSpecializations = await specializationService.ValidateSpecializationsAsync(request.SpecializationIds);
 
                 var addressDto = await addressService.CreateAddressAsync(request.Address);
-
                 var contactDto = await contactService.CreateContactAsync(request.Contact);
 
                 var doctor = new Doctor
@@ -68,7 +53,7 @@ namespace MedNet.API.Services
                     YearsOfExperience = request.YearsOfExperience,
                     AddressId = addressDto.Id,
                     ContactId = contactDto.Id,
-                    DoctorSpecializations = validSpecializationIds.Select(sid => new DoctorSpecialization
+                    DoctorSpecializations = validSpecializations.Keys.Select(sid => new DoctorSpecialization
                     {
                         DoctorId = Guid.NewGuid(),
                         SpecializationId = sid
@@ -76,15 +61,7 @@ namespace MedNet.API.Services
                 };
 
                 await doctorRepository.CreateAsync(doctor);
-
-                // Commit transaction
                 await transaction.CommitAsync();
-
-                var specializationNames = specializationDtos
-                    .Where(dto => validSpecializationIds.Contains(dto.Id))
-                    .Select(dto => dto.Name)
-                    .ToList();
-
 
                 return new CreatedDoctorDto
                 {
@@ -97,7 +74,7 @@ namespace MedNet.API.Services
                     YearsOfExperience = doctor.YearsOfExperience,
                     Address = addressDto,
                     Contact = contactDto,
-                    Specializations = specializationNames
+                    Specializations = validSpecializations.Values.ToList()
                 };
             }
             catch (Exception ex)
@@ -106,6 +83,7 @@ namespace MedNet.API.Services
                 throw new CustomException("An unexpected error occurred: " + ex.Message, ex);
             }
         }
+
 
         public async Task<IEnumerable<DoctorDto>> GetAllDoctorsAsync()
         {
