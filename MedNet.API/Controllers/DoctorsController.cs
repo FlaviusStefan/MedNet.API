@@ -25,14 +25,23 @@ namespace MedNet.API.Controllers
 
             try
             {
-                var response = await doctorService.CreateDoctorAsync(request);
-                return CreatedAtAction(nameof(GetDoctorById), new { id = response.Id }, response);
+                var doctor = await doctorService.CreateDoctorAsync(request);
+
+                
+                var response = new
+                {
+                    message = "Doctor created successfully.",
+                    doctor
+                };
+
+                return CreatedAtAction(nameof(GetDoctorById), new { id = doctor.Id }, new {  response });
             }
             catch (Exception ex)
             {
                 return StatusCode(500, "An error occurred while creating the doctor.");
             }
         }
+
 
 
         [HttpGet]

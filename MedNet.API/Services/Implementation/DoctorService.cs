@@ -76,6 +76,8 @@ namespace MedNet.API.Services
                     Contact = contactDto,
                     Specializations = validSpecializations.Values.ToList()
                 };
+
+
             }
             catch (Exception ex)
             {
