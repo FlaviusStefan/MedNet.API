@@ -12,15 +12,15 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MedNet.API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240827120529_AddedHospital")]
-    partial class AddedHospital
+    [Migration("20250121140946_InitialMigration")]
+    partial class InitialMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "7.0.18")
+                .HasAnnotation("ProductVersion", "9.0.1")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -212,6 +212,65 @@ namespace MedNet.API.Migrations
                     b.ToTable("Hospitals");
                 });
 
+            modelBuilder.Entity("MedNet.API.Models.Domain.MedicalFile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("DateUploaded")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FileType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientId");
+
+                    b.ToTable("MedicalFiles");
+                });
+
+            modelBuilder.Entity("MedNet.API.Models.Domain.Medication", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Dosage")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Frequency")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientId");
+
+                    b.ToTable("Medications");
+                });
+
             modelBuilder.Entity("MedNet.API.Models.Domain.Patient", b =>
                 {
                     b.Property<Guid>("Id")
@@ -303,18 +362,103 @@ namespace MedNet.API.Migrations
                     b.ToTable("Specializations");
                 });
 
+            modelBuilder.Entity("MedNet.API.Models.Insurance", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CoverageEndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CoverageStartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PolicyNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientId");
+
+                    b.ToTable("Insurances");
+                });
+
+            modelBuilder.Entity("MedNet.API.Models.LabAnalysis", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("AnalysisDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("AnalysisType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientId");
+
+                    b.ToTable("LabAnalyses");
+                });
+
+            modelBuilder.Entity("MedNet.API.Models.LabTest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("LabAnalysisId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ReferenceRange")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Result")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TestName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Units")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabAnalysisId");
+
+                    b.ToTable("LabTests");
+                });
+
             modelBuilder.Entity("MedNet.API.Models.Domain.Appointment", b =>
                 {
                     b.HasOne("MedNet.API.Models.Domain.Doctor", "Doctor")
                         .WithMany("Appointments")
                         .HasForeignKey("DoctorId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MedNet.API.Models.Domain.Patient", "Patient")
                         .WithMany("Appointments")
                         .HasForeignKey("PatientId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Doctor");
@@ -398,6 +542,28 @@ namespace MedNet.API.Migrations
                     b.Navigation("Contact");
                 });
 
+            modelBuilder.Entity("MedNet.API.Models.Domain.MedicalFile", b =>
+                {
+                    b.HasOne("MedNet.API.Models.Domain.Patient", "Patient")
+                        .WithMany("MedicalFiles")
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("MedNet.API.Models.Domain.Medication", b =>
+                {
+                    b.HasOne("MedNet.API.Models.Domain.Patient", "Patient")
+                        .WithMany("Medications")
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Patient");
+                });
+
             modelBuilder.Entity("MedNet.API.Models.Domain.Patient", b =>
                 {
                     b.HasOne("MedNet.API.Models.Domain.Address", "Address")
@@ -426,6 +592,39 @@ namespace MedNet.API.Migrations
                         .IsRequired();
 
                     b.Navigation("Doctor");
+                });
+
+            modelBuilder.Entity("MedNet.API.Models.Insurance", b =>
+                {
+                    b.HasOne("MedNet.API.Models.Domain.Patient", "Patient")
+                        .WithMany("Insurances")
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("MedNet.API.Models.LabAnalysis", b =>
+                {
+                    b.HasOne("MedNet.API.Models.Domain.Patient", "Patient")
+                        .WithMany("LabAnalyses")
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("MedNet.API.Models.LabTest", b =>
+                {
+                    b.HasOne("MedNet.API.Models.LabAnalysis", "LabAnalysis")
+                        .WithMany("LabTests")
+                        .HasForeignKey("LabAnalysisId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LabAnalysis");
                 });
 
             modelBuilder.Entity("MedNet.API.Models.Domain.Address", b =>
@@ -465,11 +664,24 @@ namespace MedNet.API.Migrations
             modelBuilder.Entity("MedNet.API.Models.Domain.Patient", b =>
                 {
                     b.Navigation("Appointments");
+
+                    b.Navigation("Insurances");
+
+                    b.Navigation("LabAnalyses");
+
+                    b.Navigation("MedicalFiles");
+
+                    b.Navigation("Medications");
                 });
 
             modelBuilder.Entity("MedNet.API.Models.Domain.Specialization", b =>
                 {
                     b.Navigation("DoctorSpecializations");
+                });
+
+            modelBuilder.Entity("MedNet.API.Models.LabAnalysis", b =>
+                {
+                    b.Navigation("LabTests");
                 });
 #pragma warning restore 612, 618
         }

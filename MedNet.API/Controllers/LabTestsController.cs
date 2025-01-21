@@ -17,24 +17,24 @@ namespace MedNet.API.Controllers
             this.labTestService = labTestService;
         }
 
-        [HttpPost]
-        public async Task<IActionResult> CreateLabTest(CreateLabTestRequestDto request)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+        //[HttpPost]
+        //public async Task<IActionResult> CreateLabTest(CreateLabTestRequestDto request)
+        //{
+        //    if (!ModelState.IsValid)
+        //    {
+        //        return BadRequest(ModelState);
+        //    }
 
-            try
-            {
-                var response = await labTestService.CreateLabTestAsync(request);
-                return CreatedAtAction(nameof(GetLabTestById), new { id = response.Id }, response);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, "An error occurred while creating the lab test.");
-            }
-        }
+        //    try
+        //    {
+        //        var response = await labTestService.CreateLabTestAsync(request);
+        //        return CreatedAtAction(nameof(GetLabTestById), new { id = response.Id }, response);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(500, "An error occurred while creating the lab test.");
+        //    }
+        //}
 
         [HttpGet]
         public async Task<IActionResult> GetAllLabTests()
