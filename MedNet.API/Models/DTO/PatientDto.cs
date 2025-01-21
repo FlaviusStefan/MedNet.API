@@ -11,8 +11,8 @@
         public double Weight { get; set; }
         public AddressDto Address { get; set; }
         public ContactDto Contact { get; set; }
-        public ICollection<InsuranceDto> Insurances { get; set; }
-        public ICollection<MedicationDto> Medications { get; set; }
-        public ICollection<MedicalFileDto> MedicalFiles { get; set; }
+        public ICollection<DisplayInsuranceDto> Insurances { get; set; }
+        public ICollection<DisplayMedicationDto> Medications { get; set; }
+        public ICollection<DisplayMedicalFileDto> MedicalFiles { get; set; }
     }
 }

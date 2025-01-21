@@ -105,7 +105,7 @@ namespace MedNet.API.Services.Implementation
                 Contact = contactDtos.FirstOrDefault(c => c.Id == patient.ContactId),
                 Insurances = insuranceDtos
                     .Where(dto => patient.Insurances.Select(i => i.Id).Contains(dto.Id))
-                    .Select(dto => new InsuranceDto
+                    .Select(dto => new DisplayInsuranceDto
                     {
                         Id = dto.Id,
                         Provider = dto.Provider,
@@ -115,7 +115,7 @@ namespace MedNet.API.Services.Implementation
                     }).ToList(),
                 Medications = medicationDtos
                     .Where(dto => patient.Medications.Select(m => m.Id).Contains(dto.Id))
-                    .Select(dto => new MedicationDto
+                    .Select(dto => new DisplayMedicationDto
                     {
                         Id = dto.Id,
                         Name = dto.Name,
@@ -124,7 +124,7 @@ namespace MedNet.API.Services.Implementation
                     }).ToList(),
                 MedicalFiles = medicalFileDtos
                     .Where(dto => patient.MedicalFiles.Select(mf => mf.Id).Contains(dto.Id))
-                    .Select(dto => new MedicalFileDto
+                    .Select(dto => new DisplayMedicalFileDto
                     {
                         Id = dto.Id,
                         FileName = dto.FileName,
@@ -160,7 +160,7 @@ namespace MedNet.API.Services.Implementation
                 Contact = contactDto,
                 Insurances = insuranceDtos
                     .Where(dto => patient.Insurances.Select(i => i.Id).Contains(dto.Id))
-                    .Select(dto => new InsuranceDto
+                    .Select(dto => new DisplayInsuranceDto
                     {
                         Id = dto.Id,
                         Provider = dto.Provider,
@@ -170,7 +170,7 @@ namespace MedNet.API.Services.Implementation
                     }).ToList(),
                 Medications = medicationDtos
                     .Where(dto => patient.Medications.Select(m => m.Id).Contains(dto.Id))
-                    .Select(dto => new MedicationDto
+                    .Select(dto => new DisplayMedicationDto
                     {
                         Id = dto.Id,
                         Name = dto.Name,
@@ -179,7 +179,7 @@ namespace MedNet.API.Services.Implementation
                     }).ToList(),
                 MedicalFiles = medicalFileDtos
                     .Where(dto => patient.MedicalFiles.Select(mf => mf.Id).Contains(dto.Id))
-                    .Select(dto => new MedicalFileDto
+                    .Select(dto => new DisplayMedicalFileDto
                     {
                         Id = dto.Id,
                         FileName = dto.FileName,
