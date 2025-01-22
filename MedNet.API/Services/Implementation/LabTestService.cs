@@ -46,6 +46,7 @@ namespace MedNet.API.Services.Implementation
             return labTests.Select(labTest => new LabTestDto
             {
                 Id = labTest.Id,
+                LabAnalysisId = labTest.LabAnalysisId,
                 TestName = labTest.TestName,
                 Result = labTest.Result,
                 Units = labTest.Units,
@@ -64,6 +65,7 @@ namespace MedNet.API.Services.Implementation
             return new LabTestDto
             {
                 Id = labTest.Id,
+                LabAnalysisId = labTest.LabAnalysisId,
                 TestName = labTest.TestName,
                 Result = labTest.Result,
                 Units = labTest.Units,

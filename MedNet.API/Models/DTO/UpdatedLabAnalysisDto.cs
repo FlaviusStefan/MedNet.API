@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace MedNet.API.Models.DTO
 {
@@ -7,9 +8,6 @@ namespace MedNet.API.Models.DTO
         public Guid Id { get; set; }
         public DateTime AnalysisDate { get; set; }
         public string AnalysisType { get; set; }
-
-        [Required]
-        public List<Guid> LabTestIds { get; set; } 
 
     }
 }

@@ -63,13 +63,13 @@ namespace MedNet.API.Services.Implementation
 
 
 
-        public async Task<IEnumerable<LabAnalysisDto>> GetAllLabAnalysesAsync()
+        public async Task<IEnumerable<DisplayLabAnalysisDto>> GetAllLabAnalysesAsync()
         {
             var labAnalyses = await labAnalysisRepository.GetAllAsync();
 
             var labTestDtos = await labTestService.GetAllLabTestsAsync();
 
-            return labAnalyses.Select(labAnalysis => new LabAnalysisDto
+            return labAnalyses.Select(labAnalysis => new DisplayLabAnalysisDto
             {
                 Id = labAnalysis.Id,
                 PatientId = labAnalysis.PatientId,
@@ -77,7 +77,7 @@ namespace MedNet.API.Services.Implementation
                 AnalysisType = labAnalysis.AnalysisType,
                 LabTests = labTestDtos
                     .Where(dto => labAnalysis.LabTests.Select(lt => lt.Id).Contains(dto.Id))
-                    .Select(dto => new LabTestDto
+                    .Select(dto => new DisplayLabTestDto
                     {
                         Id = dto.Id,
                         TestName = dto.TestName,
@@ -89,7 +89,7 @@ namespace MedNet.API.Services.Implementation
             
         }
 
-        public async Task<LabAnalysisDto?> GetLabAnalysisByIdAsync(Guid id)
+        public async Task<DisplayLabAnalysisDto?> GetLabAnalysisByIdAsync(Guid id)
         {
             var labAnalysis = await labAnalysisRepository.GetById(id);
             if(labAnalysis == null)
@@ -100,7 +100,7 @@ namespace MedNet.API.Services.Implementation
             var labTestDtos = await labTestService.GetAllLabTestsAsync();
 
 
-            return new LabAnalysisDto
+            return new DisplayLabAnalysisDto
             {
                 Id = labAnalysis.Id,
                 PatientId = labAnalysis.PatientId,
@@ -108,7 +108,7 @@ namespace MedNet.API.Services.Implementation
                 AnalysisType = labAnalysis.AnalysisType,
                 LabTests = labTestDtos
                     .Where(dto => labAnalysis.LabTests.Select(lt => lt.Id).Contains(dto.Id))
-                    .Select(dto => new LabTestDto
+                    .Select(dto => new DisplayLabTestDto
                     {
                         Id = dto.Id,
                         TestName = dto.TestName,
