@@ -73,6 +73,22 @@ namespace MedNet.API.Services.Implementation
             };
         }
 
+        public async Task<IEnumerable<InsuranceDto>> GetInsurancesByPatientIdAsync(Guid patientId)
+        {
+            var insurances = await insuranceRepository.GetAllByPatientIdAsync(patientId);
+
+            return insurances.Select(insurance => new InsuranceDto
+            {
+                Id = insurance.Id,
+                PatientId = insurance.PatientId,
+                Provider = insurance.Provider,
+                PolicyNumber = insurance.PolicyNumber,
+                CoverageStartDate = insurance.CoverageStartDate,
+                CoverageEndDate = insurance.CoverageEndDate
+            }).ToList();
+        }
+
+
         public async Task<InsuranceDto> UpdateInsuranceAsync(Guid id, UpdateInsuranceRequestDto request)
         {
             var existingInsurance = await insuranceRepository.GetById(id);

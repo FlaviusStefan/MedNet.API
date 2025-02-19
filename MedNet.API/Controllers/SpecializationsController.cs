@@ -1,6 +1,7 @@
 ﻿using MedNet.API.Models.DTO;
 using MedNet.API.Services.Implementation;
 using MedNet.API.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,6 +18,7 @@ namespace MedNet.API.Controllers
             this.specializationService = specializationService;
         }
 
+        [Authorize(Roles = "Admin")] 
         [HttpPost]
         public async Task<IActionResult> CreateSpecialization(CreateSpecializationRequestDto request)
         {
@@ -35,6 +37,7 @@ namespace MedNet.API.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin,Doctor,Patient")]
         [HttpGet]
         public async Task<IActionResult> GetAllSpecializations()
         {
@@ -42,6 +45,7 @@ namespace MedNet.API.Controllers
             return Ok(specializations);
         }
 
+        [Authorize(Roles = "Admin,Doctor,Patient")]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetSpecializationById(Guid id)
         {
@@ -55,6 +59,7 @@ namespace MedNet.API.Controllers
             return Ok(specializationDto);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateSpecialization(Guid id, UpdateSpecializationRequestDto request)
         {
@@ -67,6 +72,7 @@ namespace MedNet.API.Controllers
             return Ok(response);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id:Guid}")]
         public async Task<IActionResult> DeleteSpecialization(Guid id)
         {

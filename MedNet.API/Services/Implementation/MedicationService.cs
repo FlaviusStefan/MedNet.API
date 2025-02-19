@@ -68,6 +68,19 @@ namespace MedNet.API.Services.Implementation
             };
         }
 
+        public async Task<IEnumerable<MedicationDto>> GetMedicationsByPatientIdAsync(Guid patientId)
+        {
+            var medications = await medicationRepository.GetAllByPatientIdAsync(patientId);
+
+            return medications.Select(medication => new MedicationDto
+            {
+                Id = medication.Id,
+                Name = medication.Name,
+                Dosage = medication.Dosage,
+                Frequency = medication.Frequency
+            }).ToList();
+        }
+
         public async Task<MedicationDto> UpdateMedicationAsync(Guid id, UpdateMedicationRequestDto request)
         {
             var existingMedication = await medicationRepository.GetById(id);
@@ -104,5 +117,7 @@ namespace MedNet.API.Services.Implementation
                 Frequency = medication.Frequency
             };
         }
+
+        
     }
 }

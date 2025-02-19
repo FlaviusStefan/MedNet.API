@@ -9,6 +9,7 @@
         public string Gender { get; set; }
         public double Height { get; set; }
         public double Weight { get; set; }
+        public string UserId { get; set; }
         public AddressDto Address { get; set; }
         public ContactDto Contact { get; set; }
         public ICollection<DisplayInsuranceDto> Insurances { get; set; }

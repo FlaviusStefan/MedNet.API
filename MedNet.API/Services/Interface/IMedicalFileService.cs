@@ -7,6 +7,7 @@ namespace MedNet.API.Services.Interface
         Task<MedicalFileDto> CreateMedicalFileAsync(CreateMedicalFileRequestDto request);
         Task<IEnumerable<MedicalFileDto>> GetAllMedicalFilesAsync();
         Task<MedicalFileDto?> GetMedicalFileByIdAsync(Guid id);
+        Task<IEnumerable<MedicalFileDto>> GetMedicalFilesByPatientIdAsync(Guid patientId);
         Task<MedicalFileDto> UpdateMedicalFileAsync(Guid id, UpdateMedicalFileRequestDto request);
         Task<MedicalFileDto> DeleteMedicalFileAsync(Guid id);
     }

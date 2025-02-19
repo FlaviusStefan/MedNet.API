@@ -2,6 +2,7 @@
 using MedNet.API.Services;
 using MedNet.API.Services.Implementation;
 using MedNet.API.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,6 +19,7 @@ namespace MedNet.API.Controllers
             this.labAnalysisService = labAnalysisService;
         }
 
+        [Authorize(Roles = "Admin,Doctor")] // Admin and Doctor can create
         [HttpPost]
         public async Task<IActionResult> CreateLabAnalysis(CreateLabAnalysisRequestDto request)
         {
@@ -37,6 +39,7 @@ namespace MedNet.API.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin,Doctor,Patient")] 
         [HttpGet]
         public async Task<IActionResult> GetAllLabAnalyses()
         {
@@ -44,6 +47,7 @@ namespace MedNet.API.Controllers
             return Ok(response);
         }
 
+        [Authorize(Roles = "Admin,Doctor,Patient")]
         [HttpGet("{id:Guid}")]
         public async Task<IActionResult> GetLabAnalysisById(Guid id)
         {
@@ -57,6 +61,7 @@ namespace MedNet.API.Controllers
             return Ok(response);
         }
 
+        [Authorize(Roles = "Admin,Doctor")] 
         [HttpPut("{id:Guid}")]
         public async Task<IActionResult> UpdateLabAnalysis(Guid id, UpdateLabAnalysisRequestDto request)
         {
@@ -69,6 +74,7 @@ namespace MedNet.API.Controllers
             return Ok(response);
         }
 
+        [Authorize(Roles = "Admin")] 
         [HttpDelete("{id:Guid}")]
         public async Task<IActionResult> DeleteLabAnalysis(Guid id)
         {

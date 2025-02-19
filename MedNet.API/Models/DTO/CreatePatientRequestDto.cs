@@ -9,6 +9,7 @@ namespace MedNet.API.Models.DTO
 
         [Required(ErrorMessage = "Last Name is required.")]
         public string LastName { get; set; }
+        public string UserId { get; set; }
 
         [Required(ErrorMessage = "Date of birth is required.")]
         public DateTime DateOfBirth { get; set; }
@@ -26,6 +27,8 @@ namespace MedNet.API.Models.DTO
         public CreateAddressRequestDto Address { get; set; }
 
         [Required(ErrorMessage = "Contact is required.")]
-        public CreateContactRequestDto Contact { get; set; }
+        public CreateContactRequestDto Contact { get; set; } // Contact details will be filled from user registration
+
+
     }
 }

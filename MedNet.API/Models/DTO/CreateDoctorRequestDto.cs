@@ -30,5 +30,14 @@ namespace MedNet.API.Models.DTO
 
         [Required(ErrorMessage = "SpecializationIds are required.")]
         public ICollection<Guid> SpecializationIds { get; set; }
+
+        [Required(ErrorMessage = "Email is required.")]
+        [EmailAddress(ErrorMessage = "Invalid email format.")]
+        public string Email { get; set; }
+
+        [Required(ErrorMessage = "Password is required.")]
+        [MinLength(8, ErrorMessage = "Password must be at least 8 characters.")]
+        [RegularExpression(@"^(?=.*[A-Z])(?=.*[\W_]).+$", ErrorMessage = "Password must contain an uppercase letter and a special character.")]
+        public string Password { get; set; }
     }
 }

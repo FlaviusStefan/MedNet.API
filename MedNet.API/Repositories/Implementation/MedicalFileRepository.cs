@@ -32,6 +32,13 @@ namespace MedNet.API.Repositories.Implementation
             return await dbContext.MedicalFiles.FirstOrDefaultAsync(x => x.Id == id);
         }
 
+        public async Task<IEnumerable<MedicalFile>> GetAllByPatientIdAsync(Guid patientId)
+        {
+            return await dbContext.MedicalFiles
+                .Where(mf => mf.PatientId == patientId)
+                .ToListAsync();
+        }
+
         public async Task<MedicalFile?> UpdateAsync(MedicalFile medicalFile)
         {
             var existingMedicalFile = await dbContext.MedicalFiles.FirstOrDefaultAsync(x => x.Id == medicalFile.Id);

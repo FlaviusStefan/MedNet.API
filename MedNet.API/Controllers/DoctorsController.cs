@@ -1,11 +1,13 @@
 ﻿using MedNet.API.Models.DTO;
 using MedNet.API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MedNet.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class DoctorsController : ControllerBase
     {
         private readonly IDoctorService doctorService;
@@ -15,6 +17,7 @@ namespace MedNet.API.Controllers
             this.doctorService = doctorService;
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> CreateDoctor(CreateDoctorRequestDto request)
         {
@@ -43,7 +46,7 @@ namespace MedNet.API.Controllers
         }
 
 
-
+        [Authorize(Roles = "Admin,Doctor,Patient")]
         [HttpGet]
         public async Task<IActionResult> GetAllDoctors()
         {
@@ -51,6 +54,7 @@ namespace MedNet.API.Controllers
             return Ok(response);
         }
 
+        [Authorize(Roles = "Admin,Doctor,Patient")]
         [HttpGet("{id:Guid}")]
         public async Task<IActionResult> GetDoctorById(Guid id)
         {
@@ -64,6 +68,7 @@ namespace MedNet.API.Controllers
             return Ok(response);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPut("{id:Guid}")]
         public async Task<IActionResult> UpdateDoctor(Guid id, UpdateDoctorRequestDto request)
         {
@@ -96,6 +101,7 @@ namespace MedNet.API.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id:Guid}")]
         public async Task<IActionResult> DeleteDoctor(Guid id)
         {

@@ -4,6 +4,7 @@ using MedNet.API.Repositories.Interface;
 using MedNet.API.Services;
 using MedNet.API.Services.Implementation;
 using MedNet.API.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -23,6 +24,7 @@ namespace MedNet.API.Controllers
             this.appointmentService = appointmentService;
         }
 
+        [Authorize(Roles = "Admin,Doctor")]
         [HttpPost]
         public async Task<IActionResult> CreateAppointment(CreateAppointmentRequestDto request)
         {
@@ -42,6 +44,7 @@ namespace MedNet.API.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin,Doctor,Patient")]
         [HttpGet]
         public async Task<IActionResult> GetAllAppointments()
         {
@@ -49,6 +52,7 @@ namespace MedNet.API.Controllers
             return Ok(response);
         }
 
+        [Authorize(Roles = "Admin,Doctor,Patient")]
         [HttpGet("{id:Guid}")]
         public async Task<IActionResult> GetAppointmentById(Guid id)
         {
@@ -62,6 +66,7 @@ namespace MedNet.API.Controllers
             return Ok(response);
         }
 
+        [Authorize(Roles = "Admin,Doctor")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateAppointment(Guid id, UpdateAppointmentRequestDto request)
         {
@@ -74,6 +79,7 @@ namespace MedNet.API.Controllers
             return Ok(response);
         }
 
+        [Authorize(Roles = "Admin,Doctor")]
         [HttpDelete("{id:Guid}")]
         public async Task<IActionResult> DeleteAppointment(Guid id)
         {

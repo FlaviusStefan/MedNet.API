@@ -1,6 +1,7 @@
 ﻿using MedNet.API.Models.DTO;
 using MedNet.API.Services;
 using MedNet.API.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,6 +18,7 @@ namespace MedNet.API.Controllers
             this.contactService = contactService;
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> CreateContact(CreateContactRequestDto request)
         {
@@ -35,6 +37,7 @@ namespace MedNet.API.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin,Doctor")]
         [HttpGet]
         public async Task<IActionResult> GetAllContacts()
         {
@@ -42,6 +45,7 @@ namespace MedNet.API.Controllers
             return Ok(contacts);
         }
 
+        [Authorize(Roles = "Admin,Doctor")]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetContactById(Guid id)
         {
@@ -55,6 +59,7 @@ namespace MedNet.API.Controllers
             return Ok(contactDto);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateContact(Guid id, UpdateContactRequestDto request)
         {
@@ -67,6 +72,7 @@ namespace MedNet.API.Controllers
             return Ok(response);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id:Guid}")]
         public async Task<IActionResult> DeleteContact(Guid id)
         {

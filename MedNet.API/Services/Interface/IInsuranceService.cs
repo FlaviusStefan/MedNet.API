@@ -8,6 +8,7 @@ namespace MedNet.API.Services.Interface
         Task<InsuranceDto> CreateInsuranceAsync(CreateInsuranceRequestDto request);
         Task<IEnumerable<InsuranceDto>> GetAllInsurancesAsync();
         Task<InsuranceDto?> GetInsuranceByIdAsync(Guid id);
+        Task<IEnumerable<InsuranceDto>> GetInsurancesByPatientIdAsync(Guid patientId);
         Task<InsuranceDto> UpdateInsuranceAsync(Guid id, UpdateInsuranceRequestDto request);
         Task<InsuranceDto> DeleteInsuranceAsync(Guid id);
     }

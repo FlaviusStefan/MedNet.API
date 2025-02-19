@@ -1,4 +1,5 @@
 ﻿using MedNet.API.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
@@ -16,6 +17,7 @@ namespace MedNet.API.Controllers
             this.doctorHospitalService = doctorHospitalService;
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost("bind")]
         public async Task<IActionResult> BindDoctorToHospitalAsync(Guid doctorId, Guid hospitalId)
         {
@@ -31,6 +33,7 @@ namespace MedNet.API.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost("unbind")]
         public async Task<IActionResult> UnbindDoctorFromHospitalAsync(Guid doctorId, Guid hospitalId)
         {

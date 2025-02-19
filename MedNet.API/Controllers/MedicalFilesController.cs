@@ -1,6 +1,7 @@
 ﻿using MedNet.API.Models.DTO;
 using MedNet.API.Services.Implementation;
 using MedNet.API.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,6 +18,7 @@ namespace MedNet.API.Controllers
             this.medicalFileService = medicalFileService;
         }
 
+        [Authorize(Roles = "Admin,Doctor")] 
         [HttpPost]
         public async Task<IActionResult> CreateMedicalFile(CreateMedicalFileRequestDto request)
         {
@@ -35,6 +37,7 @@ namespace MedNet.API.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin,Doctor,Patient")]
         [HttpGet]
         public async Task<IActionResult> GetAllMedicalFiles()
         {
@@ -42,6 +45,7 @@ namespace MedNet.API.Controllers
             return Ok(medicalFiles);
         }
 
+        [Authorize(Roles = "Admin,Doctor,Patient")]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetMedicalFileById(Guid id)
         {
@@ -55,6 +59,7 @@ namespace MedNet.API.Controllers
             return Ok(medicalFileDto);
         }
 
+        [Authorize(Roles = "Admin,Doctor")] 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateMedicalFile(Guid id, UpdateMedicalFileRequestDto request)
         {
@@ -67,6 +72,7 @@ namespace MedNet.API.Controllers
             return Ok(response);
         }
 
+        [Authorize(Roles = "Admin")] 
         [HttpDelete("{id:Guid}")]
         public async Task<IActionResult> DeleteMedicalFile(Guid id)
         {

@@ -73,6 +73,21 @@ namespace MedNet.API.Services.Implementation
             };
         }
 
+        public async Task<IEnumerable<MedicalFileDto>> GetMedicalFilesByPatientIdAsync(Guid patientId)
+        {
+            var medicalFiles = await medicalFileRepository.GetAllByPatientIdAsync(patientId);
+
+            return medicalFiles.Select(mf => new MedicalFileDto
+            {
+                Id = mf.Id,
+                FileName = mf.FileName,
+                FileType = mf.FileType,
+                FilePath = mf.FilePath,
+                DateUploaded = mf.DateUploaded
+            }).ToList();
+        }
+
+
         public async Task<MedicalFileDto?> UpdateMedicalFileAsync(Guid id, UpdateMedicalFileRequestDto request)
         {
             var existingMedicalFile = await medicalFileRepository.GetById(id);

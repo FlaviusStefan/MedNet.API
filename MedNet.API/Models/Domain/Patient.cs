@@ -13,6 +13,8 @@
         public Address Address { get; set; }
         public Guid ContactId { get; set; }
         public Contact Contact { get; set; }
+
+        public string UserId { get; set; }
         public ICollection<MedicalFile> MedicalFiles { get; set; } = new List<MedicalFile>();
         public ICollection<Medication> Medications { get; set; } = new List<Medication>();
         public ICollection<Insurance> Insurances { get; set; } = new List<Insurance>();

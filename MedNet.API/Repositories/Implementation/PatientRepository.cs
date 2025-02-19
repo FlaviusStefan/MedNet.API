@@ -1,8 +1,10 @@
 ﻿using MedNet.API.Data;
 using MedNet.API.Models.Domain;
 using MedNet.API.Repositories.Interface;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using System.Data;
 using System.Numerics;
 
 namespace MedNet.API.Repositories.Implementation
@@ -39,6 +41,32 @@ namespace MedNet.API.Repositories.Implementation
                 .Include(p => p.Contact)
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
+
+        public async Task<Patient?> GetByUserIdAsync(string userId)
+        {
+            Console.WriteLine($"[DEBUG] Searching for UserId: '{userId}' (Length: {userId.Length})");
+
+            var formattedUserId = userId.Trim();
+
+            var patient = await dbContext.Patients
+                .FromSqlRaw("SELECT * FROM Patients WHERE CAST(UserId AS VARCHAR(36)) = @userId",
+                             new SqlParameter("userId", SqlDbType.VarChar) { Size = 36, Value = formattedUserId })
+                .FirstOrDefaultAsync();
+
+            if (patient == null)
+            {
+                Console.WriteLine($"[ERROR] No patient found for UserId: '{formattedUserId}' (Length: {formattedUserId.Length})");
+            }
+            else
+            {
+                Console.WriteLine($"[SUCCESS] Found patient: {patient.FirstName} {patient.LastName}");
+            }
+
+            return patient;
+        }
+
+
+
 
         public async Task<Patient?> UpdateAsync(Patient patient)
         {

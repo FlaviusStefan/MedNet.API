@@ -33,6 +33,14 @@ namespace MedNet.API.Repositories.Implementation
 
         }
 
+        public async Task<IEnumerable<Insurance>> GetAllByPatientIdAsync(Guid patientId)
+        {
+            return await dbContext.Insurances
+                .Where(i => i.PatientId == patientId)
+                .ToListAsync();
+        }
+
+
         public async Task<Insurance?> UpdateAsync(Insurance insurance)
         {
             var existingInsurance = await dbContext.Insurances.FirstOrDefaultAsync(x => x.Id == insurance.Id);

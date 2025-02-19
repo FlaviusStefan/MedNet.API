@@ -16,19 +16,24 @@ namespace MedNet.API.Services
         private readonly IContactService contactService;
         private readonly ISpecializationService specializationService;
         private readonly IQualificationService qualificationService;
+        private readonly IUserManagementService userManagementService;
 
         public DoctorService(
             IDoctorRepository doctorRepository,
             IAddressService addressService,
             IContactService contactService,
             ISpecializationService specializationService,
-            IQualificationService qualificationService)
+            IQualificationService qualificationService,
+            IUserManagementService userManagementService
+            )
         {
             this.doctorRepository = doctorRepository;
             this.addressService = addressService;
             this.contactService = contactService;
             this.specializationService = specializationService;
             this.qualificationService = qualificationService;
+            this.userManagementService = userManagementService;
+
         }
 
         public async Task<CreatedDoctorDto> CreateDoctorAsync(CreateDoctorRequestDto request)
@@ -37,11 +42,14 @@ namespace MedNet.API.Services
 
             try
             {
+                // Validate specializations
                 var validSpecializations = await specializationService.ValidateSpecializationsAsync(request.SpecializationIds);
 
+                // Create address and contact
                 var addressDto = await addressService.CreateAddressAsync(request.Address);
                 var contactDto = await contactService.CreateContactAsync(request.Contact);
 
+                // Create the Doctor entity
                 var doctor = new Doctor
                 {
                     Id = Guid.NewGuid(),
@@ -60,7 +68,27 @@ namespace MedNet.API.Services
                     }).ToList()
                 };
 
+                // Save the doctor entity in the database
                 await doctorRepository.CreateAsync(doctor);
+
+                // Use UserManagementService to create user
+                var userResult = await userManagementService.CreateUserAsync(request.Email, request.Password);
+
+                if (!userResult.Succeeded)
+                {
+                    await transaction.RollbackAsync();
+                    throw new CustomException("Failed to create user: " + string.Join(", ", userResult.Errors.Select(e => e.Description)));
+                }
+
+                // Assign the "Doctor" role
+                var roleResult = await userManagementService.AssignRoleAsync(request.Email, "Doctor");
+
+                if (!roleResult.Succeeded)
+                {
+                    await transaction.RollbackAsync();
+                    throw new CustomException("Failed to assign Doctor role: " + string.Join(", ", roleResult.Errors.Select(e => e.Description)));
+                }
+
                 await transaction.CommitAsync();
 
                 return new CreatedDoctorDto
@@ -76,8 +104,6 @@ namespace MedNet.API.Services
                     Contact = contactDto,
                     Specializations = validSpecializations.Values.ToList()
                 };
-
-
             }
             catch (Exception ex)
             {

@@ -7,6 +7,7 @@ namespace MedNet.API.Repositories.Interface
         Task<Insurance> CreateAsync(Insurance insurance);
         Task<IEnumerable<Insurance>> GetAllAsync();
         Task<Insurance?> GetById(Guid id);
+        Task<IEnumerable<Insurance>> GetAllByPatientIdAsync(Guid patientId);
         Task<Insurance?> UpdateAsync(Insurance insurance);
         Task<Insurance?> DeleteAsync(Guid id);
     }

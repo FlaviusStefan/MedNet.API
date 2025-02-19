@@ -1,5 +1,6 @@
 ﻿using MedNet.API.Models.DTO;
 using MedNet.API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MedNet.API.Controllers
@@ -15,6 +16,7 @@ namespace MedNet.API.Controllers
             this.addressService = addressService;
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> CreateAddress(CreateAddressRequestDto request)
         {
@@ -33,6 +35,7 @@ namespace MedNet.API.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin,Doctor")]
         [HttpGet]
         public async Task<IActionResult> GetAllAddresses()
         {
@@ -40,6 +43,7 @@ namespace MedNet.API.Controllers
             return Ok(addresses);
         }
 
+        [Authorize(Roles = "Admin,Doctor")]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetAddressById(Guid id)
         {
@@ -53,6 +57,7 @@ namespace MedNet.API.Controllers
             return Ok(addressDto);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateAddress(Guid id,UpdateAddressRequestDto request)
         {
@@ -65,6 +70,7 @@ namespace MedNet.API.Controllers
             return Ok(response);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id:Guid}")]
         public async Task<IActionResult> DeleteAddress(Guid id)
         {
