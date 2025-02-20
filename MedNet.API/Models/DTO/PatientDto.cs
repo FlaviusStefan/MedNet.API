@@ -1,4 +1,6 @@
-﻿namespace MedNet.API.Models.DTO
+﻿using System.Text.Json.Serialization;
+
+namespace MedNet.API.Models.DTO
 {
     public class PatientDto
     {
@@ -9,6 +11,8 @@
         public string Gender { get; set; }
         public double Height { get; set; }
         public double Weight { get; set; }
+
+        [JsonIgnore]
         public string UserId { get; set; }
         public AddressDto Address { get; set; }
         public ContactDto Contact { get; set; }
