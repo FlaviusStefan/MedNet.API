@@ -16,10 +16,15 @@ namespace MedNet.API.Services.Implementation
 
         public async Task<InsuranceDto> CreateInsuranceAsync(CreateInsuranceRequestDto request)
         {
+            if (!request.PatientId.HasValue)
+            {
+                throw new InvalidOperationException("PatientId cannot be null.");
+            }
+
             var insurance = new Insurance
             {
                 Id = Guid.NewGuid(),
-                PatientId = request.PatientId,
+                PatientId = request.PatientId.Value,
                 Provider = request.Provider,
                 PolicyNumber = request.PolicyNumber,
                 CoverageStartDate = request.CoverageStartDate,

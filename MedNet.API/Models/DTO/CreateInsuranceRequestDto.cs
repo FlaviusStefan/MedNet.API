@@ -4,8 +4,8 @@ namespace MedNet.API.Models.DTO
 {
     public class CreateInsuranceRequestDto
     {
-        [Required(ErrorMessage = "Patient ID is required.")]
-        public Guid PatientId { get; set; }
+        //[Required(ErrorMessage = "Patient ID is required.")]
+        public Guid? PatientId { get; set; }
 
         [Required(ErrorMessage = "Provider is required.")]
         public string Provider { get; set; }
