@@ -317,6 +317,27 @@ namespace MedNet.API.Services.Implementation
                     CoverageEndDate = i.CoverageEndDate
                 }).ToList();  // Ensure it's a List<DisplayInsuranceDto>
 
+            var medications = (await medicationService.GetAllMedicationsAsync())
+                .Where(m => m.PatientId == patient.Id)
+                .Select(m => new DisplayMedicationDto
+                {
+                    Id = m.Id,
+                    Name = m.Name,
+                    Dosage = m.Dosage,
+                    Frequency = m.Frequency
+                }).ToList();
+
+            var medicalFiles = (await medicalFileService.GetAllMedicalFilesAsync())
+                .Where(mf => mf.PatientId == patient.Id)
+                .Select(mf => new DisplayMedicalFileDto
+                {
+                    Id = mf.Id,
+                    FileName = mf.FileName,
+                    FileType = mf.FileType,
+                    FilePath = mf.FilePath,
+                    DateUploaded = mf.DateUploaded
+                }).ToList();
+
             Console.WriteLine($"[SUCCESS] Found patient: {patient.FirstName} {patient.LastName}");
 
             return new PatientDto
@@ -330,7 +351,9 @@ namespace MedNet.API.Services.Implementation
                 Weight = patient.Weight,
                 Address = addressDto,
                 Contact = contactDto,
-                Insurances = insurances // Now it's correctly mapped
+                Insurances = insurances, 
+                Medications = medications,
+                MedicalFiles = medicalFiles
             };
         }
 
