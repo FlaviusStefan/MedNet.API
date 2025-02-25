@@ -20,6 +20,7 @@ namespace MedNet.API.Controllers
             this.insuranceService = insuranceService;
             this.patientService = patientService;
         }
+
         [Authorize(Roles = "Admin,Patient")]
         [HttpPost]
         public async Task<IActionResult> CreateInsurance(CreateInsuranceRequestDto request)
@@ -69,10 +70,6 @@ namespace MedNet.API.Controllers
                 return StatusCode(500, "An error occurred while creating the insurance: " + ex.Message);
             }
         }
-
-
-
-
 
 
         [Authorize(Roles = "Admin,Patient")] 

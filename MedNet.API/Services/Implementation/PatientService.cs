@@ -306,6 +306,17 @@ namespace MedNet.API.Services.Implementation
             var addressDto = await addressService.GetAddressByIdAsync(patient.AddressId);
             var contactDto = await contactService.GetContactByIdAsync(patient.ContactId);
 
+            // Fetch insurances and map them to DisplayInsuranceDto
+            var insurances = (await insuranceService.GetInsurancesByPatientIdAsync(patient.Id))
+                .Select(i => new DisplayInsuranceDto
+                {
+                    Id = i.Id,
+                    Provider = i.Provider,
+                    PolicyNumber = i.PolicyNumber,
+                    CoverageStartDate = i.CoverageStartDate,
+                    CoverageEndDate = i.CoverageEndDate
+                }).ToList();  // Ensure it's a List<DisplayInsuranceDto>
+
             Console.WriteLine($"[SUCCESS] Found patient: {patient.FirstName} {patient.LastName}");
 
             return new PatientDto
@@ -318,9 +329,11 @@ namespace MedNet.API.Services.Implementation
                 Height = patient.Height,
                 Weight = patient.Weight,
                 Address = addressDto,
-                Contact = contactDto
+                Contact = contactDto,
+                Insurances = insurances // Now it's correctly mapped
             };
         }
+
 
 
         public async Task<PatientDto?> GetPatientByIdAsync(Guid id)
