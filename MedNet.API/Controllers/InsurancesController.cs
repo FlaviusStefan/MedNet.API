@@ -21,7 +21,8 @@ namespace MedNet.API.Controllers
             this.patientService = patientService;
         }
 
-        [Authorize(Roles = "Admin,Patient")]
+
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> CreateInsurance(CreateInsuranceRequestDto request)
         {
@@ -30,38 +31,13 @@ namespace MedNet.API.Controllers
                 return BadRequest(ModelState);
             }
 
+            if (request.PatientId == null || request.PatientId == Guid.Empty)
+            {
+                return BadRequest("patientId is required.");
+            }
+
             try
             {
-                // Extract role and userId from JWT
-                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                             ?? User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
-
-                if (string.IsNullOrEmpty(userId))
-                {
-                    return Unauthorized(new { message = "Invalid token. User ID not found." });
-                }
-
-                if (userRole == "Patient")
-                {
-                    // For patients, look up the patient record by the Identity user id
-                    var patientRecord = await patientService.GetPatientByUserIdAsync(userId);
-                    if (patientRecord == null)
-                    {
-                        return NotFound("Patient profile not found for the logged-in user.");
-                    }
-                    // Overwrite the request.PatientId with the actual patient record Id
-                    request.PatientId = patientRecord.Id;
-                }
-                else
-                {
-                    // For Admin/Doctor, require a valid PatientId in the request
-                    if (request.PatientId == null || request.PatientId == Guid.Empty)
-                    {
-                        return BadRequest("patientId is required for Admin or Doctor.");
-                    }
-                }
-
                 var insuranceDto = await insuranceService.CreateInsuranceAsync(request);
                 return CreatedAtAction(nameof(GetInsuranceById), new { id = insuranceDto.Id }, insuranceDto);
             }
@@ -72,7 +48,7 @@ namespace MedNet.API.Controllers
         }
 
 
-        [Authorize(Roles = "Admin,Patient")] 
+        [Authorize(Roles = "Admin")] 
         [HttpGet]
         public async Task<IActionResult> GetAllInsurances()
         {
@@ -80,21 +56,57 @@ namespace MedNet.API.Controllers
             return Ok(insurances);
         }
 
-        [Authorize(Roles = "Admin,Patient")] 
-        [HttpGet("{id}")]
+
+        [Authorize(Roles = "Admin,Patient")]
+        [HttpGet("{id:guid}")]
         public async Task<IActionResult> GetInsuranceById(Guid id)
         {
             var insuranceDto = await insuranceService.GetInsuranceByIdAsync(id);
-
             if (insuranceDto == null)
             {
                 return NotFound();
             }
 
+            // Additional check for patients: ensure they can only access their own insurance.
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (userRole == "Patient")
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                             ?? User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+                var patientRecord = await patientService.GetPatientByUserIdAsync(userId);
+                if (patientRecord == null || patientRecord.Id != insuranceDto.PatientId)
+                {
+                    return Forbid("You are not allowed to access this insurance.");
+                }
+            }
+
             return Ok(insuranceDto);
         }
 
-        [Authorize(Roles = "Admin,Doctor")]
+
+        [Authorize(Roles = "Admin,Patient")]
+        [HttpGet("patient/{patientId:guid}")]
+        public async Task<IActionResult> GetInsurancesByPatientId(Guid patientId)
+        {
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                         ?? User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+
+            if (userRole == "Patient")
+            {
+                var patientRecord = await patientService.GetPatientByUserIdAsync(userId);
+                if (patientRecord == null || patientRecord.Id != patientId)
+                {
+                    return Forbid("You are not allowed to access other patients' insurances.");
+                }
+            }
+
+            var insurances = await insuranceService.GetInsurancesByPatientIdAsync(patientId);
+            return Ok(insurances);
+        }
+
+
+        [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateInsurance(Guid id, UpdateInsuranceRequestDto request)
         {
@@ -106,6 +118,7 @@ namespace MedNet.API.Controllers
 
             return Ok(response);
         }
+
 
         [Authorize(Roles = "Admin")]
         [HttpDelete("{id:Guid}")]
