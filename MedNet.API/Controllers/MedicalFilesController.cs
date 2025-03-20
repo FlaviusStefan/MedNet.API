@@ -4,6 +4,7 @@ using MedNet.API.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace MedNet.API.Controllers
 {
@@ -12,10 +13,12 @@ namespace MedNet.API.Controllers
     public class MedicalFilesController : ControllerBase
     {
         private readonly IMedicalFileService medicalFileService;
+        private readonly IPatientService patientService;
 
-        public MedicalFilesController(IMedicalFileService medicalFileService)
+        public MedicalFilesController(IMedicalFileService medicalFileService, IPatientService patientService)
         {
             this.medicalFileService = medicalFileService;
+            this.patientService = patientService;
         }
 
         [Authorize(Roles = "Admin,Doctor")] 
@@ -45,18 +48,51 @@ namespace MedNet.API.Controllers
             return Ok(medicalFiles);
         }
 
-        [Authorize(Roles = "Admin,Doctor,Patient")]
-        [HttpGet("{id}")]
+        [Authorize(Roles = "Admin,Patient")]
+        [HttpGet("{id:guid}")]
         public async Task<IActionResult> GetMedicalFileById(Guid id)
         {
             var medicalFileDto = await medicalFileService.GetMedicalFileByIdAsync(id);
-
             if (medicalFileDto == null)
             {
                 return NotFound();
             }
 
+            // Additional check for patients: ensure they can only access their own medical files.
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (userRole == "Patient")
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                             ?? User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+                var patientRecord = await patientService.GetPatientByUserIdAsync(userId);
+                if (patientRecord == null || patientRecord.Id != medicalFileDto.PatientId)
+                {
+                    return Forbid("You are not allowed to access this medical file.");
+                }
+            }
+
             return Ok(medicalFileDto);
+        }
+
+        [Authorize(Roles = "Admin,Patient")]
+        [HttpGet("patient/{patientId:guid}")]
+        public async Task<IActionResult> GetMedicalFilesByPatientId(Guid patientId)
+        {
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                         ?? User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+
+            if (userRole == "Patient")
+            {
+                var patientRecord = await patientService.GetPatientByUserIdAsync(userId);
+                if (patientRecord == null || patientRecord.Id != patientId)
+                {
+                    return Forbid("You are not allowed to access other patients' medical files.");
+                }
+            }
+
+            var medicalFiles = await medicalFileService.GetMedicalFilesByPatientIdAsync(patientId);
+            return Ok(medicalFiles);
         }
 
         [Authorize(Roles = "Admin,Doctor")] 

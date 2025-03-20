@@ -80,6 +80,7 @@ namespace MedNet.API.Services.Implementation
             return medicalFiles.Select(mf => new MedicalFileDto
             {
                 Id = mf.Id,
+                PatientId = mf.PatientId,
                 FileName = mf.FileName,
                 FileType = mf.FileType,
                 FilePath = mf.FilePath,
