@@ -75,6 +75,7 @@ namespace MedNet.API.Services.Implementation
             return medications.Select(medication => new MedicationDto
             {
                 Id = medication.Id,
+                PatientId = medication.PatientId,
                 Name = medication.Name,
                 Dosage = medication.Dosage,
                 Frequency = medication.Frequency

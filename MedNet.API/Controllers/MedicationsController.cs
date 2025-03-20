@@ -4,6 +4,7 @@ using MedNet.API.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace MedNet.API.Controllers
 {
@@ -12,10 +13,12 @@ namespace MedNet.API.Controllers
     public class MedicationsController : ControllerBase
     {
         private readonly IMedicationService medicationService;
+        private readonly IPatientService patientService;
 
-        public MedicationsController(IMedicationService medicationService)
+        public MedicationsController(IMedicationService medicationService, IPatientService patientService)
         {
             this.medicationService = medicationService;
+            this.patientService = patientService;
         }
 
         [Authorize(Roles = "Admin,Doctor")] 
@@ -45,7 +48,7 @@ namespace MedNet.API.Controllers
             return Ok(medications);
         }
 
-        [Authorize(Roles = "Admin,Doctor,Patient")]
+        [Authorize(Roles = "Admin,Patient")]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetMedicationById(Guid id)
         {
@@ -56,7 +59,40 @@ namespace MedNet.API.Controllers
                 return NotFound();
             }
 
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (userRole == "Patient")
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                             ?? User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+                var patientRecord = await patientService.GetPatientByUserIdAsync(userId);
+                if (patientRecord == null || patientRecord.Id != medicationDto.PatientId)
+                {
+                    return Forbid("You are not allowed to access this medication.");
+                }
+            }
+
             return Ok(medicationDto);
+        }
+
+        [Authorize(Roles = "Admin,Patient")]
+        [HttpGet("patient/{patientId:guid}")]
+        public async Task<IActionResult> GetMedicationsByPatientId(Guid patientId)
+        {
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                         ?? User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+
+            if (userRole == "Patient")
+            {
+                var patientRecord = await patientService.GetPatientByUserIdAsync(userId);
+                if (patientRecord == null || patientRecord.Id != patientId)
+                {
+                    return Forbid("You are not allowed to access other patients' medications.");
+                }
+            }
+
+            var medications = await medicationService.GetMedicationsByPatientIdAsync(patientId);
+            return Ok(medications);
         }
 
         [Authorize(Roles = "Admin,Doctor")] 
