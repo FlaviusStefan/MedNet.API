@@ -40,6 +40,27 @@ namespace MedNet.API.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin")]
+        [HttpPost("register-patient-by-admin")]
+        public async Task<IActionResult> RegisterPatientByAdmin([FromBody] RegisterPatientByAdminDto registerDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                var message = await _authService.RegisterPatientByAdminAsync(registerDto);
+                return Ok(new { message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+
         //[Authorize(Roles = "Admin")]
         //[HttpPost("register/doctor")]
         //public async Task<IActionResult> RegisterDoctor([FromBody] RegisterDoctorDto registerDoctorDto)

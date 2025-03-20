@@ -76,6 +76,53 @@ namespace MedNet.API.Services.Implementation
             }
         }
 
+        public async Task<string> RegisterPatientByAdminAsync(RegisterPatientByAdminDto registerDto)
+        {
+            // Step 1: Create IdentityUser with the admin-supplied password
+            var user = new IdentityUser
+            {
+                UserName = registerDto.Email,
+                Email = registerDto.Email,
+                PhoneNumber = registerDto.PhoneNumber
+            };
+
+            var result = await _userManager.CreateAsync(user, registerDto.Password);
+            if (!result.Succeeded)
+            {
+                throw new Exception(string.Join(", ", result.Errors.Select(e => e.Description)));
+            }
+
+            // Step 2: Assign "Patient" Role to the user
+            await _userManager.AddToRoleAsync(user, UserRole.Patient.ToString());
+
+            // Step 3: Create Patient Profile via PatientService
+            var createPatientDto = new CreatePatientRequestDto
+            {
+                FirstName = registerDto.FirstName,
+                LastName = registerDto.LastName,
+                UserId = user.Id,  // Link the IdentityUser to the patient record
+                DateOfBirth = registerDto.DateOfBirth,
+                Gender = registerDto.Gender,
+                Height = registerDto.Height,
+                Weight = registerDto.Weight,
+                Address = registerDto.Address,
+                // Use the same email & phone as in the user registration
+                Contact = new CreateContactRequestDto
+                {
+                    Email = registerDto.Email,
+                    Phone = registerDto.PhoneNumber
+                }
+            };
+
+            await _patientService.CreatePatientAsync(createPatientDto);
+
+            // You could return a success message instead of a token in this case,
+            // since the patient might not log in immediately.
+            return "Patient account created successfully.";
+        }
+
+
+
 
         public async Task<string> LoginAsync(LoginDto loginDto)
         {
