@@ -67,7 +67,6 @@ namespace MedNet.API.Controllers
                 return NotFound();
             }
 
-            // Additional check for patients: ensure they can only access their own insurance.
             var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
             if (userRole == "Patient")
             {

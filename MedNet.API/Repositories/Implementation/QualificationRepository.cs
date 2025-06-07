@@ -32,6 +32,11 @@ namespace MedNet.API.Repositories.Implementation
             return await dbContext.Qualifications.FirstOrDefaultAsync(x => x.Id == id);
         }
 
+        public async Task<IEnumerable<Qualification>> GetAllByDoctorIdAsync(Guid doctorId)
+        {
+            return await dbContext.Qualifications.Where(x => x.DoctorId == doctorId).ToListAsync();
+        }
+
         public async Task<Qualification?> UpdateAsync(Qualification qualification)
         {
             var existingQualification = await dbContext.Qualifications.FirstOrDefaultAsync(x => x.Id == qualification.Id);

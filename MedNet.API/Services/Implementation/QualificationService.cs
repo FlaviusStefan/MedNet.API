@@ -74,6 +74,20 @@ namespace MedNet.API.Services.Implementation
             };
         }
 
+        public async Task<IEnumerable<QualificationDto>> GetQualificationsByDoctorIdAsync(Guid doctorId)
+        {
+            var qualifications = await qualificationRepository.GetAllByDoctorIdAsync(doctorId);
+            return qualifications.Select(qualification => new QualificationDto
+            {
+                Id = qualification.Id,
+                DoctorId = qualification.DoctorId,
+                Degree = qualification.Degree,
+                Institution = qualification.Institution,
+                StudiedYears = qualification.StudiedYears,
+                YearOfCompletion = qualification.YearOfCompletion
+            }).ToList();
+        }
+
         public async Task<QualificationDto?> UpdateQualificationAsync(Guid id, UpdateQualificationRequestDto request)
         {
             var existingQualification = await qualificationRepository.GetById(id);

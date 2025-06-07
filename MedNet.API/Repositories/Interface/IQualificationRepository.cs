@@ -7,6 +7,7 @@ namespace MedNet.API.Repositories.Interface
         Task<Qualification> CreateAsync(Qualification qualification);
         Task<IEnumerable<Qualification>> GetAllAsync();
         Task<Qualification?> GetById(Guid id);
+        Task<IEnumerable<Qualification>> GetAllByDoctorIdAsync(Guid doctorId);
         Task<Qualification?> UpdateAsync(Qualification qualification);
         Task<Qualification?> DeleteAsync(Guid id);
     }

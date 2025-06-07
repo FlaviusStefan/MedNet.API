@@ -59,6 +59,14 @@ namespace MedNet.API.Controllers
             return Ok(qualificationDto);
         }
 
+        [Authorize(Roles = "Admin,Doctor,Patient")]
+        [HttpGet("doctor/{doctorId}")]
+        public async Task<IActionResult> GetQualificationsByDoctorId(Guid doctorId)
+        {
+            var qualifications = await qualificationService.GetQualificationsByDoctorIdAsync(doctorId);
+            return Ok(qualifications);
+        }
+
         [Authorize(Roles = "Admin,Doctor")] 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateQualification(Guid id, UpdateQualificationRequestDto request)
