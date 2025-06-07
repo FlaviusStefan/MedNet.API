@@ -33,6 +33,14 @@ namespace MedNet.API.Repositories.Implementation
 
         }
 
+        public async Task<IEnumerable<Specialization>> GetAllByDoctorIdAsync(Guid doctorId)
+        {
+            return await dbContext.DoctorSpecializations
+                .Where(ds => ds.DoctorId == doctorId)
+                .Select(ds => ds.Specialization)
+                .ToListAsync();
+        }
+
         public async Task<Specialization?> UpdateAsync(Specialization specialization)
         {
             var existingSpecialization = await dbContext.Specializations.FirstOrDefaultAsync(x => x.Id == specialization.Id);

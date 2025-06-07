@@ -59,6 +59,14 @@ namespace MedNet.API.Controllers
             return Ok(specializationDto);
         }
 
+        [Authorize(Roles = "Admin,Doctor,Patient")]
+        [HttpGet("doctor/{doctorId}")]
+        public async Task<IActionResult> GetSpecializationsByDoctorId(Guid doctorId)
+        {
+            var specializations = await specializationService.GetSpecializationsByDoctorIdAsync(doctorId);
+            return Ok(specializations);
+        }
+
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateSpecialization(Guid id, UpdateSpecializationRequestDto request)

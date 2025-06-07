@@ -62,6 +62,17 @@ namespace MedNet.API.Services.Implementation
             };
         }
 
+        public async Task<IEnumerable<SpecializationDto>> GetSpecializationsByDoctorIdAsync(Guid doctorId)
+        {
+            var specializations = await specializationRepository.GetAllByDoctorIdAsync(doctorId);
+            return specializations.Select(specialization => new SpecializationDto
+            {
+                Id = specialization.Id,
+                Name = specialization.Name,
+                Description = specialization.Description
+            }).ToList();
+        }
+
         public async Task<SpecializationDto?> UpdateSpecializationAsync(Guid id, UpdateSpecializationRequestDto request)
         {
             var existingSpecialization = await specializationRepository.GetById(id);
