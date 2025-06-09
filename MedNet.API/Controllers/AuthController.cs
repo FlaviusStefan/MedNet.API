@@ -99,5 +99,7 @@ namespace MedNet.API.Controllers
 
             return Ok(new { token });
         }
+
+        // test
     }
 }
