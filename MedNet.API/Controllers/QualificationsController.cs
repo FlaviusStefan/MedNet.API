@@ -18,7 +18,7 @@ namespace MedNet.API.Controllers
             this.qualificationService = qualificationService;
         }
 
-        [Authorize(Roles = "Admin,Doctor")]
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> CreateQualification(CreateQualificationRequestDto request)
         {
@@ -67,7 +67,7 @@ namespace MedNet.API.Controllers
             return Ok(qualifications);
         }
 
-        [Authorize(Roles = "Admin,Doctor")] 
+        [Authorize(Roles = "Admin")] 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateQualification(Guid id, UpdateQualificationRequestDto request)
         {
