@@ -135,49 +135,36 @@ namespace MedNet.API.Services.Implementation
         //    });
         //}
 
-        public async Task<IEnumerable<PatientDto>> GetAllPatientsAsync()
+        public async Task<IEnumerable<PatientBasicSummaryDto>> GetAllPatientsAsync()
         {
             var patients = await patientRepository.GetAllAsync();
-
-            var patientDtos = new List<PatientDto>();
+            var patientDtos = new List<PatientBasicSummaryDto>();
 
             foreach (var patient in patients)
             {
-                var addressDto = await addressService.GetAddressByIdAsync(patient.AddressId);
-                var contactDto = await contactService.GetContactByIdAsync(patient.ContactId);
-                var insurances = (await insuranceService.GetAllInsurancesAsync())
-                    .Where(i => i.PatientId == patient.Id)
-                    .Select(i => new DisplayInsuranceDto
-                    {
-                        Id = i.Id,
-                        Provider = i.Provider,
-                        PolicyNumber = i.PolicyNumber,
-                        CoverageStartDate = i.CoverageStartDate,
-                        CoverageEndDate = i.CoverageEndDate
-                    }).ToList();
+                var addressDto = new AddressDto
+                {
+                    Id = patient.AddressId,
+                    Street = patient.Address?.Street,
+                    StreetNr = patient.Address?.StreetNr ?? 0,
+                    City = patient.Address?.City,
+                    State = patient.Address?.State,
+                    Country = patient.Address?.Country,
+                    PostalCode = patient.Address?.PostalCode
 
-                var medications = (await medicationService.GetAllMedicationsAsync())
-                    .Where(m => m.PatientId == patient.Id)
-                    .Select(m => new DisplayMedicationDto
-                    {
-                        Id = m.Id,
-                        Name = m.Name,
-                        Dosage = m.Dosage,
-                        Frequency = m.Frequency
-                    }).ToList();
+                };
 
-                var medicalFiles = (await medicalFileService.GetAllMedicalFilesAsync())
-                    .Where(mf => mf.PatientId == patient.Id)
-                    .Select(mf => new DisplayMedicalFileDto
-                    {
-                        Id = mf.Id,
-                        FileName = mf.FileName,
-                        FileType = mf.FileType,
-                        FilePath = mf.FilePath,
-                        DateUploaded = mf.DateUploaded
-                    }).ToList();
+                var contactDto = new ContactDto
+                {
+                    Id = patient.ContactId,
+                    Phone = patient.Contact?.Phone,
+                    Email = patient.Contact?.Email
+                };
 
-                patientDtos.Add(new PatientDto
+                //var addressDto = await addressService.GetAddressByIdAsync(patient.AddressId);
+                //var contactDto = await contactService.GetContactByIdAsync(patient.ContactId);
+
+                patientDtos.Add(new PatientBasicSummaryDto
                 {
                     Id = patient.Id,
                     FirstName = patient.FirstName,
@@ -187,10 +174,7 @@ namespace MedNet.API.Services.Implementation
                     Height = patient.Height,
                     Weight = patient.Weight,
                     Address = addressDto,
-                    Contact = contactDto,
-                    Insurances = insurances,
-                    Medications = medications,
-                    MedicalFiles = medicalFiles
+                    Contact = contactDto
                 });
             }
 
