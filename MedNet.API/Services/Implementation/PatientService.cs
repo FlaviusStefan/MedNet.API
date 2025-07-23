@@ -40,7 +40,7 @@ namespace MedNet.API.Services.Implementation
             try
             {
                 var addressDto = await addressService.CreateAddressAsync(request.Address);
-                var contactDto = await contactService.CreateContactAsync(request.Contact); // Ensure this gets the contact
+                var contactDto = await contactService.CreateContactAsync(request.Contact); 
 
                 var patient = new Patient
                 {
@@ -70,7 +70,7 @@ namespace MedNet.API.Services.Implementation
                     Height = patient.Height,
                     Weight = patient.Weight,
                     Address = addressDto,
-                    Contact = contactDto // Ensure contact is returned
+                    Contact = contactDto 
                 };
             }
             catch (Exception ex)
@@ -79,61 +79,6 @@ namespace MedNet.API.Services.Implementation
                 throw new CustomException("An unexpected error occurred: " + ex.Message, ex);
             }
         }
-
-
-
-        //public async Task<IEnumerable<PatientDto>> GetAllPatientsAsync()
-        //{
-        //    var patients = await patientRepository.GetAllAsync();
-
-        //    var insuranceDtos = await insuranceService.GetAllInsurancesAsync();
-        //    var medicationDtos = await medicationService.GetAllMedicationsAsync();
-        //    var medicalFileDtos = await medicalFileService.GetAllMedicalFilesAsync();
-        //    var addressDtos = await addressService.GetAllAddressesAsync();
-        //    var contactDtos = await contactService.GetAllContactsAsync();
-
-        //    return patients.Select(patient => new PatientDto
-        //    { 
-        //        Id = patient.Id,
-        //        FirstName = patient.FirstName,
-        //        LastName = patient.LastName,
-        //        Gender = patient.Gender,
-        //        DateOfBirth = patient.DateOfBirth,
-        //        Height = patient.Height, 
-        //        Weight = patient.Weight,
-        //        Address = addressDtos.FirstOrDefault(a => a.Id == patient.AddressId),
-        //        Contact = contactDtos.FirstOrDefault(c => c.Id == patient.ContactId),
-        //        Insurances = insuranceDtos
-        //            .Where(dto => patient.Insurances.Select(i => i.Id).Contains(dto.Id))
-        //            .Select(dto => new DisplayInsuranceDto
-        //            {
-        //                Id = dto.Id,
-        //                Provider = dto.Provider,
-        //                PolicyNumber = dto.PolicyNumber,
-        //                CoverageStartDate = dto.CoverageStartDate,
-        //                CoverageEndDate = dto.CoverageEndDate
-        //            }).ToList(),
-        //        Medications = medicationDtos
-        //            .Where(dto => patient.Medications.Select(m => m.Id).Contains(dto.Id))
-        //            .Select(dto => new DisplayMedicationDto
-        //            {
-        //                Id = dto.Id,
-        //                Name = dto.Name,
-        //                Dosage = dto.Dosage,
-        //                Frequency = dto.Frequency
-        //            }).ToList(),
-        //        MedicalFiles = medicalFileDtos
-        //            .Where(dto => patient.MedicalFiles.Select(mf => mf.Id).Contains(dto.Id))
-        //            .Select(dto => new DisplayMedicalFileDto
-        //            {
-        //                Id = dto.Id,
-        //                FileName = dto.FileName,
-        //                FileType = dto.FileType,
-        //                FilePath = dto.FilePath,
-        //                DateUploaded = dto.DateUploaded
-        //            }).ToList()
-        //    });
-        //}
 
         public async Task<IEnumerable<PatientBasicSummaryDto>> GetAllPatientsAsync()
         {
@@ -161,9 +106,6 @@ namespace MedNet.API.Services.Implementation
                     Email = patient.Contact?.Email
                 };
 
-                //var addressDto = await addressService.GetAddressByIdAsync(patient.AddressId);
-                //var contactDto = await contactService.GetContactByIdAsync(patient.ContactId);
-
                 patientDtos.Add(new PatientBasicSummaryDto
                 {
                     Id = patient.Id,
@@ -181,101 +123,6 @@ namespace MedNet.API.Services.Implementation
             return patientDtos;
         }
 
-
-        //// Get patient by his own GUID
-        //public async Task<PatientDto?> GetPatientByIdAsync(Guid id)
-        //{
-        //    var patient = await patientRepository.GetById(id);
-
-        //    if (patient == null) return null;
-
-        //    var insuranceDtos = await insuranceService.GetAllInsurancesAsync();
-        //    var medicationDtos = await medicationService.GetAllMedicationsAsync();
-        //    var medicalFileDtos = await medicalFileService.GetAllMedicalFilesAsync();
-        //    var addressDto = await addressService.GetAddressByIdAsync(patient.AddressId);
-        //    var contactDto = await contactService.GetContactByIdAsync(patient.ContactId);
-
-        //    return new PatientDto
-        //    {
-        //        Id = patient.Id,
-        //        FirstName = patient.FirstName,
-        //        LastName = patient.LastName,
-        //        DateOfBirth = patient.DateOfBirth,
-        //        Gender = patient.Gender,
-        //        Height = patient.Height,
-        //        Weight = patient.Weight,
-        //        Address = addressDto,
-        //        Contact = contactDto,
-        //        Insurances = insuranceDtos
-        //            .Where(dto => patient.Insurances.Select(i => i.Id).Contains(dto.Id))
-        //            .Select(dto => new DisplayInsuranceDto
-        //            {
-        //                Id = dto.Id,
-        //                Provider = dto.Provider,
-        //                PolicyNumber = dto.PolicyNumber,
-        //                CoverageStartDate = dto.CoverageStartDate,
-        //                CoverageEndDate = dto.CoverageEndDate
-        //            }).ToList(),
-        //        Medications = medicationDtos
-        //            .Where(dto => patient.Medications.Select(m => m.Id).Contains(dto.Id))
-        //            .Select(dto => new DisplayMedicationDto
-        //            {
-        //                Id = dto.Id,
-        //                Name = dto.Name,
-        //                Dosage = dto.Dosage,
-        //                Frequency = dto.Frequency
-        //            }).ToList(),
-        //        MedicalFiles = medicalFileDtos
-        //            .Where(dto => patient.MedicalFiles.Select(mf => mf.Id).Contains(dto.Id))
-        //            .Select(dto => new DisplayMedicalFileDto
-        //            {
-        //                Id = dto.Id,
-        //                FileName = dto.FileName,
-        //                FileType = dto.FileType,
-        //                FilePath = dto.FilePath,
-        //                DateUploaded = dto.DateUploaded
-        //            }).ToList()
-        //    };
-        //}
-
-
-
-        //// Get a patient by !!! USER ID !!!
-        //public async Task<PatientDto?> GetPatientByUserIdAsync(string userId)
-        //{
-        //    var patient = await patientRepository.GetByUserIdAsync(userId);
-
-        //    if (patient == null) return null;
-
-        //    var insuranceDtos = await insuranceService.GetAllInsurancesAsync();
-        //    var medicationDtos = await medicationService.GetAllMedicationsAsync();
-        //    var medicalFileDtos = await medicalFileService.GetAllMedicalFilesAsync();
-        //    var addressDto = await addressService.GetAddressByIdAsync(patient.AddressId);
-        //    var contactDto = await contactService.GetContactByIdAsync(patient.ContactId);
-
-        //    return new PatientDto
-        //    {
-        //        Id = patient.Id,
-        //        FirstName = patient.FirstName,
-        //        LastName = patient.LastName,
-        //        DateOfBirth = patient.DateOfBirth,
-        //        Gender = patient.Gender,
-        //        Height = patient.Height,
-        //        Weight = patient.Weight,
-        //        Address = addressDto,
-        //        Contact = contactDto,
-        //        Insurances = insuranceDtos
-        //            .Where(dto => patient.Insurances.Select(i => i.Id).Contains(dto.Id))
-        //            .ToList(),
-        //        Medications = medicationDtos
-        //            .Where(dto => patient.Medications.Select(m => m.Id).Contains(dto.Id))
-        //            .ToList(),
-        //        MedicalFiles = medicalFileDtos
-        //            .Where(dto => patient.MedicalFiles.Select(mf => mf.Id).Contains(dto.Id))
-        //            .ToList()
-        //    };
-        //}
-
         public async Task<PatientDto?> GetPatientByUserIdAsync(string userId)
         {
             Console.WriteLine($"[DEBUG] Searching for patient with UserId: {userId}");
@@ -290,7 +137,6 @@ namespace MedNet.API.Services.Implementation
             var addressDto = await addressService.GetAddressByIdAsync(patient.AddressId);
             var contactDto = await contactService.GetContactByIdAsync(patient.ContactId);
 
-            // Fetch insurances and map them to DisplayInsuranceDto
             var insurances = (await insuranceService.GetInsurancesByPatientIdAsync(patient.Id))
                 .Select(i => new DisplayInsuranceDto
                 {
@@ -299,10 +145,9 @@ namespace MedNet.API.Services.Implementation
                     PolicyNumber = i.PolicyNumber,
                     CoverageStartDate = i.CoverageStartDate,
                     CoverageEndDate = i.CoverageEndDate
-                }).ToList();  // Ensure it's a List<DisplayInsuranceDto>
+                }).ToList();  
 
-            var medications = (await medicationService.GetAllMedicationsAsync())
-                .Where(m => m.PatientId == patient.Id)
+            var medications = (await medicationService.GetMedicationsByPatientIdAsync(patient.Id))
                 .Select(m => new DisplayMedicationDto
                 {
                     Id = m.Id,
@@ -311,8 +156,7 @@ namespace MedNet.API.Services.Implementation
                     Frequency = m.Frequency
                 }).ToList();
 
-            var medicalFiles = (await medicalFileService.GetAllMedicalFilesAsync())
-                .Where(mf => mf.PatientId == patient.Id)
+            var medicalFiles = (await medicalFileService.GetMedicalFilesByPatientIdAsync(patient.Id))
                 .Select(mf => new DisplayMedicalFileDto
                 {
                     Id = mf.Id,
@@ -350,8 +194,7 @@ namespace MedNet.API.Services.Implementation
 
             var addressDto = await addressService.GetAddressByIdAsync(patient.AddressId);
             var contactDto = await contactService.GetContactByIdAsync(patient.ContactId);
-            var insurances = (await insuranceService.GetAllInsurancesAsync())
-                .Where(i => i.PatientId == patient.Id)
+            var insurances = (await insuranceService.GetInsurancesByPatientIdAsync(patient.Id))
                 .Select(i => new DisplayInsuranceDto
                 {
                     Id = i.Id,
@@ -361,8 +204,7 @@ namespace MedNet.API.Services.Implementation
                     CoverageEndDate = i.CoverageEndDate
                 }).ToList();
 
-            var medications = (await medicationService.GetAllMedicationsAsync())
-                .Where(m => m.PatientId == patient.Id)
+            var medications = (await medicationService.GetMedicationsByPatientIdAsync(patient.Id))
                 .Select(m => new DisplayMedicationDto
                 {
                     Id = m.Id,
@@ -371,8 +213,7 @@ namespace MedNet.API.Services.Implementation
                     Frequency = m.Frequency
                 }).ToList();
 
-            var medicalFiles = (await medicalFileService.GetAllMedicalFilesAsync())
-                .Where(mf => mf.PatientId == patient.Id)
+            var medicalFiles = (await medicalFileService.GetMedicalFilesByPatientIdAsync(patient.Id))
                 .Select(mf => new DisplayMedicalFileDto
                 {
                     Id = mf.Id,
@@ -464,7 +305,7 @@ namespace MedNet.API.Services.Implementation
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
+                await transaction.RollbackAsync(); 
                 throw new CustomException("An unexpected error occurred while deleting the patient: " + ex.Message, ex);
             }
         }

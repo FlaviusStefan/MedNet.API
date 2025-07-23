@@ -29,6 +29,7 @@ namespace MedNet.API.Repositories.Implementation
         public async Task<IEnumerable<Patient>> GetAllAsync()
         {
             return await dbContext.Patients
+                .AsNoTracking()
                 .Include(p => p.Address)
                 .Include(p => p.Contact)
                 .ToListAsync();
@@ -37,6 +38,7 @@ namespace MedNet.API.Repositories.Implementation
         public async Task<Patient?> GetById(Guid id)
         {
             return await dbContext.Patients
+                .AsNoTracking()
                 .Include(p => p.Address)
                 .Include(p => p.Contact)
                 .FirstOrDefaultAsync(x => x.Id == id);
@@ -44,29 +46,13 @@ namespace MedNet.API.Repositories.Implementation
 
         public async Task<Patient?> GetByUserIdAsync(string userId)
         {
-            Console.WriteLine($"[DEBUG] Searching for UserId: '{userId}' (Length: {userId.Length})");
-
             var formattedUserId = userId.Trim();
-
-            var patient = await dbContext.Patients
-                .FromSqlRaw("SELECT * FROM Patients WHERE CAST(UserId AS VARCHAR(36)) = @userId",
-                             new SqlParameter("userId", SqlDbType.VarChar) { Size = 36, Value = formattedUserId })
-                .FirstOrDefaultAsync();
-
-            if (patient == null)
-            {
-                Console.WriteLine($"[ERROR] No patient found for UserId: '{formattedUserId}' (Length: {formattedUserId.Length})");
-            }
-            else
-            {
-                Console.WriteLine($"[SUCCESS] Found patient: {patient.FirstName} {patient.LastName}");
-            }
-
-            return patient;
+            return await dbContext.Patients
+                .AsNoTracking()
+                .Include(p => p.Address)
+                .Include(p => p.Contact)
+                .FirstOrDefaultAsync(x => x.UserId == formattedUserId);
         }
-
-
-
 
         public async Task<Patient?> UpdateAsync(Patient patient)
         {
@@ -95,7 +81,6 @@ namespace MedNet.API.Repositories.Implementation
             await dbContext.SaveChangesAsync();
             return existingPatient;
         }
-
         public async Task<IDbContextTransaction> BeginTransactionAsync()
         {
             return await dbContext.Database.BeginTransactionAsync();

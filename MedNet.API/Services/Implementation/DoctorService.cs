@@ -117,11 +117,6 @@ namespace MedNet.API.Services
         {
             var doctors = await doctorRepository.GetAllAsync();
 
-            var specializationDtos = await specializationService.GetAllSpecializationsAsync();
-            var qualificationDtos = await qualificationService.GetAllQualificationsAsync();
-            var addressDtos = await addressService.GetAllAddressesAsync();
-            var contactDtos = await contactService.GetAllContactsAsync();
-
             return doctors.Select(doctor => new DoctorDto
             {
                 Id = doctor.Id,
@@ -131,21 +126,34 @@ namespace MedNet.API.Services
                 Gender = doctor.Gender,
                 LicenseNumber = doctor.LicenseNumber,
                 YearsOfExperience = doctor.YearsOfExperience,
-                Address = addressDtos.FirstOrDefault(a => a.Id == doctor.AddressId),
-                Contact = contactDtos.FirstOrDefault(c => c.Id == doctor.ContactId),
-                Specializations = specializationDtos
-                    .Where(dto => doctor.DoctorSpecializations.Select(ds => ds.SpecializationId).Contains(dto.Id))
-                    .Select(dto => dto.Name)
+                Address = doctor.Address != null ? new AddressDto
+                {
+                    Id = doctor.Address.Id,
+                    Street = doctor.Address.Street,
+                    StreetNr = doctor.Address.StreetNr,
+                    City = doctor.Address.City,
+                    State = doctor.Address.State,
+                    PostalCode = doctor.Address.PostalCode,
+                    Country = doctor.Address.Country
+                } : null,
+
+                Contact = doctor.Contact != null ? new ContactDto
+                {
+                    Id = doctor.Contact.Id,
+                    Phone = doctor.Contact.Phone,
+                    Email = doctor.Contact.Email,
+                } : null,
+                Specializations = doctor.DoctorSpecializations
+                    .Select(ds => ds.Specialization.Name)
                     .ToList(),
-                Qualifications = qualificationDtos
-                    .Where(dto => doctor.Qualifications.Select(q => q.Id).Contains(dto.Id))
-                    .Select(dto => new QualificationDto
+                Qualifications = doctor.Qualifications
+                    .Select(q => new QualificationDto
                     {
-                        Id = dto.Id,
-                        Degree = dto.Degree,
-                        Institution = dto.Institution,
-                        StudiedYears = dto.StudiedYears,
-                        YearOfCompletion = dto.YearOfCompletion
+                        Id = q.Id,
+                        Degree = q.Degree,
+                        Institution = q.Institution,
+                        StudiedYears = q.StudiedYears,
+                        YearOfCompletion = q.YearOfCompletion
                     }).ToList()
             });
         }

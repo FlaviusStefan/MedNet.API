@@ -39,7 +39,8 @@ namespace MedNet.API.Repositories.Implementation
                 .Include(d => d.Address)
                 .Include(d => d.Contact)
                 .Include(d => d.DoctorSpecializations)
-                .ThenInclude(d => d.Specialization)
+                    .ThenInclude(d => d.Specialization)
+                .Include(d => d.Qualifications)
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
 
