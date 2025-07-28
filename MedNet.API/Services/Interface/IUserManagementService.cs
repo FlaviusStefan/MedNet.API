@@ -6,5 +6,6 @@ namespace MedNet.API.Services.Interface
     {
         Task<IdentityResult> CreateUserAsync(string email, string password);
         Task<IdentityResult> AssignRoleAsync(string email, string role);
+        Task<IdentityResult> DeleteUserByIdAsync(string userId);
     }
 }

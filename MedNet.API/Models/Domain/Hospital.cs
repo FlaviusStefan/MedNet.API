@@ -1,8 +1,12 @@
-﻿namespace MedNet.API.Models.Domain
+﻿using Microsoft.AspNetCore.Identity;
+
+namespace MedNet.API.Models.Domain
 {
     public class Hospital
     {
         public Guid Id { get; set; }
+        public string? IdentityUserId { get; set; }
+        public IdentityUser? IdentityUser { get; set; }
         public string Name { get; set; }
         public Guid AddressId { get; set; }
         public Address Address { get; set; }

@@ -4,6 +4,7 @@ using MedNet.API.Models.DTO;
 using MedNet.API.Repositories.Implementation;
 using MedNet.API.Repositories.Interface;
 using MedNet.API.Services.Interface;
+using Microsoft.AspNetCore.Identity;
 using System.Numerics;
 
 namespace MedNet.API.Services.Implementation
@@ -16,13 +17,15 @@ namespace MedNet.API.Services.Implementation
         private readonly IInsuranceService insuranceService;
         private readonly IMedicationService medicationService;
         private readonly IMedicalFileService medicalFileService;
+        private readonly IUserManagementService userManagementService;
 
-        public PatientService(IPatientRepository patientRepository, 
-            IAddressService addressService, 
+        public PatientService(IPatientRepository patientRepository,
+            IAddressService addressService,
             IContactService contactService,
             IInsuranceService insuranceService,
             IMedicationService medicationService,
-            IMedicalFileService medicalFileService)
+            IMedicalFileService medicalFileService,
+            IUserManagementService userManagementService)
         {
             this.patientRepository = patientRepository;
             this.addressService = addressService;
@@ -30,6 +33,7 @@ namespace MedNet.API.Services.Implementation
             this.insuranceService = insuranceService;
             this.medicationService = medicationService;
             this.medicalFileService = medicalFileService;
+            this.userManagementService = userManagementService;
         }
 
 
@@ -298,6 +302,16 @@ namespace MedNet.API.Services.Implementation
                     await contactService.DeleteContactAsync(patient.Contact.Id);
                 }
 
+                if (!string.IsNullOrEmpty(patient.UserId))
+                {
+                    var identityResult = await userManagementService.DeleteUserByIdAsync(patient.UserId);
+                    if (!identityResult.Succeeded)
+                    {
+                        await transaction.RollbackAsync();
+                        throw new CustomException("Failed to delete associated Identity user: " +
+                            string.Join(", ", identityResult.Errors.Select(e => e.Description)));
+                    }
+                }
 
                 await transaction.CommitAsync();
 

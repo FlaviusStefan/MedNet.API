@@ -4,6 +4,7 @@ using MedNet.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MedNet.API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250728103921_FixCascadeDeleteConflicts")]
+    partial class FixCascadeDeleteConflicts
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -134,9 +137,6 @@ namespace MedNet.API.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("IdentityUserId")
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -153,8 +153,6 @@ namespace MedNet.API.Migrations
                     b.HasIndex("AddressId");
 
                     b.HasIndex("ContactId");
-
-                    b.HasIndex("IdentityUserId");
 
                     b.ToTable("Doctors");
                 });
@@ -201,9 +199,6 @@ namespace MedNet.API.Migrations
                     b.Property<Guid>("ContactId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("IdentityUserId")
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -213,8 +208,6 @@ namespace MedNet.API.Migrations
                     b.HasIndex("AddressId");
 
                     b.HasIndex("ContactId");
-
-                    b.HasIndex("IdentityUserId");
 
                     b.ToTable("Hospitals");
                 });
@@ -304,9 +297,6 @@ namespace MedNet.API.Migrations
                     b.Property<double>("Height")
                         .HasColumnType("float");
 
-                    b.Property<string>("IdentityUserId")
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -323,8 +313,6 @@ namespace MedNet.API.Migrations
                     b.HasIndex("AddressId");
 
                     b.HasIndex("ContactId");
-
-                    b.HasIndex("IdentityUserId");
 
                     b.ToTable("Patients");
                 });
@@ -463,58 +451,6 @@ namespace MedNet.API.Migrations
                     b.ToTable("LabTests");
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUser", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("AccessFailedCount")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Email")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("EmailConfirmed")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("LockoutEnabled")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTimeOffset?>("LockoutEnd")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("NormalizedEmail")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("NormalizedUserName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PasswordHash")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PhoneNumber")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("PhoneNumberConfirmed")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("SecurityStamp")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("TwoFactorEnabled")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("UserName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("IdentityUser");
-                });
-
             modelBuilder.Entity("MedNet.API.Models.Domain.Appointment", b =>
                 {
                     b.HasOne("MedNet.API.Models.Domain.Doctor", "Doctor")
@@ -548,15 +484,9 @@ namespace MedNet.API.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "IdentityUser")
-                        .WithMany()
-                        .HasForeignKey("IdentityUserId");
-
                     b.Navigation("Address");
 
                     b.Navigation("Contact");
-
-                    b.Navigation("IdentityUser");
                 });
 
             modelBuilder.Entity("MedNet.API.Models.Domain.DoctorHospital", b =>
@@ -611,15 +541,9 @@ namespace MedNet.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "IdentityUser")
-                        .WithMany()
-                        .HasForeignKey("IdentityUserId");
-
                     b.Navigation("Address");
 
                     b.Navigation("Contact");
-
-                    b.Navigation("IdentityUser");
                 });
 
             modelBuilder.Entity("MedNet.API.Models.Domain.MedicalFile", b =>
@@ -658,15 +582,9 @@ namespace MedNet.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "IdentityUser")
-                        .WithMany()
-                        .HasForeignKey("IdentityUserId");
-
                     b.Navigation("Address");
 
                     b.Navigation("Contact");
-
-                    b.Navigation("IdentityUser");
                 });
 
             modelBuilder.Entity("MedNet.API.Models.Domain.Qualification", b =>

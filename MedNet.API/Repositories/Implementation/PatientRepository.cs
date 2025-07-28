@@ -41,6 +41,9 @@ namespace MedNet.API.Repositories.Implementation
                 .AsNoTracking()
                 .Include(p => p.Address)
                 .Include(p => p.Contact)
+                .Include(p => p.Insurances)
+                .Include(p => p.Medications)
+                .Include(p => p.MedicalFiles)
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
 
@@ -51,6 +54,9 @@ namespace MedNet.API.Repositories.Implementation
                 .AsNoTracking()
                 .Include(p => p.Address)
                 .Include(p => p.Contact)
+                .Include(p => p.Insurances)
+                .Include(p => p.Medications)
+                .Include(p => p.MedicalFiles)
                 .FirstOrDefaultAsync(x => x.UserId == formattedUserId);
         }
 

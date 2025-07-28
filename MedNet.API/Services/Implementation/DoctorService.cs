@@ -18,6 +18,7 @@ namespace MedNet.API.Services
         private readonly IQualificationService qualificationService;
         private readonly IUserManagementService userManagementService;
 
+
         public DoctorService(
             IDoctorRepository doctorRepository,
             IAddressService addressService,
@@ -254,6 +255,8 @@ namespace MedNet.API.Services
 
             try
             {
+                await doctorRepository.DeleteAsync(id);
+
                 if (doctor.Address != null)
                 {
                     await addressService.DeleteAddressAsync(doctor.Address.Id);
@@ -263,8 +266,6 @@ namespace MedNet.API.Services
                 {
                     await contactService.DeleteContactAsync(doctor.Contact.Id);
                 }
-
-                await doctorRepository.DeleteAsync(id);
 
                 await transaction.CommitAsync();
 

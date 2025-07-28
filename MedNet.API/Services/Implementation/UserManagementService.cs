@@ -30,5 +30,16 @@ namespace MedNet.API.Services.Implementation
 
             return await _userManager.AddToRoleAsync(user, role);
         }
+
+        public async Task<IdentityResult> DeleteUserByIdAsync(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                throw new Exception($"User with ID {userId} not found.");
+            }
+
+            return await _userManager.DeleteAsync(user);
+        }
     }
 }
