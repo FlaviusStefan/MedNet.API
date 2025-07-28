@@ -17,33 +17,33 @@ namespace MedNet.API.Controllers
             this.doctorService = doctorService;
         }
 
-        [Authorize(Roles = "Admin")]
-        [HttpPost]
-        public async Task<IActionResult> CreateDoctor(CreateDoctorRequestDto request)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+        //[Authorize(Roles = "Admin")]
+        //[HttpPost]
+        //public async Task<IActionResult> CreateDoctor(CreateDoctorRequestDto request)
+        //{
+        //    if (!ModelState.IsValid)
+        //    {
+        //        return BadRequest(ModelState);
+        //    }
 
-            try
-            {
-                var doctor = await doctorService.CreateDoctorAsync(request);
+        //    try
+        //    {
+        //        var doctor = await doctorService.CreateDoctorAsync(request);
 
                 
-                var response = new
-                {
-                    message = "Doctor created successfully.",
-                    doctor
-                };
+        //        var response = new
+        //        {
+        //            message = "Doctor created successfully.",
+        //            doctor
+        //        };
 
-                return CreatedAtAction(nameof(GetDoctorById), new { id = doctor.Id }, new {  response });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, "An error occurred while creating the doctor.");
-            }
-        }
+        //        return CreatedAtAction(nameof(GetDoctorById), new { id = doctor.Id }, new {  response });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(500, "An error occurred while creating the doctor.");
+        //    }
+        //}
 
 
         [Authorize(Roles = "Admin,Doctor,Patient")]

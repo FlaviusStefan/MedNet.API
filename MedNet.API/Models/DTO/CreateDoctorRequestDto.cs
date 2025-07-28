@@ -9,6 +9,7 @@ namespace MedNet.API.Models.DTO
 
         [Required(ErrorMessage = "Last Name is required.")]
         public string LastName { get; set; }
+        public string UserId { get;set; }
 
         [Required(ErrorMessage = "Date of birth is required.")]
         public DateTime DateOfBirth { get; set; }
@@ -21,6 +22,9 @@ namespace MedNet.API.Models.DTO
 
         [Required(ErrorMessage = "Years of experience is required.")]
         public int YearsOfExperience { get; set; }
+
+        [Required(ErrorMessage = "Qualification is required.")]
+        public string Qualification { get; set; }
 
         [Required(ErrorMessage = "Address is required.")]
         public CreateAddressRequestDto Address { get; set; }

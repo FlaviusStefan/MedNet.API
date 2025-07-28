@@ -2,7 +2,7 @@
 
 namespace MedNet.API.Models.DTO.Auth
 {
-    public class RegisterPatientDto
+    public class RegisterDoctorByAdminDto
     {
         // USER AUTH FIELDS
         [Required(ErrorMessage = "Email is required.")]
@@ -13,10 +13,6 @@ namespace MedNet.API.Models.DTO.Auth
         [MinLength(8, ErrorMessage = "Password must be at least 8 characters.")]
         [RegularExpression(@"^(?=.*[A-Z])(?=.*[\W_]).+$", ErrorMessage = "Password must contain at least one uppercase letter and one non-alphanumeric character.")]
         public string Password { get; set; }
-
-        [Required(ErrorMessage = "Confirm Password is required.")]
-        [Compare("Password", ErrorMessage = "Passwords do not match.")]
-        public string ConfirmPassword { get; set; }
 
         // PERSONAL INFO
         [Required(ErrorMessage = "First name is required.")]
@@ -34,16 +30,21 @@ namespace MedNet.API.Models.DTO.Auth
         [Required(ErrorMessage = "Gender is required.")]
         public string Gender { get; set; }
 
-        [Required(ErrorMessage = "Height is required.")]
-        public double Height { get; set; }
+        [Required(ErrorMessage = "Qualification is required.")]
+        public string Qualification { get; set; }
 
-        [Required(ErrorMessage = "Weight is required.")]
-        public double Weight { get; set; }
+        [Required(ErrorMessage = "LicenseNumber is required.")]
+        public string LicenseNumber { get; set; }
+
+        [Required(ErrorMessage = "YearsOfExperience is required.")]
+        public int YearsOfExperience { get; set; }
+
+        // RELATIONSHIPS
+        [Required(ErrorMessage = "At least one specialization must be selected.")]
+        public List<Guid> SpecializationIds { get; set; }
 
         // ADDRESS INFO
         [Required(ErrorMessage = "Address is required.")]
         public CreateAddressRequestDto Address { get; set; }
-
     }
-
 }

@@ -60,26 +60,25 @@ namespace MedNet.API.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin")]
+        [HttpPost("register-doctor-by-admin")]
+        public async Task<IActionResult> RegisterDoctorByAdmin([FromBody] RegisterDoctorByAdminDto registerDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
 
-        //[Authorize(Roles = "Admin")]
-        //[HttpPost("register/doctor")]
-        //public async Task<IActionResult> RegisterDoctor([FromBody] RegisterDoctorDto registerDoctorDto)
-        //{
-        //    if (!ModelState.IsValid)
-        //    {
-        //        return BadRequest(ModelState);
-        //    }
-
-        //    try
-        //    {
-        //        var doctor = await _authService.RegisterDoctorAsync(registerDoctorDto);
-        //        return CreatedAtAction(nameof(RegisterDoctor), new { id = doctor.Id }, doctor);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return StatusCode(500, ex.Message);
-        //    }
-        //}
+            try
+            {
+                var message = await _authService.RegisterDoctorByAdminAsync(registerDto);
+                return Ok(new { message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
 
 
         [AllowAnonymous]
@@ -100,6 +99,5 @@ namespace MedNet.API.Controllers
             return Ok(new { token });
         }
 
-        // test
     }
 }

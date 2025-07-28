@@ -43,19 +43,17 @@ namespace MedNet.API.Services
 
             try
             {
-                // Validate specializations
                 var validSpecializations = await specializationService.ValidateSpecializationsAsync(request.SpecializationIds);
 
-                // Create address and contact
                 var addressDto = await addressService.CreateAddressAsync(request.Address);
                 var contactDto = await contactService.CreateContactAsync(request.Contact);
 
-                // Create the Doctor entity
                 var doctor = new Doctor
                 {
                     Id = Guid.NewGuid(),
                     FirstName = request.FirstName,
                     LastName = request.LastName,
+                    UserId = request.UserId.Trim(),
                     DateOfBirth = request.DateOfBirth,
                     Gender = request.Gender,
                     LicenseNumber = request.LicenseNumber,
@@ -69,27 +67,7 @@ namespace MedNet.API.Services
                     }).ToList()
                 };
 
-                // Save the doctor entity in the database
                 await doctorRepository.CreateAsync(doctor);
-
-                // Use UserManagementService to create user
-                var userResult = await userManagementService.CreateUserAsync(request.Email, request.Password);
-
-                if (!userResult.Succeeded)
-                {
-                    await transaction.RollbackAsync();
-                    throw new CustomException("Failed to create user: " + string.Join(", ", userResult.Errors.Select(e => e.Description)));
-                }
-
-                // Assign the "Doctor" role
-                var roleResult = await userManagementService.AssignRoleAsync(request.Email, "Doctor");
-
-                if (!roleResult.Succeeded)
-                {
-                    await transaction.RollbackAsync();
-                    throw new CustomException("Failed to assign Doctor role: " + string.Join(", ", roleResult.Errors.Select(e => e.Description)));
-                }
-
                 await transaction.CommitAsync();
 
                 return new CreatedDoctorDto
@@ -265,6 +243,17 @@ namespace MedNet.API.Services
                 if (doctor.Contact != null)
                 {
                     await contactService.DeleteContactAsync(doctor.Contact.Id);
+                }
+
+                if (!string.IsNullOrEmpty(doctor.UserId))
+                {
+                    var identityResult = await userManagementService.DeleteUserByIdAsync(doctor.UserId);
+                    if (!identityResult.Succeeded)
+                    {
+                        await transaction.RollbackAsync();
+                        throw new CustomException("Failed to delete associated Identity user: " +
+                            string.Join(", ", identityResult.Errors.Select(e => e.Description)));
+                    }
                 }
 
                 await transaction.CommitAsync();

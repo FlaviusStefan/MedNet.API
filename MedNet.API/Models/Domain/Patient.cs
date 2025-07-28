@@ -7,6 +7,7 @@ namespace MedNet.API.Models.Domain
         public Guid Id { get; set; }
         public string? IdentityUserId { get; set; }
         public IdentityUser? IdentityUser { get; set; }
+        public string UserId { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public DateTime DateOfBirth { get; set; }
@@ -17,8 +18,6 @@ namespace MedNet.API.Models.Domain
         public Address Address { get; set; }
         public Guid ContactId { get; set; }
         public Contact Contact { get; set; }
-
-        public string UserId { get; set; }
         public ICollection<MedicalFile> MedicalFiles { get; set; } = new List<MedicalFile>();
         public ICollection<Medication> Medications { get; set; } = new List<Medication>();
         public ICollection<Insurance> Insurances { get; set; } = new List<Insurance>();
