@@ -171,7 +171,6 @@ namespace MedNet.API.Services.Implementation
 
         public async Task<string> RegisterDoctorByAdminAsync(RegisterDoctorByAdminDto registerDto)
         {
-            // Step 1: Create IdentityUser with the admin-supplied password
             var user = new IdentityUser
             {
                 UserName = registerDto.Email,
@@ -185,34 +184,43 @@ namespace MedNet.API.Services.Implementation
                 throw new Exception(string.Join(", ", result.Errors.Select(e => e.Description)));
             }
 
-            // Step 2: Assign "Doctor" Role to the user
-            await _userManager.AddToRoleAsync(user, UserRole.Doctor.ToString());
 
-            // Step 3: Create Patient Profile via PatientService
-            var createDoctorDto = new CreateDoctorRequestDto
+            try
             {
-                FirstName = registerDto.FirstName,
-                LastName = registerDto.LastName,
-                UserId = user.Id,  
-                DateOfBirth = registerDto.DateOfBirth,
-                Gender = registerDto.Gender,
-                Qualification = registerDto.Qualification,
-                YearsOfExperience = registerDto.YearsOfExperience,
-                LicenseNumber = registerDto.LicenseNumber,
-                Address = registerDto.Address,
-                SpecializationIds = registerDto.SpecializationIds,
-                Contact = new CreateContactRequestDto
+                // Step 3: Assign "Doctor" Role to the user
+                await _userManager.AddToRoleAsync(user, UserRole.Doctor.ToString());
+
+                // Step 4: Create Doctor Profile via DoctorService
+                var createDoctorDto = new CreateDoctorRequestDto
                 {
-                    Email = registerDto.Email,
-                    Phone = registerDto.PhoneNumber
-                }
-            };
+                    FirstName = registerDto.FirstName,
+                    LastName = registerDto.LastName,
+                    UserId = user.Id,
+                    DateOfBirth = registerDto.DateOfBirth,
+                    Gender = registerDto.Gender,
+                    Qualification = registerDto.Qualification,
+                    YearsOfExperience = registerDto.YearsOfExperience,
+                    LicenseNumber = registerDto.LicenseNumber,
+                    Address = registerDto.Address,
+                    SpecializationIds = registerDto.SpecializationIds,
+                    Contact = new CreateContactRequestDto
+                    {
+                        Email = registerDto.Email,
+                        Phone = registerDto.PhoneNumber
+                    }
+                };
 
-            await _doctorService.CreateDoctorAsync(createDoctorDto);
+                await _doctorService.CreateDoctorAsync(createDoctorDto);
 
-            // You could return a success message instead of a token in this case,
-            // since the doctor might not log in immediately.
-            return "Doctor account created successfully.";
+                return "Doctor account created successfully.";
+            }
+            catch (Exception)
+            {
+                // Rollback user creation if doctor creation fails
+                await _userManager.DeleteAsync(user);
+                throw;
+            }
+
         }
     }
 }
