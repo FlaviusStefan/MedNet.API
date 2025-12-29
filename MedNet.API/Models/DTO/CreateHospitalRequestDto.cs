@@ -7,6 +7,7 @@ namespace MedNet.API.Models.DTO
         [Required(ErrorMessage = "Name is required.")]
         public string Name {  get; set; }
 
+        public string UserId { get; set; }
 
         [Required(ErrorMessage = "Address is required.")]
         public CreateAddressRequestDto Address { get; set; }

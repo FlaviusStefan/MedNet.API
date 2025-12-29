@@ -1,4 +1,5 @@
-﻿using MedNet.API.Models.DTO;
+﻿using MedNet.API.Models.Domain;
+using MedNet.API.Models.DTO;
 
 namespace MedNet.API.Services.Interface
 {
@@ -10,5 +11,7 @@ namespace MedNet.API.Services.Interface
         Task<IEnumerable<QualificationDto>> GetQualificationsByDoctorIdAsync(Guid doctorId);
         Task<QualificationDto?> UpdateQualificationAsync(Guid id, UpdateQualificationRequestDto request);
         Task<QualificationDto?> DeleteQualificationAsync(Guid id);
+        Task<IEnumerable<TDto>> GetQualificationsByDoctorIdAsync<TDto>(Guid doctorId, Func<Qualification, TDto> selector);
+
     }
 }

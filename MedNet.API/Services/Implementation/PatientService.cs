@@ -91,9 +91,8 @@ namespace MedNet.API.Services.Implementation
 
             foreach (var patient in patients)
             {
-                var addressDto = new AddressDto
+                var addressDto = new AddressResponseDto
                 {
-                    Id = patient.AddressId,
                     Street = patient.Address?.Street,
                     StreetNr = patient.Address?.StreetNr ?? 0,
                     City = patient.Address?.City,
@@ -103,9 +102,8 @@ namespace MedNet.API.Services.Implementation
 
                 };
 
-                var contactDto = new ContactDto
+                var contactDto = new ContactResponseDto
                 {
-                    Id = patient.ContactId,
                     Phone = patient.Contact?.Phone,
                     Email = patient.Contact?.Email
                 };
@@ -127,7 +125,7 @@ namespace MedNet.API.Services.Implementation
             return patientDtos;
         }
 
-        public async Task<PatientDto?> GetPatientByUserIdAsync(string userId)
+        public async Task<PatientResponseDto?> GetPatientByUserIdAsync(string userId)
         {
             Console.WriteLine($"[DEBUG] Searching for patient with UserId: {userId}");
 
@@ -139,7 +137,29 @@ namespace MedNet.API.Services.Implementation
             }
 
             var addressDto = await addressService.GetAddressByIdAsync(patient.AddressId);
+            AddressResponseDto? addressResponse = null;
+            if (addressDto != null)
+            {
+                addressResponse = new AddressResponseDto
+                {
+                    Street = addressDto.Street,
+                    StreetNr = addressDto.StreetNr,
+                    City = addressDto.City,
+                    State = addressDto.State,
+                    PostalCode = addressDto.PostalCode,
+                    Country = addressDto.Country
+                };
+            }
             var contactDto = await contactService.GetContactByIdAsync(patient.ContactId);
+            ContactResponseDto? contactResponse = null;
+            if (contactDto != null)
+            {
+                contactResponse = new ContactResponseDto
+                {
+                    Phone = contactDto.Phone,
+                    Email = contactDto.Email
+                };
+            }
 
             var insurances = (await insuranceService.GetInsurancesByPatientIdAsync(patient.Id))
                 .Select(i => new DisplayInsuranceDto
@@ -172,7 +192,7 @@ namespace MedNet.API.Services.Implementation
 
             Console.WriteLine($"[SUCCESS] Found patient: {patient.FirstName} {patient.LastName}");
 
-            return new PatientDto
+            return new PatientResponseDto
             {
                 Id = patient.Id,
                 FirstName = patient.FirstName,
@@ -181,8 +201,8 @@ namespace MedNet.API.Services.Implementation
                 Gender = patient.Gender,
                 Height = patient.Height,
                 Weight = patient.Weight,
-                Address = addressDto,
-                Contact = contactDto,
+                Address = addressResponse,
+                Contact = contactResponse,
                 Insurances = insurances, 
                 Medications = medications,
                 MedicalFiles = medicalFiles
@@ -191,13 +211,36 @@ namespace MedNet.API.Services.Implementation
 
 
 
-        public async Task<PatientDto?> GetPatientByIdAsync(Guid id)
+        public async Task<PatientResponseDto?> GetPatientByIdAsync(Guid id)
         {
             var patient = await patientRepository.GetById(id);
             if (patient == null) return null;
 
             var addressDto = await addressService.GetAddressByIdAsync(patient.AddressId);
+            AddressResponseDto? addressResponse = null;
+            if (addressDto != null)
+            {
+                addressResponse = new AddressResponseDto
+                {
+                    Street = addressDto.Street,
+                    StreetNr = addressDto.StreetNr,
+                    City = addressDto.City,
+                    State = addressDto.State,
+                    PostalCode = addressDto.PostalCode,
+                    Country = addressDto.Country
+                };
+            }
             var contactDto = await contactService.GetContactByIdAsync(patient.ContactId);
+            ContactResponseDto? contactResponse = null;
+            if (contactDto != null)
+            {
+                contactResponse = new ContactResponseDto
+                {
+                    Phone = contactDto.Phone,
+                    Email = contactDto.Email
+                };
+            }
+
             var insurances = (await insuranceService.GetInsurancesByPatientIdAsync(patient.Id))
                 .Select(i => new DisplayInsuranceDto
                 {
@@ -227,7 +270,7 @@ namespace MedNet.API.Services.Implementation
                     DateUploaded = mf.DateUploaded
                 }).ToList();
 
-            return new PatientDto
+            return new PatientResponseDto
             {
                 Id = patient.Id,
                 FirstName = patient.FirstName,
@@ -236,8 +279,8 @@ namespace MedNet.API.Services.Implementation
                 Gender = patient.Gender,
                 Height = patient.Height,
                 Weight = patient.Weight,
-                Address = addressDto,
-                Contact = contactDto,
+                Address = addressResponse,
+                Contact = contactResponse,
                 Insurances = insurances,
                 Medications = medications,
                 MedicalFiles = medicalFiles

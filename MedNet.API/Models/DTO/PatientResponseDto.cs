@@ -2,7 +2,7 @@
 
 namespace MedNet.API.Models.DTO
 {
-    public class PatientDto
+    public class PatientResponseDto
     {
         public Guid Id { get; set; }
         public string FirstName { get; set; }

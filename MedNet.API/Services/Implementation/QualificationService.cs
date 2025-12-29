@@ -129,5 +129,10 @@ namespace MedNet.API.Services.Implementation
                 YearOfCompletion = qualification.YearOfCompletion
             };
         }
+        public async Task<IEnumerable<TDto>> GetQualificationsByDoctorIdAsync<TDto>(Guid doctorId, Func<Qualification, TDto> selector)
+        {
+            var qualifications = await qualificationRepository.GetAllByDoctorIdAsync(doctorId);
+            return qualifications.Select(selector).ToList();
+        }
     }
 }

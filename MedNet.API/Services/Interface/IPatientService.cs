@@ -6,8 +6,8 @@ namespace MedNet.API.Services.Interface
     {
         Task<CreatedPatientDto> CreatePatientAsync(CreatePatientRequestDto request);
         Task<IEnumerable<PatientBasicSummaryDto>> GetAllPatientsAsync();
-        Task<PatientDto?> GetPatientByIdAsync(Guid id);
-        Task<PatientDto?> GetPatientByUserIdAsync(string userId); 
+        Task<PatientResponseDto?> GetPatientByIdAsync(Guid id);
+        Task<PatientResponseDto?> GetPatientByUserIdAsync(string userId); 
         Task<UpdatedPatientDto?> UpdatePatientAsync(Guid id, UpdatePatientRequestDto request);
         Task<string?> DeletePatientAsync(Guid id);
 

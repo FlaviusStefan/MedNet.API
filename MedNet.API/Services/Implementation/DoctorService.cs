@@ -92,11 +92,11 @@ namespace MedNet.API.Services
         }
 
 
-        public async Task<IEnumerable<DoctorDto>> GetAllDoctorsAsync()
+        public async Task<IEnumerable<DoctorResponseDto>> GetAllDoctorsAsync()
         {
             var doctors = await doctorRepository.GetAllAsync();
 
-            return doctors.Select(doctor => new DoctorDto
+            return doctors.Select(doctor => new DoctorResponseDto
             {
                 Id = doctor.Id,
                 FirstName = doctor.FirstName,
@@ -105,9 +105,8 @@ namespace MedNet.API.Services
                 Gender = doctor.Gender,
                 LicenseNumber = doctor.LicenseNumber,
                 YearsOfExperience = doctor.YearsOfExperience,
-                Address = doctor.Address != null ? new AddressDto
+                Address = doctor.Address != null ? new AddressResponseDto
                 {
-                    Id = doctor.Address.Id,
                     Street = doctor.Address.Street,
                     StreetNr = doctor.Address.StreetNr,
                     City = doctor.Address.City,
@@ -116,9 +115,8 @@ namespace MedNet.API.Services
                     Country = doctor.Address.Country
                 } : null,
 
-                Contact = doctor.Contact != null ? new ContactDto
+                Contact = doctor.Contact != null ? new ContactResponseDto
                 {
-                    Id = doctor.Contact.Id,
                     Phone = doctor.Contact.Phone,
                     Email = doctor.Contact.Email,
                 } : null,
@@ -126,9 +124,8 @@ namespace MedNet.API.Services
                     .Select(ds => ds.Specialization.Name)
                     .ToList(),
                 Qualifications = doctor.Qualifications
-                    .Select(q => new QualificationDto
+                    .Select(q => new QualificationResponseDto
                     {
-                        Id = q.Id,
                         Degree = q.Degree,
                         Institution = q.Institution,
                         StudiedYears = q.StudiedYears,
@@ -137,18 +134,27 @@ namespace MedNet.API.Services
             });
         }
 
-        public async Task<DoctorDto?> GetDoctorByIdAsync(Guid id)
+        public async Task<DoctorResponseDto?> GetDoctorByIdAsync(Guid id)
         {
             var doctor = await doctorRepository.GetById(id);
 
             if (doctor == null) return null;
 
             var specializationDtos = await specializationService.GetAllSpecializationsAsync();
-            var qualificationDtos = await qualificationService.GetAllQualificationsAsync();
+            var qualificationDtos = await qualificationService.GetQualificationsByDoctorIdAsync(doctor.Id);
+            var qualificationResponses = await qualificationService.GetQualificationsByDoctorIdAsync<QualificationResponseDto>(
+                doctor.Id,
+                q => new QualificationResponseDto
+                {
+                    Degree = q.Degree,
+                    Institution = q.Institution,
+                            StudiedYears = q.StudiedYears,
+            YearOfCompletion = q.YearOfCompletion
+                });
             var addressDto = await addressService.GetAddressByIdAsync(doctor.AddressId);
             var contactDto = await contactService.GetContactByIdAsync(doctor.ContactId);
 
-            return new DoctorDto
+            return new DoctorResponseDto
             {
                 Id = doctor.Id,
                 FirstName = doctor.FirstName,
@@ -157,22 +163,24 @@ namespace MedNet.API.Services
                 Gender = doctor.Gender,
                 LicenseNumber = doctor.LicenseNumber,
                 YearsOfExperience = doctor.YearsOfExperience,
-                Address = addressDto,
-                Contact = contactDto,
-                Specializations = specializationDtos
-                    .Where(dto => doctor.DoctorSpecializations.Select(ds => ds.SpecializationId).Contains(dto.Id))
-                    .Select(dto => dto.Name)
+                Address = doctor.Address != null ? new AddressResponseDto
+                {
+                    Street = doctor.Address.Street,
+                    StreetNr = doctor.Address.StreetNr,
+                    City = doctor.Address.City,
+                    State = doctor.Address.State,
+                    PostalCode = doctor.Address.PostalCode,
+                    Country = doctor.Address.Country
+                } : null,
+                Contact = doctor.Contact != null ? new ContactResponseDto
+                {
+                    Phone = doctor.Contact.Phone,
+                    Email = doctor.Contact.Email,
+                } : null,
+                Specializations = doctor.DoctorSpecializations
+                    .Select(ds => ds.Specialization.Name)
                     .ToList(),
-                Qualifications = qualificationDtos
-                    .Where(dto => doctor.Qualifications.Select(q => q.Id).Contains(dto.Id))
-                    .Select(dto => new QualificationDto
-                    {
-                        Id = dto.Id,
-                        Degree = dto.Degree,
-                        Institution = dto.Institution,
-                        StudiedYears = dto.StudiedYears,
-                        YearOfCompletion = dto.YearOfCompletion
-                    }).ToList()
+                Qualifications = qualificationResponses.ToList()
             };
         }
 
