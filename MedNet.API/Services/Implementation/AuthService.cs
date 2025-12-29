@@ -19,14 +19,16 @@ namespace MedNet.API.Services.Implementation
         private readonly IConfiguration _configuration;
         private readonly IPatientService _patientService;
         private readonly IDoctorService _doctorService;
+        private readonly IHospitalService _hospitalService;
 
-        public AuthService(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager, IConfiguration configuration, IPatientService patientService, IDoctorService doctorService)
+        public AuthService(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager, IConfiguration configuration, IPatientService patientService, IDoctorService doctorService, IHospitalService hospitalService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _configuration = configuration;
             _patientService = patientService;
             _doctorService = doctorService;
+            _hospitalService = hospitalService;
         }
         public async Task<string> RegisterPatientAsync(RegisterPatientDto registerPatientDto)
         {
@@ -221,6 +223,43 @@ namespace MedNet.API.Services.Implementation
                 throw;
             }
 
+        }
+
+        public async Task<string> RegisterHospitalByAdminAsync(RegisterHospitalByAdminDto registerDto)
+        {
+            // Step 1: Create IdentityUser with the admin-supplied password
+            var user = new IdentityUser
+            {
+                UserName = registerDto.Email,
+                Email = registerDto.Email,
+                PhoneNumber = registerDto.PhoneNumber
+            };
+
+            var result = await _userManager.CreateAsync(user, registerDto.Password);
+            if (!result.Succeeded)
+            {
+                throw new Exception(string.Join(", ", result.Errors.Select(e => e.Description)));
+            }
+
+            // Step 3: Create hospital Profile via hospitalService
+            var createHospitalDto = new CreateHospitalRequestDto
+            {
+                Name = registerDto.Name,
+                UserId = user.Id,  // Link the IdentityUser to the hospital record
+                Address = registerDto.Address,
+                // Use the same email & phone as in the user registration
+                Contact = new CreateContactRequestDto
+                {
+                    Email = registerDto.Email,
+                    Phone = registerDto.PhoneNumber
+                }
+            };
+
+            await _hospitalService.CreateHospitalAsync(createHospitalDto);
+
+            // You could return a success message instead of a token in this case,
+            // since the hospital might not log in immediately.
+            return "Hospital account created successfully.";
         }
     }
 }

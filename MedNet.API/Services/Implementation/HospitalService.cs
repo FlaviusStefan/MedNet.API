@@ -56,37 +56,91 @@ namespace MedNet.API.Services.Implementation
             
         }
 
-        public async Task<IEnumerable<HospitalDto>> GetAllHospitalsAsync()
+        public async Task<IEnumerable<HospitalResponseDto>> GetAllHospitalsAsync()
         {
             var hospitals = await hospitalRepository.GetAllAsync();
 
-            var addressDtos = await addressService.GetAllAddressesAsync();
-            var contactDtos = await contactService.GetAllContactsAsync();
+            var result = new List<HospitalResponseDto>();
 
-            return hospitals.Select(hospital => new HospitalDto
+            foreach (var hospital in hospitals)
             {
-                Id = hospital.Id,
-                Name = hospital.Name,
-                Address = addressDtos.FirstOrDefault(a => a.Id == hospital.AddressId),
-                Contact = contactDtos.FirstOrDefault(c => c.Id == hospital.ContactId),
+                // Load address
+                var addressDto = await addressService.GetAddressByIdAsync(hospital.AddressId);
+                AddressResponseDto? addressResponse = null;
+                if (addressDto != null)
+                {
+                    addressResponse = new AddressResponseDto
+                    {
+                        Street = addressDto.Street,
+                        StreetNr = addressDto.StreetNr,
+                        City = addressDto.City,
+                        State = addressDto.State,
+                        PostalCode = addressDto.PostalCode,
+                        Country = addressDto.Country
+                    };
+                }
 
-            }).ToList();
+                // Load contact
+                var contactDto = await contactService.GetContactByIdAsync(hospital.ContactId);
+                ContactResponseDto? contactResponse = null;
+                if (contactDto != null)
+                {
+                    contactResponse = new ContactResponseDto
+                    {
+                        Phone = contactDto.Phone,
+                        Email = contactDto.Email
+                    };
+                }
+
+                result.Add(new HospitalResponseDto
+                {
+                    Id = hospital.Id,
+                    Name = hospital.Name,
+                    Address = addressResponse,
+                    Contact = contactResponse
+                });
+            }
+
+            return result;
         }
 
-        public async Task<HospitalDto?> GetHospitalByIdAsync(Guid id)
+        public async Task<HospitalResponseDto?> GetHospitalByIdAsync(Guid id)
         {
             var hospital = await hospitalRepository.GetById(id);
 
             if (hospital == null) return null;
             var addressDto = await addressService.GetAddressByIdAsync(hospital.AddressId);
+            AddressResponseDto? addressResponse = null;
+            if (addressDto != null)
+            {
+                addressResponse = new AddressResponseDto
+                {
+                    Street = addressDto.Street,
+                    StreetNr = addressDto.StreetNr,
+                    City = addressDto.City,
+                    State = addressDto.State,
+                    PostalCode = addressDto.PostalCode,
+                    Country = addressDto.Country
+                };
+            }
             var contactDto = await contactService.GetContactByIdAsync(hospital.ContactId);
+            ContactResponseDto? contactResponse = null;
+            if (contactDto != null)
+            {
+                contactResponse = new ContactResponseDto
+                {
+                    Phone = contactDto.Phone,
+                    Email = contactDto.Email
+                };
+            }
 
-            return new HospitalDto
+
+            return new HospitalResponseDto
             {
                 Id = hospital.Id,
                 Name = hospital.Name,
-                Address = addressDto,
-                Contact = contactDto
+                Address = addressResponse,
+                Contact = contactResponse
             };
         }
 

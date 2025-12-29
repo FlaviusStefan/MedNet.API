@@ -8,6 +8,7 @@ namespace MedNet.API.Services.Interface
         Task<string> RegisterPatientByAdminAsync(RegisterPatientByAdminDto registerPatientByAdminDto);
         Task<string> RegisterDoctorAsync(RegisterDoctorDto registerDto);
         Task<string> RegisterDoctorByAdminAsync(RegisterDoctorByAdminDto registerDoctorByAdminDto);
+        Task<string> RegisterHospitalByAdminAsync(RegisterHospitalByAdminDto registerHospitalByAdminDto);
         Task<string> LoginAsync(LoginDto loginDto);
     }
 }

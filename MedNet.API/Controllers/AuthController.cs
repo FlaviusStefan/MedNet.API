@@ -80,6 +80,26 @@ namespace MedNet.API.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin")]
+        [HttpPost("register-hospital-by-admin")]
+        public async Task<IActionResult> RegisterHospitalByAdmin([FromBody] RegisterHospitalByAdminDto registerDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                var message = await _authService.RegisterHospitalByAdminAsync(registerDto);
+                return Ok(new { message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
 
         [AllowAnonymous]
         [HttpPost("login")]

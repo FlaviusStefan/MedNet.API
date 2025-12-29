@@ -7,7 +7,7 @@ namespace MedNet.API.Models.Domain
         public Guid Id { get; set; }
         public string? IdentityUserId { get; set; }
         public IdentityUser? IdentityUser { get; set; }
-        public string UserId { get; set; }
+        public string? UserId { get; set; }
         public string Name { get; set; }
         public Guid AddressId { get; set; }
         public Address Address { get; set; }
