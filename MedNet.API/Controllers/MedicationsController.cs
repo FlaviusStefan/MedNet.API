@@ -40,7 +40,7 @@ namespace MedNet.API.Controllers
             }
         }
 
-        [Authorize(Roles = "Admin,Doctor,Patient")]
+        [Authorize(Roles = "Admin")]
         [HttpGet]
         public async Task<IActionResult> GetAllMedications()
         {

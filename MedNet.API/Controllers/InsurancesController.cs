@@ -61,8 +61,8 @@ namespace MedNet.API.Controllers
         [HttpGet("{id:guid}")]
         public async Task<IActionResult> GetInsuranceById(Guid id)
         {
-            var insuranceDto = await insuranceService.GetInsuranceByIdAsync(id);
-            if (insuranceDto == null)
+            var response = await insuranceService.GetInsuranceByIdAsync(id);
+            if (response == null)
             {
                 return NotFound();
             }
@@ -73,13 +73,13 @@ namespace MedNet.API.Controllers
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                              ?? User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
                 var patientRecord = await patientService.GetPatientByUserIdAsync(userId);
-                if (patientRecord == null || patientRecord.Id != insuranceDto.PatientId)
+                if (patientRecord == null || patientRecord.Id != response.PatientId)
                 {
                     return Forbid("You are not allowed to access this insurance.");
                 }
             }
 
-            return Ok(insuranceDto);
+            return Ok(response);
         }
 
 

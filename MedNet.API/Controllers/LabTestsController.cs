@@ -4,6 +4,7 @@ using MedNet.API.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace MedNet.API.Controllers
 {
@@ -12,10 +13,14 @@ namespace MedNet.API.Controllers
     public class LabTestsController : ControllerBase
     {
         private readonly ILabTestService labTestService;
+        private readonly ILabAnalysisService labAnalysisService;
+        private readonly IPatientService patientService;
 
-        public LabTestsController(ILabTestService labTestService)
+        public LabTestsController(ILabTestService labTestService, ILabAnalysisService labAnalysisService, IPatientService patientService)
         {
             this.labTestService = labTestService;
+            this.labAnalysisService = labAnalysisService;
+            this.patientService = patientService;
         }
 
         //[Authorize(Roles = "Admin,Doctor")] // Admin and Doctor can create
@@ -38,7 +43,7 @@ namespace MedNet.API.Controllers
         //    }
         //}
 
-        [Authorize(Roles = "Admin,Doctor,Patient")] // All roles can view
+        [Authorize(Roles = "Admin,Doctor")] // All roles can view
         [HttpGet]
         public async Task<IActionResult> GetAllLabTests()
         {
@@ -55,6 +60,27 @@ namespace MedNet.API.Controllers
             if (response == null)
             {
                 return NotFound();
+            }
+
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (userRole == "Patient")
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                             ?? User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+
+                // get patient record for the current user
+                var patientRecord = await patientService.GetPatientByUserIdAsync(userId);
+                if (patientRecord == null)
+                {
+                    return Forbid("You are not allowed to access this lab test.");
+                }
+
+                // get the lab analysis that owns this test and check its PatientId
+                var analysis = await labAnalysisService.GetLabAnalysisByIdAsync(response.LabAnalysisId);
+                if (analysis == null || analysis.PatientId != patientRecord.Id)
+                {
+                    return Forbid("You are not allowed to access this lab test.");
+                }
             }
 
             return Ok(response);
