@@ -18,24 +18,24 @@ namespace MedNet.API.Controllers
             this.contactService = contactService;
         }
 
-        [Authorize(Roles = "Admin")]
-        [HttpPost]
-        public async Task<IActionResult> CreateContact(CreateContactRequestDto request)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-            try
-            {
-                var contactDto = await contactService.CreateContactAsync(request);
-                return CreatedAtAction(nameof(GetContactById), new { id = contactDto.Id }, contactDto);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, "An error occurred while creating the contact.");
-            }
-        }
+        //[Authorize(Roles = "Admin")]
+        //[HttpPost]
+        //public async Task<IActionResult> CreateContact(CreateContactRequestDto request)
+        //{
+        //    if (!ModelState.IsValid)
+        //    {
+        //        return BadRequest(ModelState);
+        //    }
+        //    try
+        //    {
+        //        var contactDto = await contactService.CreateContactAsync(request);
+        //        return CreatedAtAction(nameof(GetContactById), new { id = contactDto.Id }, contactDto);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(500, "An error occurred while creating the contact.");
+        //    }
+        //}
 
         [Authorize(Roles = "Admin,Doctor")]
         [HttpGet]
