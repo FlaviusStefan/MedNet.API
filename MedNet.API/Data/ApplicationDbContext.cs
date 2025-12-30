@@ -136,7 +136,7 @@ namespace MedNet.API.Data
                 .HasMany(d => d.Appointments)
                 .WithOne(a => a.Doctor)
                 .HasForeignKey(a => a.DoctorId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
             // Hospital Configuration
             modelBuilder.Entity<Hospital>()
@@ -192,7 +192,7 @@ namespace MedNet.API.Data
                 .HasMany(p => p.Appointments)
                 .WithOne(a => a.Patient)
                 .HasForeignKey(a => a.PatientId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Patient>()
                 .HasMany(p => p.LabAnalyses)
@@ -220,18 +220,6 @@ namespace MedNet.API.Data
             // Appointment configuration
             modelBuilder.Entity<Appointment>()
                 .HasKey(a => a.Id);
-
-            modelBuilder.Entity<Appointment>()
-                .HasOne(a => a.Doctor)
-                .WithMany(d => d.Appointments)
-                .HasForeignKey(a => a.DoctorId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Appointment>()
-                .HasOne(a => a.Patient)
-                .WithMany(p => p.Appointments)
-                .HasForeignKey(a => a.PatientId)
-                .OnDelete(DeleteBehavior.Restrict);
 
             // Lab Analyses configuration 
             modelBuilder.Entity<LabAnalysis>()
