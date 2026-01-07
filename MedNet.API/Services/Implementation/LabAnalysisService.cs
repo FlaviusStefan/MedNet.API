@@ -79,7 +79,7 @@ namespace MedNet.API.Services.Implementation
                     .Where(dto => labAnalysis.LabTests.Select(lt => lt.Id).Contains(dto.Id))
                     .Select(dto => new DisplayLabTestDto
                     {
-                        Id = dto.Id,
+                        //Id = dto.Id,
                         TestName = dto.TestName,
                         Result = dto.Result,
                         Units = dto.Units,
@@ -110,7 +110,7 @@ namespace MedNet.API.Services.Implementation
                     .Where(dto => labAnalysis.LabTests.Select(lt => lt.Id).Contains(dto.Id))
                     .Select(dto => new DisplayLabTestDto
                     {
-                        Id = dto.Id,
+                        //Id = dto.Id,
                         TestName = dto.TestName,
                         Result = dto.Result,
                         Units = dto.Units,

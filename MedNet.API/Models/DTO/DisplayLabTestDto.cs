@@ -2,7 +2,7 @@
 {
     public class DisplayLabTestDto
     {
-        public Guid Id { get; set; }
+        //public Guid Id { get; set; }
         public string TestName { get; set; }
         public string Result { get; set; }
         public string Units { get; set; }
