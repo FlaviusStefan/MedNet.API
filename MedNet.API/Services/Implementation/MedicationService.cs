@@ -8,13 +8,17 @@ namespace MedNet.API.Services.Implementation
     public class MedicationService : IMedicationService
     {
         private readonly IMedicationRepository medicationRepository;
-
-        public MedicationService(IMedicationRepository medicationRepository)
+        private readonly ILogger<MedicationService> logger;
+        public MedicationService(IMedicationRepository medicationRepository, ILogger<MedicationService> logger)
         {
             this.medicationRepository = medicationRepository;
+            this.logger = logger;
         }
         public async Task<MedicationDto> CreateMedicationAsync(CreateMedicationRequestDto request)
         {
+            logger.LogInformation("Creating medication for Patient {PatientId}, Name: {Name}, Dosage: {Dosage}",
+                request.PatientId, request.Name, request.Dosage);
+
             var medication = new Medication
             {
                 Id = Guid.NewGuid(),
@@ -25,6 +29,9 @@ namespace MedNet.API.Services.Implementation
             };
 
             await medicationRepository.CreateAsync(medication);
+
+            logger.LogInformation("Medication {MedicationId} created successfully for Patient {PatientId} - {Name}",
+                medication.Id, medication.PatientId, medication.Name);
 
             return new MedicationDto
             {
@@ -38,9 +45,11 @@ namespace MedNet.API.Services.Implementation
 
         public async Task<IEnumerable<MedicationDto>> GetAllMedicationsAsync()
         {
+            logger.LogInformation("Retrieving all medications");
+
             var medications = await medicationRepository.GetAllAsync();
 
-            return medications.Select(medication => new MedicationDto
+            var medicationList = medications.Select(medication => new MedicationDto
             {
                 Id = medication.Id,
                 PatientId = medication.PatientId,
@@ -48,15 +57,25 @@ namespace MedNet.API.Services.Implementation
                 Dosage = medication.Dosage,
                 Frequency = medication.Frequency
             }).ToList();
+
+            logger.LogInformation("Retrieved {Count} medications", medicationList.Count);
+
+            return medicationList;
         }
 
         public async Task<MedicationDto?> GetMedicationByIdAsync(Guid id)
         {
+            logger.LogInformation("Retrieving medication with ID: {MedicationId}", id);
+
             var medication = await medicationRepository.GetById(id);
-            if(medication == null)
+            if (medication == null)
             {
+                logger.LogWarning("Medication not found with ID: {MedicationId}", id);
                 return null;
             }
+
+            logger.LogInformation("Medication {MedicationId} retrieved - Patient: {PatientId}, Name: {Name}",
+                medication.Id, medication.PatientId, medication.Name);
 
             return new MedicationDto
             {
@@ -70,9 +89,11 @@ namespace MedNet.API.Services.Implementation
 
         public async Task<IEnumerable<MedicationDto>> GetMedicationsByPatientIdAsync(Guid patientId)
         {
+            logger.LogInformation("Retrieving medications for Patient {PatientId}", patientId);
+
             var medications = await medicationRepository.GetAllByPatientIdAsync(patientId);
 
-            return medications.Select(medication => new MedicationDto
+            var medicationList = medications.Select(medication => new MedicationDto
             {
                 Id = medication.Id,
                 PatientId = medication.PatientId,
@@ -80,12 +101,26 @@ namespace MedNet.API.Services.Implementation
                 Dosage = medication.Dosage,
                 Frequency = medication.Frequency
             }).ToList();
+
+            logger.LogInformation("Retrieved {Count} medications for Patient {PatientId}",
+                medicationList.Count, patientId);
+
+            return medicationList;
         }
 
         public async Task<MedicationDto> UpdateMedicationAsync(Guid id, UpdateMedicationRequestDto request)
         {
+            logger.LogInformation("Updating medication with ID: {MedicationId}", id);
+
             var existingMedication = await medicationRepository.GetById(id);
-            if (existingMedication == null) return null;
+            if (existingMedication == null)
+            {
+                logger.LogWarning("Medication not found for update with ID: {MedicationId}", id);
+                return null;
+            }
+
+            var oldName = existingMedication.Name;
+            var oldDosage = existingMedication.Dosage;
 
             existingMedication.Name = request.Name;
             existingMedication.Dosage = request.Dosage;
@@ -93,7 +128,14 @@ namespace MedNet.API.Services.Implementation
 
             var updatedMedication = await medicationRepository.UpdateAsync(existingMedication);
 
-            if (updatedMedication == null) return null;
+            if (updatedMedication == null)
+            {
+                logger.LogError("Failed to update medication with ID: {MedicationId}", id);
+                return null;
+            }
+
+            logger.LogInformation("Medication {MedicationId} updated successfully - Name: '{OldName}' → '{NewName}', Dosage: '{OldDosage}' → '{NewDosage}'",
+                id, oldName, updatedMedication.Name, oldDosage, updatedMedication.Dosage);
 
             return new MedicationDto
             {
@@ -104,21 +146,22 @@ namespace MedNet.API.Services.Implementation
                 Frequency = updatedMedication.Frequency
             };
         }
-        public async Task<MedicationDto> DeleteMedicationAsync(Guid id)
+
+        public async Task<string?> DeleteMedicationAsync(Guid id)
         {
+            logger.LogInformation("Deleting medication with ID: {MedicationId}", id);
+
             var medication = await medicationRepository.DeleteAsync(id);
-            if (medication == null) return null;
-
-            return new MedicationDto
+            if (medication == null)
             {
-                Id = medication.Id,
-                PatientId = medication.PatientId,
-                Name = medication.Name,
-                Dosage = medication.Dosage,
-                Frequency = medication.Frequency
-            };
-        }
+                logger.LogWarning("Medication not found for deletion with ID: {MedicationId}", id);
+                return null;
+            }
 
-        
+            logger.LogInformation("Medication {MedicationId} deleted successfully - Patient: {PatientId}, Name: {Name}",
+                medication.Id, medication.PatientId, medication.Name);
+
+            return $"Medication '{medication.Name}' deleted successfully!";
+        }
     }
 }

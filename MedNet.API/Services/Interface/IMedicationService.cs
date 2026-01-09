@@ -9,6 +9,6 @@ namespace MedNet.API.Services.Interface
         Task<MedicationDto?> GetMedicationByIdAsync(Guid id);
         Task<IEnumerable<MedicationDto>> GetMedicationsByPatientIdAsync(Guid patientId);
         Task<MedicationDto> UpdateMedicationAsync(Guid id, UpdateMedicationRequestDto request);
-        Task<MedicationDto> DeleteMedicationAsync(Guid id);
+        Task<string?> DeleteMedicationAsync(Guid id);
     }
 }
