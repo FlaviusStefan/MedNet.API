@@ -2,20 +2,26 @@
 using MedNet.API.Models.DTO;
 using MedNet.API.Repositories.Interface;
 using MedNet.API.Services.Interface;
+using Microsoft.Extensions.Logging;
 
 namespace MedNet.API.Services.Implementation
 {
     public class LabTestService : ILabTestService
     {
         private readonly ILabTestRepository labTestRepository;
+        private readonly ILogger<LabTestService> logger;
 
-        public LabTestService(ILabTestRepository labTestRepository)
+        public LabTestService(ILabTestRepository labTestRepository, ILogger<LabTestService> logger)
         {
             this.labTestRepository = labTestRepository;
+            this.logger = logger;
         }
 
         public async Task<LabTestDto> CreateLabTestAsync(CreateLabTestRequestDto request)
         {
+            logger.LogInformation("Creating lab test for LabAnalysis {AnalysisId}, Test: {TestName}, Result: {Result}",
+                request.LabAnalysisId, request.TestName, request.Result);
+
             var labTest = new LabTest
             {
                 Id = Guid.NewGuid(),
@@ -27,6 +33,9 @@ namespace MedNet.API.Services.Implementation
             };
 
             var createdLabTest = await labTestRepository.CreateAsync(labTest);
+
+            logger.LogInformation("Lab test {TestId} created successfully for LabAnalysis {AnalysisId} - {TestName}: {Result} {Units}",
+                createdLabTest.Id, createdLabTest.LabAnalysisId, createdLabTest.TestName, createdLabTest.Result, createdLabTest.Units);
 
             return new LabTestDto
             {
@@ -41,9 +50,11 @@ namespace MedNet.API.Services.Implementation
 
         public async Task<IEnumerable<LabTestDto>> GetAllLabTestsAsync()
         {
+            logger.LogInformation("Retrieving all lab tests");
+
             var labTests = await labTestRepository.GetAllAsync();
 
-            return labTests.Select(labTest => new LabTestDto
+            var testList = labTests.Select(labTest => new LabTestDto
             {
                 Id = labTest.Id,
                 LabAnalysisId = labTest.LabAnalysisId,
@@ -52,15 +63,25 @@ namespace MedNet.API.Services.Implementation
                 Units = labTest.Units,
                 ReferenceRange = labTest.ReferenceRange
             }).ToList();
+
+            logger.LogInformation("Retrieved {Count} lab tests", testList.Count);
+
+            return testList;
         }
 
         public async Task<LabTestDto> GetLabTestByIdAsync(Guid id)
         {
+            logger.LogInformation("Retrieving lab test with ID: {TestId}", id);
+
             var labTest = await labTestRepository.GetById(id);
             if (labTest == null)
             {
+                logger.LogWarning("Lab test not found with ID: {TestId}", id);
                 return null;
             }
+
+            logger.LogInformation("Lab test {TestId} retrieved - LabAnalysis: {AnalysisId}, Test: {TestName}, Result: {Result}",
+                labTest.Id, labTest.LabAnalysisId, labTest.TestName, labTest.Result);
 
             return new LabTestDto
             {
@@ -75,8 +96,17 @@ namespace MedNet.API.Services.Implementation
 
         public async Task<LabTestDto> UpdateLabTestAsync(Guid id, UpdateLabTestRequestDto request)
         {
+            logger.LogInformation("Updating lab test with ID: {TestId}", id);
+
             var existingLabTest = await labTestRepository.GetById(id);
-            if (existingLabTest == null) return null;
+            if (existingLabTest == null)
+            {
+                logger.LogWarning("Lab test not found for update with ID: {TestId}", id);
+                return null;
+            }
+
+            var oldTestName = existingLabTest.TestName;
+            var oldResult = existingLabTest.Result;
 
             existingLabTest.TestName = request.TestName;
             existingLabTest.Result = request.Result;
@@ -85,7 +115,14 @@ namespace MedNet.API.Services.Implementation
 
             var updatedLabTest = await labTestRepository.UpdateAsync(existingLabTest);
 
-            if (updatedLabTest == null) return null;
+            if (updatedLabTest == null)
+            {
+                logger.LogError("Failed to update lab test with ID: {TestId}", id);
+                return null;
+            }
+
+            logger.LogInformation("Lab test {TestId} updated successfully - Test: '{OldName}' → '{NewName}', Result: '{OldResult}' → '{NewResult}'",
+                id, oldTestName, updatedLabTest.TestName, oldResult, updatedLabTest.Result);
 
             return new LabTestDto
             {
@@ -97,22 +134,22 @@ namespace MedNet.API.Services.Implementation
             };
         }
 
-
-        public async Task<LabTestDto> DeleteLabTestAsync(Guid id)
+        public async Task<string?> DeleteLabTestAsync(Guid id)
         {
+            logger.LogInformation("Deleting lab test with ID: {TestId}", id);
+
             var labTest = await labTestRepository.DeleteAsync(id);
 
-            if (labTest == null) return null;
-
-            return new LabTestDto
+            if (labTest == null)
             {
-                Id = labTest.Id,
-                TestName = labTest.TestName,
-                Result = labTest.Result,
-                Units = labTest.Units,
-                ReferenceRange = labTest.ReferenceRange
-            };
-        }
+                logger.LogWarning("Lab test not found for deletion with ID: {TestId}", id);
+                return null;
+            }
 
+            logger.LogInformation("Lab test {TestId} deleted successfully - LabAnalysis: {AnalysisId}, Test: {TestName}",
+                labTest.Id, labTest.LabAnalysisId, labTest.TestName);
+
+            return $"Lab test '{labTest.TestName}' (ID: {labTest.Id}) deleted successfully!";
+        }
     }
 }

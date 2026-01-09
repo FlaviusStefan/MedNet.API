@@ -9,6 +9,6 @@ namespace MedNet.API.Services.Interface
         Task<IEnumerable<LabTestDto>> GetAllLabTestsAsync();
         Task<LabTestDto> GetLabTestByIdAsync(Guid id);
         Task<LabTestDto> UpdateLabTestAsync(Guid id, UpdateLabTestRequestDto request);
-        Task<LabTestDto> DeleteLabTestAsync(Guid id);
+        Task<string?> DeleteLabTestAsync(Guid id);
     }
 }
