@@ -42,7 +42,7 @@ namespace MedNet.API.Services
         {
             logger.LogInformation("Creating doctor: {FirstName} {LastName}, License: {LicenseNumber}, UserId: {UserId}",
                request.FirstName, request.LastName, request.LicenseNumber, request.UserId);
- 
+
             using var transaction = await doctorRepository.BeginTransactionAsync();
 
             try
@@ -74,10 +74,32 @@ namespace MedNet.API.Services
                 };
 
                 await doctorRepository.CreateAsync(doctor);
+
+                // CREATE QUALIFICATIONS
+                var createdQualifications = new List<QualificationDto>();
+                logger.LogDebug("Creating {Count} qualifications for doctor {DoctorId}",
+                    request.Qualifications.Count, doctor.Id);
+
+                foreach (var qualificationRequest in request.Qualifications)
+                {
+                    var qualificationDto = await qualificationService.CreateQualificationAsync(new CreateQualificationRequestDto
+                    {
+                        DoctorId = doctor.Id,
+                        Degree = qualificationRequest.Degree,
+                        Institution = qualificationRequest.Institution,
+                        StudiedYears = qualificationRequest.StudiedYears,
+                        YearOfCompletion = qualificationRequest.YearOfCompletion
+                    });
+                    createdQualifications.Add(qualificationDto);
+                }
+
+                logger.LogInformation("Created {Count} qualifications for doctor {DoctorId}",
+                    createdQualifications.Count, doctor.Id);
+
                 await transaction.CommitAsync();
 
-                logger.LogInformation("Doctor {DoctorId} created successfully - {FirstName} {LastName}, License: {LicenseNumber}",
-                    doctor.Id, doctor.FirstName, doctor.LastName, doctor.LicenseNumber);
+                logger.LogInformation("Doctor {DoctorId} created successfully - {FirstName} {LastName}, License: {LicenseNumber}, with {QualCount} qualifications",
+                    doctor.Id, doctor.FirstName, doctor.LastName, doctor.LicenseNumber, createdQualifications.Count);
 
                 return new CreatedDoctorDto
                 {
@@ -90,7 +112,8 @@ namespace MedNet.API.Services
                     YearsOfExperience = doctor.YearsOfExperience,
                     Address = addressDto,
                     Contact = contactDto,
-                    Specializations = validSpecializations.Values.ToList()
+                    Specializations = validSpecializations.Values.ToList(),
+                    Qualifications = createdQualifications
                 };
             }
             catch (Exception ex)

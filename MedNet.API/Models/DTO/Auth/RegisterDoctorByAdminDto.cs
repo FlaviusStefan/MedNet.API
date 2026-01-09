@@ -30,14 +30,16 @@ namespace MedNet.API.Models.DTO.Auth
         [Required(ErrorMessage = "Gender is required.")]
         public string Gender { get; set; }
 
-        [Required(ErrorMessage = "Qualification is required.")]
-        public string Qualification { get; set; }
-
         [Required(ErrorMessage = "LicenseNumber is required.")]
         public string LicenseNumber { get; set; }
 
         [Required(ErrorMessage = "YearsOfExperience is required.")]
         public int YearsOfExperience { get; set; }
+
+        // Support multiple qualifications
+        [Required(ErrorMessage = "At least one qualification is required.")]
+        [MinLength(1, ErrorMessage = "At least one qualification is required.")]
+        public ICollection<CreateQualificationDto> Qualifications { get; set; }
 
         // RELATIONSHIPS
         [Required(ErrorMessage = "At least one specialization must be selected.")]

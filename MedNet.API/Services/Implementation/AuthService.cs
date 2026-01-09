@@ -186,7 +186,6 @@ namespace MedNet.API.Services.Implementation
                 throw new Exception(string.Join(", ", result.Errors.Select(e => e.Description)));
             }
 
-
             try
             {
                 // Step 3: Assign "Doctor" Role to the user
@@ -200,11 +199,13 @@ namespace MedNet.API.Services.Implementation
                     UserId = user.Id,
                     DateOfBirth = registerDto.DateOfBirth,
                     Gender = registerDto.Gender,
-                    Qualification = registerDto.Qualification,
+                    Qualifications = registerDto.Qualifications, // ✅ FIXED: Use Qualifications collection
                     YearsOfExperience = registerDto.YearsOfExperience,
                     LicenseNumber = registerDto.LicenseNumber,
                     Address = registerDto.Address,
                     SpecializationIds = registerDto.SpecializationIds,
+                    Email = registerDto.Email, // ✅ ADDED: Required by CreateDoctorRequestDto
+                    Password = registerDto.Password, // ✅ ADDED: Required by CreateDoctorRequestDto
                     Contact = new CreateContactRequestDto
                     {
                         Email = registerDto.Email,
@@ -222,7 +223,6 @@ namespace MedNet.API.Services.Implementation
                 await _userManager.DeleteAsync(user);
                 throw;
             }
-
         }
 
         public async Task<string> RegisterHospitalByAdminAsync(RegisterHospitalByAdminDto registerDto)

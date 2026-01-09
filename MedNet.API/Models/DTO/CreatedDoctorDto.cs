@@ -12,5 +12,7 @@
         public AddressDto Address { get; set; }
         public ContactDto Contact { get; set; }
         public List<string> Specializations { get; set; }
+        public List<QualificationDto> Qualifications { get; set; }
+
     }
 }

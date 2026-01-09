@@ -23,8 +23,9 @@ namespace MedNet.API.Models.DTO
         [Required(ErrorMessage = "Years of experience is required.")]
         public int YearsOfExperience { get; set; }
 
-        [Required(ErrorMessage = "Qualification is required.")]
-        public string Qualification { get; set; }
+        [Required(ErrorMessage = "At least one qualification is required.")]
+        [MinLength(1, ErrorMessage = "At least one qualification is required.")]
+        public ICollection<CreateQualificationDto> Qualifications { get; set; }
 
         [Required(ErrorMessage = "Address is required.")]
         public CreateAddressRequestDto Address { get; set; }
