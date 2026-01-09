@@ -10,7 +10,7 @@ namespace MedNet.API.Services.Interface
         Task<SpecializationDto?> GetSpecializationByIdAsync(Guid id);
         Task<IEnumerable<SpecializationDto>> GetSpecializationsByDoctorIdAsync(Guid doctorId);
         Task<SpecializationDto?> UpdateSpecializationAsync(Guid id, UpdateSpecializationRequestDto request);
-        Task<SpecializationDto?> DeleteSpecializationAsync(Guid id);
+        Task<string?> DeleteSpecializationAsync(Guid id);
         Task<Dictionary<Guid, string>> ValidateSpecializationsAsync(IEnumerable<Guid> specializationIds);
 
 
