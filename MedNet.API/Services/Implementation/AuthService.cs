@@ -20,8 +20,10 @@ namespace MedNet.API.Services.Implementation
         private readonly IPatientService _patientService;
         private readonly IDoctorService _doctorService;
         private readonly IHospitalService _hospitalService;
+        private readonly ILogger<AuthService> _logger;
 
-        public AuthService(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager, IConfiguration configuration, IPatientService patientService, IDoctorService doctorService, IHospitalService hospitalService)
+
+        public AuthService(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager, IConfiguration configuration, IPatientService patientService, IDoctorService doctorService, IHospitalService hospitalService, ILogger<AuthService> logger)
         {
             _userManager = userManager;
             _signInManager = signInManager;
@@ -29,12 +31,14 @@ namespace MedNet.API.Services.Implementation
             _patientService = patientService;
             _doctorService = doctorService;
             _hospitalService = hospitalService;
+            _logger = logger;
         }
         public async Task<string> RegisterPatientAsync(RegisterPatientDto registerPatientDto)
         {
+            _logger.LogInformation("Patient self-registration attempt for email: {Email}", registerPatientDto.Email);
+
             try
             {
-                // Step 1: Create User in Identity
                 var user = new IdentityUser
                 {
                     UserName = registerPatientDto.Email,
@@ -45,109 +49,135 @@ namespace MedNet.API.Services.Implementation
                 var result = await _userManager.CreateAsync(user, registerPatientDto.Password);
                 if (!result.Succeeded)
                 {
-                    throw new Exception(string.Join(", ", result.Errors.Select(e => e.Description)));
+                    var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                    _logger.LogWarning("Patient registration failed for {Email}: {Errors}", registerPatientDto.Email, errors);
+                    throw new Exception(errors);
                 }
 
-                // Step 2: Assign "Patient" Role to User
-                await _userManager.AddToRoleAsync(user, UserRole.Patient.ToString());
+                _logger.LogInformation("Identity user created successfully for patient: {Email}, UserId: {UserId}",
+                    registerPatientDto.Email, user.Id);
 
-                // Step 3: Create Patient Profile via PatientService
+                await _userManager.AddToRoleAsync(user, UserRole.Patient.ToString());
+                _logger.LogDebug("Patient role assigned to user {UserId}", user.Id);
+
                 var createPatientDto = new CreatePatientRequestDto
                 {
                     FirstName = registerPatientDto.FirstName,
                     LastName = registerPatientDto.LastName,
-                    UserId = user.Id, // Use Identity user ID
+                    UserId = user.Id, 
                     DateOfBirth = registerPatientDto.DateOfBirth,
                     Gender = registerPatientDto.Gender,
                     Height = registerPatientDto.Height,
                     Weight = registerPatientDto.Weight,
                     Address = registerPatientDto.Address,
-                    Contact = new CreateContactRequestDto // Ensure contact is passed!
+                    Contact = new CreateContactRequestDto 
                     {
                         Email = registerPatientDto.Email,
                         Phone = registerPatientDto.PhoneNumber
                     }
                 };
 
-                // Call PatientService to create a Patient
                 var createdPatient = await _patientService.CreatePatientAsync(createPatientDto);
+
+                _logger.LogInformation("Patient self-registration completed successfully - Email: {Email}, UserId: {UserId}, PatientId: {PatientId}", 
+                    registerPatientDto.Email, user.Id, createdPatient.Id);
 
                 return GenerateJwtToken(user);
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error during patient self-registration for email: {Email}", registerPatientDto.Email);
                 throw new CustomException("An error occurred while registering the patient: " + ex.Message, ex);
             }
         }
 
         public async Task<string> RegisterPatientByAdminAsync(RegisterPatientByAdminDto registerDto)
         {
-            // Step 1: Create IdentityUser with the admin-supplied password
-            var user = new IdentityUser
-            {
-                UserName = registerDto.Email,
-                Email = registerDto.Email,
-                PhoneNumber = registerDto.PhoneNumber
-            };
+            _logger.LogInformation("Admin creating patient account for email: {Email}", registerDto.Email);
 
-            var result = await _userManager.CreateAsync(user, registerDto.Password);
-            if (!result.Succeeded)
+            try
             {
-                throw new Exception(string.Join(", ", result.Errors.Select(e => e.Description)));
-            }
-
-            // Step 2: Assign "Patient" Role to the user
-            await _userManager.AddToRoleAsync(user, UserRole.Patient.ToString());
-
-            // Step 3: Create Patient Profile via PatientService
-            var createPatientDto = new CreatePatientRequestDto
-            {
-                FirstName = registerDto.FirstName,
-                LastName = registerDto.LastName,
-                UserId = user.Id,  // Link the IdentityUser to the patient record
-                DateOfBirth = registerDto.DateOfBirth,
-                Gender = registerDto.Gender,
-                Height = registerDto.Height,
-                Weight = registerDto.Weight,
-                Address = registerDto.Address,
-                // Use the same email & phone as in the user registration
-                Contact = new CreateContactRequestDto
+                var user = new IdentityUser
                 {
+                    UserName = registerDto.Email,
                     Email = registerDto.Email,
-                    Phone = registerDto.PhoneNumber
+                    PhoneNumber = registerDto.PhoneNumber
+                };
+
+                var result = await _userManager.CreateAsync(user, registerDto.Password);
+                if (!result.Succeeded)
+                {
+                    var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                    _logger.LogWarning("Admin patient registration failed for {Email}: {Errors}", registerDto.Email, errors);
+                    throw new Exception(errors);
                 }
-            };
 
-            await _patientService.CreatePatientAsync(createPatientDto);
+                _logger.LogInformation("Identity user created by admin for patient: {Email}, UserId: {UserId}",
+                    registerDto.Email, user.Id);
 
-            // You could return a success message instead of a token in this case,
-            // since the patient might not log in immediately.
-            return "Patient account created successfully.";
+                await _userManager.AddToRoleAsync(user, UserRole.Patient.ToString());
+
+                var createPatientDto = new CreatePatientRequestDto
+                {
+                    FirstName = registerDto.FirstName,
+                    LastName = registerDto.LastName,
+                    UserId = user.Id,
+                    DateOfBirth = registerDto.DateOfBirth,
+                    Gender = registerDto.Gender,
+                    Height = registerDto.Height,
+                    Weight = registerDto.Weight,
+                    Address = registerDto.Address,
+                    Contact = new CreateContactRequestDto
+                    {
+                        Email = registerDto.Email,
+                        Phone = registerDto.PhoneNumber
+                    }
+                };
+
+                var createdPatient = await _patientService.CreatePatientAsync(createPatientDto);
+
+                _logger.LogInformation("Patient account created successfully by admin - Email: {Email}, UserId: {UserId}, PatientId: {PatientId}",
+                    registerDto.Email, user.Id, createdPatient.Id);
+
+                return "Patient account created successfully.";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during admin patient registration for email: {Email}", registerDto.Email);
+                throw;
+            }
         }
-
-
-
 
         public async Task<string> LoginAsync(LoginDto loginDto)
         {
+            _logger.LogInformation("Login attempt for email: {Email}", loginDto.Email);
+
             var result = await _signInManager.PasswordSignInAsync(loginDto.Email, loginDto.Password, false, false);
 
             if (!result.Succeeded)
             {
+                _logger.LogWarning("Failed login attempt for email: {Email}", loginDto.Email);
                 throw new Exception("Invalid login attempt.");
             }
 
             var user = await _userManager.FindByEmailAsync(loginDto.Email);
+            var roles = await _userManager.GetRolesAsync(user);
+
+            _logger.LogInformation("Successful login for email: {Email}, UserId: {UserId}, Roles: {Roles}",
+                loginDto.Email, user.Id, string.Join(", ", roles));
+
             return GenerateJwtToken(user);
         }
 
         private string GenerateJwtToken(IdentityUser user)
         {
+            _logger.LogDebug("Generating JWT token for user {UserId}", user.Id);
+
             var claims = new List<Claim>
             {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id),  // ✅ Set UserId as "sub"
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(ClaimTypes.NameIdentifier, user.Id) // ✅ Ensure NameIdentifier has UserId
+                new Claim(ClaimTypes.NameIdentifier, user.Id)
             };
 
             var roles = _userManager.GetRolesAsync(user).Result;
@@ -163,16 +193,23 @@ namespace MedNet.API.Services.Implementation
                 expires: DateTime.Now.AddMinutes(Convert.ToDouble(_configuration["Jwt:ExpiryMinutes"])),
                 signingCredentials: creds);
 
+            _logger.LogDebug("JWT token generated successfully for user {UserId} with roles: {Roles}",
+                user.Id, string.Join(", ", roles));
+
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
         public Task<string> RegisterDoctorAsync(RegisterDoctorDto registerDto)
         {
+            _logger.LogWarning("RegisterDoctorAsync called but not implemented");
             throw new NotImplementedException();
         }
 
         public async Task<string> RegisterDoctorByAdminAsync(RegisterDoctorByAdminDto registerDto)
         {
+            _logger.LogInformation("Admin creating doctor account for email: {Email}, License: {LicenseNumber}",
+                registerDto.Email, registerDto.LicenseNumber);
+
             var user = new IdentityUser
             {
                 UserName = registerDto.Email,
@@ -183,15 +220,18 @@ namespace MedNet.API.Services.Implementation
             var result = await _userManager.CreateAsync(user, registerDto.Password);
             if (!result.Succeeded)
             {
-                throw new Exception(string.Join(", ", result.Errors.Select(e => e.Description)));
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                _logger.LogWarning("Admin doctor registration failed for {Email}: {Errors}", registerDto.Email, errors);
+                throw new Exception(errors);
             }
+
+            _logger.LogInformation("Identity user created by admin for doctor: {Email}, UserId: {UserId}",
+                registerDto.Email, user.Id);
 
             try
             {
-                // Step 3: Assign "Doctor" Role to the user
                 await _userManager.AddToRoleAsync(user, UserRole.Doctor.ToString());
 
-                // Step 4: Create Doctor Profile via DoctorService
                 var createDoctorDto = new CreateDoctorRequestDto
                 {
                     FirstName = registerDto.FirstName,
@@ -199,13 +239,13 @@ namespace MedNet.API.Services.Implementation
                     UserId = user.Id,
                     DateOfBirth = registerDto.DateOfBirth,
                     Gender = registerDto.Gender,
-                    Qualifications = registerDto.Qualifications, // ✅ FIXED: Use Qualifications collection
+                    Qualifications = registerDto.Qualifications,
                     YearsOfExperience = registerDto.YearsOfExperience,
                     LicenseNumber = registerDto.LicenseNumber,
                     Address = registerDto.Address,
                     SpecializationIds = registerDto.SpecializationIds,
-                    Email = registerDto.Email, // ✅ ADDED: Required by CreateDoctorRequestDto
-                    Password = registerDto.Password, // ✅ ADDED: Required by CreateDoctorRequestDto
+                    Email = registerDto.Email,
+                    Password = registerDto.Password,
                     Contact = new CreateContactRequestDto
                     {
                         Email = registerDto.Email,
@@ -213,21 +253,27 @@ namespace MedNet.API.Services.Implementation
                     }
                 };
 
-                await _doctorService.CreateDoctorAsync(createDoctorDto);
+                var createdDoctor = await _doctorService.CreateDoctorAsync(createDoctorDto);
+
+                _logger.LogInformation("Doctor account created successfully by admin - Email: {Email}, UserId: {UserId}, DoctorId: {DoctorId}, License: {LicenseNumber}",
+                    registerDto.Email, user.Id, createdDoctor.Id, registerDto.LicenseNumber);
 
                 return "Doctor account created successfully.";
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Rollback user creation if doctor creation fails
+                _logger.LogError(ex, "Error creating doctor profile for {Email}, rolling back user creation", registerDto.Email);
                 await _userManager.DeleteAsync(user);
+                _logger.LogInformation("Rolled back user creation for failed doctor registration: {Email}", registerDto.Email);
                 throw;
             }
         }
 
         public async Task<string> RegisterHospitalByAdminAsync(RegisterHospitalByAdminDto registerDto)
         {
-            // Step 1: Create IdentityUser with the admin-supplied password
+            _logger.LogInformation("Admin creating hospital account for: {Name}, Email: {Email}",
+                registerDto.Name, registerDto.Email);
+
             var user = new IdentityUser
             {
                 UserName = registerDto.Email,
@@ -238,28 +284,42 @@ namespace MedNet.API.Services.Implementation
             var result = await _userManager.CreateAsync(user, registerDto.Password);
             if (!result.Succeeded)
             {
-                throw new Exception(string.Join(", ", result.Errors.Select(e => e.Description)));
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                _logger.LogWarning("Admin hospital registration failed for {Name}: {Errors}", registerDto.Name, errors);
+                throw new Exception(errors);
             }
 
-            // Step 3: Create hospital Profile via hospitalService
-            var createHospitalDto = new CreateHospitalRequestDto
+            _logger.LogInformation("Identity user created by admin for hospital: {Name}, UserId: {UserId}",
+                registerDto.Name, user.Id);
+
+            try
             {
-                Name = registerDto.Name,
-                UserId = user.Id,  // Link the IdentityUser to the hospital record
-                Address = registerDto.Address,
-                // Use the same email & phone as in the user registration
-                Contact = new CreateContactRequestDto
+                var createHospitalDto = new CreateHospitalRequestDto
                 {
-                    Email = registerDto.Email,
-                    Phone = registerDto.PhoneNumber
-                }
-            };
+                    Name = registerDto.Name,
+                    UserId = user.Id,
+                    Address = registerDto.Address,
+                    Contact = new CreateContactRequestDto
+                    {
+                        Email = registerDto.Email,
+                        Phone = registerDto.PhoneNumber
+                    }
+                };
 
-            await _hospitalService.CreateHospitalAsync(createHospitalDto);
+                var createdHospital = await _hospitalService.CreateHospitalAsync(createHospitalDto);
 
-            // You could return a success message instead of a token in this case,
-            // since the hospital might not log in immediately.
-            return "Hospital account created successfully.";
+                _logger.LogInformation("Hospital account created successfully by admin - Name: {Name}, UserId: {UserId}, HospitalId: {HospitalId}",
+                    registerDto.Name, user.Id, createdHospital.Id);
+
+                return "Hospital account created successfully.";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating hospital profile for {Name}, rolling back user creation", registerDto.Name);
+                await _userManager.DeleteAsync(user);
+                _logger.LogInformation("Rolled back user creation for failed hospital registration: {Name}", registerDto.Name);
+                throw;
+            }
         }
     }
 }
