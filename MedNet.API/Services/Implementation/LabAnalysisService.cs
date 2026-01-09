@@ -9,15 +9,18 @@ namespace MedNet.API.Services.Implementation
     {
         private readonly ILabAnalysisRepository labAnalysisRepository;
         private readonly ILabTestService labTestService;
-
-        public LabAnalysisService(ILabAnalysisRepository labAnalysisRepository, ILabTestService labTestService)
+        private readonly ILogger<LabAnalysisService> logger;
+        public LabAnalysisService(ILabAnalysisRepository labAnalysisRepository, ILabTestService labTestService, ILogger<LabAnalysisService> logger)
         {
             this.labAnalysisRepository = labAnalysisRepository;
             this.labTestService = labTestService;
+            this.logger = logger;
         }
-
         public async Task<LabAnalysisDto> CreateLabAnalysisAsync(CreateLabAnalysisRequestDto request)
         {
+            logger.LogInformation("Creating lab analysis for Patient {PatientId}, Type: {AnalysisType}, Tests: {TestCount}",
+                request.PatientId, request.AnalysisType, request.LabTests?.Count ?? 0);
+
             var labAnalysis = new LabAnalysis
             {
                 Id = Guid.NewGuid(),
@@ -27,6 +30,9 @@ namespace MedNet.API.Services.Implementation
             };
 
             var createdLabAnalysis = await labAnalysisRepository.CreateAsync(labAnalysis);
+
+            logger.LogDebug("Lab analysis {AnalysisId} created, now creating {TestCount} lab tests",
+                createdLabAnalysis.Id, request.LabTests?.Count ?? 0);
 
             foreach (var testDto in request.LabTests)
             {
@@ -43,6 +49,9 @@ namespace MedNet.API.Services.Implementation
             }
 
             var labAnalysisWithTests = await labAnalysisRepository.GetById(createdLabAnalysis.Id);
+
+            logger.LogInformation("Lab analysis {AnalysisId} created successfully for Patient {PatientId} with {TestCount} tests - Type: {AnalysisType}",
+                labAnalysisWithTests.Id, labAnalysisWithTests.PatientId, labAnalysisWithTests.LabTests.Count, labAnalysisWithTests.AnalysisType);
 
             return new LabAnalysisDto
             {
@@ -61,15 +70,15 @@ namespace MedNet.API.Services.Implementation
             };
         }
 
-
-
         public async Task<IEnumerable<DisplayLabAnalysisDto>> GetAllLabAnalysesAsync()
         {
+            logger.LogInformation("Retrieving all lab analyses");
+
             var labAnalyses = await labAnalysisRepository.GetAllAsync();
 
             var labTestDtos = await labTestService.GetAllLabTestsAsync();
 
-            return labAnalyses.Select(labAnalysis => new DisplayLabAnalysisDto
+            var analysisList = labAnalyses.Select(labAnalysis => new DisplayLabAnalysisDto
             {
                 Id = labAnalysis.Id,
                 PatientId = labAnalysis.PatientId,
@@ -79,26 +88,33 @@ namespace MedNet.API.Services.Implementation
                     .Where(dto => labAnalysis.LabTests.Select(lt => lt.Id).Contains(dto.Id))
                     .Select(dto => new DisplayLabTestDto
                     {
-                        //Id = dto.Id,
                         TestName = dto.TestName,
                         Result = dto.Result,
                         Units = dto.Units,
                         ReferenceRange = dto.ReferenceRange
                     }).ToList()
-            });
-            
+            }).ToList();
+
+            logger.LogInformation("Retrieved {Count} lab analyses", analysisList.Count);
+
+            return analysisList;
         }
 
         public async Task<DisplayLabAnalysisDto?> GetLabAnalysisByIdAsync(Guid id)
         {
+            logger.LogInformation("Retrieving lab analysis with ID: {AnalysisId}", id);
+
             var labAnalysis = await labAnalysisRepository.GetById(id);
-            if(labAnalysis == null)
+            if (labAnalysis == null)
             {
+                logger.LogWarning("Lab analysis not found with ID: {AnalysisId}", id);
                 return null;
             }
 
             var labTestDtos = await labTestService.GetAllLabTestsAsync();
 
+            logger.LogInformation("Lab analysis {AnalysisId} retrieved - Patient: {PatientId}, Type: {AnalysisType}, Tests: {TestCount}",
+                labAnalysis.Id, labAnalysis.PatientId, labAnalysis.AnalysisType, labAnalysis.LabTests.Count);
 
             return new DisplayLabAnalysisDto
             {
@@ -110,7 +126,6 @@ namespace MedNet.API.Services.Implementation
                     .Where(dto => labAnalysis.LabTests.Select(lt => lt.Id).Contains(dto.Id))
                     .Select(dto => new DisplayLabTestDto
                     {
-                        //Id = dto.Id,
                         TestName = dto.TestName,
                         Result = dto.Result,
                         Units = dto.Units,
@@ -118,19 +133,34 @@ namespace MedNet.API.Services.Implementation
                     }).ToList()
             };
         }
-
         public async Task<UpdatedLabAnalysisDto?> UpdateLabAnalysisAsync(Guid id, UpdateLabAnalysisRequestDto request)
         {
+            logger.LogInformation("Updating lab analysis with ID: {AnalysisId}", id);
+
             var existingLabAnalysis = await labAnalysisRepository.GetById(id);
 
-            if (existingLabAnalysis == null) return null;
+            if (existingLabAnalysis == null)
+            {
+                logger.LogWarning("Lab analysis not found for update with ID: {AnalysisId}", id);
+                return null;
+            }
+
+            var oldAnalysisType = existingLabAnalysis.AnalysisType;
+            var oldAnalysisDate = existingLabAnalysis.AnalysisDate;
 
             existingLabAnalysis.AnalysisDate = request.AnalysisDate;
             existingLabAnalysis.AnalysisType = request.AnalysisType;
 
             var updatedLabAnalysis = await labAnalysisRepository.UpdateAsync(existingLabAnalysis);
 
-            if (updatedLabAnalysis == null) return null;
+            if (updatedLabAnalysis == null)
+            {
+                logger.LogError("Failed to update lab analysis with ID: {AnalysisId}", id);
+                return null;
+            }
+
+            logger.LogInformation("Lab analysis {AnalysisId} updated successfully - Type: '{OldType}' → '{NewType}', Date: {OldDate} → {NewDate}",
+                id, oldAnalysisType, updatedLabAnalysis.AnalysisType, oldAnalysisDate.ToShortDateString(), updatedLabAnalysis.AnalysisDate.ToShortDateString());
 
             return new UpdatedLabAnalysisDto
             {
@@ -139,20 +169,22 @@ namespace MedNet.API.Services.Implementation
                 AnalysisType = updatedLabAnalysis.AnalysisType
             };
         }
-
-
-        public async Task<LabAnalysisDto> DeleteLabAnalysisAsync(Guid id)
+        public async Task<string?> DeleteLabAnalysisAsync(Guid id)
         {
+            logger.LogInformation("Deleting lab analysis with ID: {AnalysisId}", id);
+
             var labAnalysis = await labAnalysisRepository.DeleteAsync(id);
 
-            if (labAnalysis == null) return null;
-
-            return new LabAnalysisDto
+            if (labAnalysis == null)
             {
-                Id = labAnalysis.Id,
-                AnalysisDate = labAnalysis.AnalysisDate,
-                AnalysisType = labAnalysis.AnalysisType
-            };
+                logger.LogWarning("Lab analysis not found for deletion with ID: {AnalysisId}", id);
+                return null;
+            }
+
+            logger.LogInformation("Lab analysis {AnalysisId} deleted successfully - Patient: {PatientId}, Type: {AnalysisType}",
+                labAnalysis.Id, labAnalysis.PatientId, labAnalysis.AnalysisType);
+
+            return $"Lab analysis '{labAnalysis.AnalysisType}' (ID: {labAnalysis.Id}) deleted successfully!";
         }
     }
 }
