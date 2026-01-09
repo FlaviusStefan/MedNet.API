@@ -130,7 +130,7 @@ namespace MedNet.API.Services
             };
         }
 
-        public async Task<AddressDto> DeleteAddressAsync(Guid id)
+        public async Task<string?> DeleteAddressAsync(Guid id)
         {
             logger.LogInformation("Deleting address with ID: {AddressId}", id);
 
@@ -143,16 +143,7 @@ namespace MedNet.API.Services
 
             logger.LogInformation("Address {AddressId} deleted successfully", id);
 
-            return new AddressDto
-            {
-                Id = address.Id,
-                Street = address.Street,
-                StreetNr = address.StreetNr,
-                City = address.City,
-                State = address.State,
-                Country = address.Country,
-                PostalCode = address.PostalCode
-            };
+            return $"Address with ID {address.Id} deleted successfully!";
         }
     }
 }

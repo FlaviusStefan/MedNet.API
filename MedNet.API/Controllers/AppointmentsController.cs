@@ -129,7 +129,7 @@ namespace MedNet.API.Controllers
             return Ok(response);
         }
 
-        [Authorize(Roles = "Admin,Doctor")]
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id:Guid}")]
         public async Task<IActionResult> DeleteAppointment(Guid id)
         {

@@ -8,6 +8,6 @@ namespace MedNet.API.Services
         Task<IEnumerable<AddressDto>> GetAllAddressesAsync();
         Task<AddressDto?> GetAddressByIdAsync(Guid id);
         Task<AddressDto?> UpdateAddressAsync(Guid id, UpdateAddressRequestDto request);
-        Task<AddressDto> DeleteAddressAsync(Guid id);
+        Task<string?> DeleteAddressAsync(Guid id);
     }
 }

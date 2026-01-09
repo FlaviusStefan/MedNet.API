@@ -50,19 +50,5 @@ namespace MedNet.API.Controllers
 
             return Ok(response);
         }
-
-        [Authorize(Roles = "Admin")]
-        [HttpDelete("{id:Guid}")]
-        public async Task<IActionResult> DeleteAddress(Guid id)
-        {
-            var response = await addressService.DeleteAddressAsync(id);
-
-            if (response == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(response);
-        }
     }
 }

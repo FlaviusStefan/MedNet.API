@@ -9,13 +9,18 @@ namespace MedNet.API.Services.Implementation
     public class ContactService : IContactService
     {
         private readonly IContactRepository contactRepository;
+        private readonly ILogger<ContactService> logger;
 
-        public ContactService(IContactRepository contactRepository)
+        public ContactService(IContactRepository contactRepository, ILogger<ContactService> logger)
         {
             this.contactRepository = contactRepository;
+            this.logger = logger;
         }
         public async Task<ContactDto> CreateContactAsync(CreateContactRequestDto request)
         {
+            logger.LogInformation("Creating new contact with Email: {Email}, Phone: {Phone}",
+                request.Email, request.Phone);
+
             var contact = new Contact
             {
                 Id = Guid.NewGuid(),
@@ -24,6 +29,8 @@ namespace MedNet.API.Services.Implementation
             };
 
             await contactRepository.CreateAsync(contact);
+
+            logger.LogInformation("Contact {ContactId} created successfully", contact.Id);
 
             return new ContactDto
             {
@@ -35,23 +42,34 @@ namespace MedNet.API.Services.Implementation
 
         public async Task<IEnumerable<ContactDto>> GetAllContactsAsync()
         {
+            logger.LogInformation("Retrieving all contacts");
+
             var contacts = await contactRepository.GetAllAsync();
 
-            return contacts.Select(contact => new ContactDto
+            var contactList = contacts.Select(contact => new ContactDto
             {
                 Id = contact.Id,
                 Phone = contact.Phone,
                 Email = contact.Email
             }).ToList();
+
+            logger.LogInformation("Retrieved {Count} contacts", contactList.Count);
+
+            return contactList;
         }
 
         public async Task<ContactDto?> GetContactByIdAsync(Guid id)
         {
+            logger.LogDebug("Retrieving contact with ID: {ContactId}", id);
+
             var contact = await contactRepository.GetById(id);
-            if(contact == null)
+            if (contact == null)
             {
+                logger.LogWarning("Contact not found with ID: {ContactId}", id);
                 return null;
             }
+
+            logger.LogDebug("Contact {ContactId} retrieved successfully", id);
 
             return new ContactDto
             {
@@ -63,40 +81,58 @@ namespace MedNet.API.Services.Implementation
 
         public async Task<ContactDto?> UpdateContactAsync(Guid id, UpdateContactRequestDto request)
         {
+            logger.LogInformation("Updating contact with ID: {ContactId}", id);
+
             var existingContact = await contactRepository.GetById(id);
 
-            if (existingContact == null) return null;
+            if (existingContact == null)
+            {
+                logger.LogWarning("Contact not found for update with ID: {ContactId}", id);
+                return null;
+            }
+
+            var oldEmail = existingContact.Email;
+            var oldPhone = existingContact.Phone;
 
             existingContact.Email = request.Email;
             existingContact.Phone = request.Phone;
 
-
             var updatedContact = await contactRepository.UpdateAsync(existingContact);
 
-            if (updatedContact == null) return null;
+            if (updatedContact == null)
+            {
+                logger.LogError("Failed to update contact with ID: {ContactId}", id);
+                return null;
+            }
+
+            logger.LogInformation("Contact {ContactId} updated successfully - Email: {OldEmail} → {NewEmail}, Phone: {OldPhone} → {NewPhone}",
+                id, oldEmail, updatedContact.Email, oldPhone, updatedContact.Phone);
 
             return new ContactDto
             {
                 Id = updatedContact.Id,
                 Email = updatedContact.Email,
                 Phone = updatedContact.Phone
-
             };
         }
 
 
-        public async Task<ContactDto> DeleteContactAsync(Guid id)
+        public async Task<string?> DeleteContactAsync(Guid id)
         {
+            logger.LogInformation("Deleting contact with ID: {ContactId}", id);
+
             var contact = await contactRepository.DeleteAsync(id);
-            if (contact == null) return null;
-
-            return new ContactDto
+            if (contact == null)
             {
-                Id = contact.Id,
-                Phone = contact.Phone,
-                Email = contact.Email,
+                logger.LogWarning("Contact not found for deletion with ID: {ContactId}", id);
+                return null;
+            }
 
-            };
+            logger.LogInformation("Contact {ContactId} deleted successfully - Email: {Email}",
+                contact.Id, contact.Email);
+
+            return $"Contact with ID {contact.Id} of deleted successfully!";
+
         }
     }
 }
