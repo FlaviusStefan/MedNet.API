@@ -16,25 +16,6 @@ namespace MedNet.API.Controllers
             this.addressService = addressService;
         }
 
-        //[Authorize(Roles = "Admin")]
-        //[HttpPost]
-        //public async Task<IActionResult> CreateAddress(CreateAddressRequestDto request)
-        //{
-        //    if (!ModelState.IsValid)
-        //    {
-        //        return BadRequest(ModelState);
-        //    }
-        //    try
-        //    {
-        //        var addressDto = await addressService.CreateAddressAsync(request);
-        //        return CreatedAtAction(nameof(GetAddressById), new { id = addressDto.Id }, addressDto);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return StatusCode(500, "An error occurred while creating the address.");
-        //    }
-        //}
-
         [Authorize(Roles = "Admin,Doctor")]
         [HttpGet]
         public async Task<IActionResult> GetAllAddresses()

@@ -9,10 +9,12 @@ namespace MedNet.API.Services
     public class AddressService : IAddressService
     {
         private readonly IAddressRepository addressRepository;
+        private readonly ILogger<AddressService> logger;
 
-        public AddressService(IAddressRepository addressRepository)
+        public AddressService(IAddressRepository addressRepository, ILogger<AddressService> logger)
         {
             this.addressRepository = addressRepository;
+            this.logger = logger;
         }
         public async Task<AddressDto> CreateAddressAsync(CreateAddressRequestDto request)
         {
@@ -29,6 +31,8 @@ namespace MedNet.API.Services
 
             await addressRepository.CreateAsync(address);
 
+            logger.LogInformation("Address {AddressId} created succesfully", address.Id);
+
             return new AddressDto
             {
                 Id = address.Id,
@@ -42,7 +46,11 @@ namespace MedNet.API.Services
         }
         public async Task<IEnumerable<AddressDto>> GetAllAddressesAsync()
         {
+            logger.LogInformation("Retrieving all addresses");
+
             var addresses = await addressRepository.GetAllAsync();
+
+            logger.LogInformation("Retrieved {Count} addresses", addresses.Count());
 
             return addresses.Select(address => new AddressDto
             {
@@ -58,11 +66,16 @@ namespace MedNet.API.Services
 
         public async Task<AddressDto?> GetAddressByIdAsync(Guid id)
         {
+            logger.LogDebug("Retrieving address with ID: {AddressId}", id);
+
             var address = await addressRepository.GetById(id);
             if (address == null)
             {
+                logger.LogWarning("Address not found with ID: {AddressId}", id);
                 return null;
             }
+
+            logger.LogDebug("Address {AddressId} retrieved successfully", id);
 
             return new AddressDto
             {
@@ -78,9 +91,15 @@ namespace MedNet.API.Services
 
         public async Task<AddressDto?> UpdateAddressAsync(Guid id, UpdateAddressRequestDto request)
         {
+            logger.LogInformation("Updating address with ID: {AddressId}", id);
+
             var existingAddress = await addressRepository.GetById(id);
 
-            if (existingAddress == null) return null;
+            if (existingAddress == null)
+            {
+                logger.LogWarning("Address not found for update with ID: {AddressId}", id);
+                return null;
+            }
 
             existingAddress.Street = request.Street;
             existingAddress.StreetNr = request.StreetNr;
@@ -91,7 +110,13 @@ namespace MedNet.API.Services
 
             var updatedAddress = await addressRepository.UpdateAsync(existingAddress);
 
-            if (updatedAddress == null) return null;
+            if (updatedAddress == null)
+            {
+                logger.LogError("Failed to update address with ID: {AddressId}", id);
+                return null;
+            }
+
+            logger.LogInformation("Address {AddressId} updated successfully", id);
 
             return new AddressDto
             {
@@ -107,8 +132,16 @@ namespace MedNet.API.Services
 
         public async Task<AddressDto> DeleteAddressAsync(Guid id)
         {
+            logger.LogInformation("Deleting address with ID: {AddressId}", id);
+
             var address = await addressRepository.DeleteAsync(id);
-            if (address == null) return null;
+            if (address == null)
+            {
+                logger.LogWarning("Address not found for deletion with ID: {AddressId}", id);
+                return null;
+            }
+
+            logger.LogInformation("Address {AddressId} deleted successfully", id);
 
             return new AddressDto
             {
