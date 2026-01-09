@@ -17,6 +17,7 @@ namespace MedNet.API.Services
         private readonly ISpecializationService specializationService;
         private readonly IQualificationService qualificationService;
         private readonly IUserManagementService userManagementService;
+        private readonly ILogger<DoctorService> logger;
 
 
         public DoctorService(
@@ -25,8 +26,8 @@ namespace MedNet.API.Services
             IContactService contactService,
             ISpecializationService specializationService,
             IQualificationService qualificationService,
-            IUserManagementService userManagementService
-            )
+            IUserManagementService userManagementService,
+            ILogger<DoctorService> logger)
         {
             this.doctorRepository = doctorRepository;
             this.addressService = addressService;
@@ -34,16 +35,21 @@ namespace MedNet.API.Services
             this.specializationService = specializationService;
             this.qualificationService = qualificationService;
             this.userManagementService = userManagementService;
-
+            this.logger = logger;
         }
 
         public async Task<CreatedDoctorDto> CreateDoctorAsync(CreateDoctorRequestDto request)
         {
+            logger.LogInformation("Creating doctor: {FirstName} {LastName}, License: {LicenseNumber}, UserId: {UserId}",
+               request.FirstName, request.LastName, request.LicenseNumber, request.UserId);
+ 
             using var transaction = await doctorRepository.BeginTransactionAsync();
 
             try
             {
                 var validSpecializations = await specializationService.ValidateSpecializationsAsync(request.SpecializationIds);
+                logger.LogDebug("Validated {Count} specializations for doctor {FirstName} {LastName}",
+                    validSpecializations.Count, request.FirstName, request.LastName);
 
                 var addressDto = await addressService.CreateAddressAsync(request.Address);
                 var contactDto = await contactService.CreateContactAsync(request.Contact);
@@ -70,6 +76,9 @@ namespace MedNet.API.Services
                 await doctorRepository.CreateAsync(doctor);
                 await transaction.CommitAsync();
 
+                logger.LogInformation("Doctor {DoctorId} created successfully - {FirstName} {LastName}, License: {LicenseNumber}",
+                    doctor.Id, doctor.FirstName, doctor.LastName, doctor.LicenseNumber);
+
                 return new CreatedDoctorDto
                 {
                     Id = doctor.Id,
@@ -87,6 +96,8 @@ namespace MedNet.API.Services
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
+                logger.LogError(ex, "Failed to create doctor {FirstName} {LastName} with UserId: {UserId}",
+                    request.FirstName, request.LastName, request.UserId);
                 throw new CustomException("An unexpected error occurred: " + ex.Message, ex);
             }
         }
@@ -94,9 +105,11 @@ namespace MedNet.API.Services
 
         public async Task<IEnumerable<DoctorResponseDto>> GetAllDoctorsAsync()
         {
+            logger.LogInformation("Retrieving all doctors");
+
             var doctors = await doctorRepository.GetAllAsync();
 
-            return doctors.Select(doctor => new DoctorResponseDto
+            var doctorList = doctors.Select(doctor => new DoctorResponseDto
             {
                 Id = doctor.Id,
                 FirstName = doctor.FirstName,
@@ -131,14 +144,24 @@ namespace MedNet.API.Services
                         StudiedYears = q.StudiedYears,
                         YearOfCompletion = q.YearOfCompletion
                     }).ToList()
-            });
+            }).ToList();
+
+            logger.LogInformation("Retrieved {Count} doctors", doctorList.Count);
+
+            return doctorList;
         }
 
         public async Task<DoctorResponseDto?> GetDoctorByIdAsync(Guid id)
         {
+            logger.LogInformation("Retrieving doctor with ID: {DoctorId}", id);
+
             var doctor = await doctorRepository.GetById(id);
 
-            if (doctor == null) return null;
+            if (doctor == null)
+            {
+                logger.LogWarning("Doctor not found with ID: {DoctorId}", id);
+                return null;
+            }
 
             var specializationDtos = await specializationService.GetAllSpecializationsAsync();
             var qualificationDtos = await qualificationService.GetQualificationsByDoctorIdAsync(doctor.Id);
@@ -148,11 +171,14 @@ namespace MedNet.API.Services
                 {
                     Degree = q.Degree,
                     Institution = q.Institution,
-                            StudiedYears = q.StudiedYears,
-            YearOfCompletion = q.YearOfCompletion
+                    StudiedYears = q.StudiedYears,
+                    YearOfCompletion = q.YearOfCompletion
                 });
             var addressDto = await addressService.GetAddressByIdAsync(doctor.AddressId);
             var contactDto = await contactService.GetContactByIdAsync(doctor.ContactId);
+
+            logger.LogInformation("Doctor {DoctorId} retrieved - {FirstName} {LastName}, License: {LicenseNumber}, Specializations: {SpecCount}",
+                doctor.Id, doctor.FirstName, doctor.LastName, doctor.LicenseNumber, doctor.DoctorSpecializations.Count);
 
             return new DoctorResponseDto
             {
@@ -187,9 +213,18 @@ namespace MedNet.API.Services
 
         public async Task<UpdatedDoctorDto?> UpdateDoctorAsync(Guid id, UpdateDoctorRequestDto request)
         {
+            logger.LogInformation("Updating doctor with ID: {DoctorId}", id);
+
             var existingDoctor = await doctorRepository.GetById(id);
 
-            if (existingDoctor == null) return null;
+            if (existingDoctor == null)
+            {
+                logger.LogWarning("Doctor not found for update with ID: {DoctorId}", id);
+                return null;
+            }
+
+            var oldLicense = existingDoctor.LicenseNumber;
+            var oldExperience = existingDoctor.YearsOfExperience;
 
             existingDoctor.FirstName = request.FirstName;
             existingDoctor.LastName = request.LastName;
@@ -206,10 +241,15 @@ namespace MedNet.API.Services
 
             if (validSpecializationIds.Count != request.SpecializationIds.Count())
             {
+                logger.LogWarning("Invalid specialization IDs provided for doctor {DoctorId}. Valid: {ValidCount}, Requested: {RequestedCount}",
+                    id, validSpecializationIds.Count, request.SpecializationIds.Count());
                 throw new ArgumentException("One or more specialization IDs are invalid.");
             }
-            
+
             await doctorRepository.UpdateDoctorSpecializationsAsync(id, validSpecializationIds);
+
+            logger.LogInformation("Doctor {DoctorId} updated successfully - {FirstName} {LastName}, License: {OldLicense} → {NewLicense}, Experience: {OldExp} → {NewExp} years",
+                id, existingDoctor.FirstName, existingDoctor.LastName, oldLicense, existingDoctor.LicenseNumber, oldExperience, existingDoctor.YearsOfExperience);
 
             return new UpdatedDoctorDto
             {
@@ -226,14 +266,18 @@ namespace MedNet.API.Services
 
         public async Task<string?> DeleteDoctorAsync(Guid id)
         {
+            logger.LogInformation("Attempting to delete doctor with ID: {DoctorId}", id);
+
             if (id == Guid.Empty)
             {
+                logger.LogWarning("Delete attempt with invalid empty GUID");
                 throw new ArgumentException("Invalid ID", nameof(id));
             }
 
             var doctor = await doctorRepository.GetById(id);
             if (doctor == null)
             {
+                logger.LogWarning("Doctor not found for deletion with ID: {DoctorId}", id);
                 return null;
             }
 
@@ -241,6 +285,9 @@ namespace MedNet.API.Services
 
             try
             {
+                logger.LogDebug("Deleting doctor {DoctorId} - {FirstName} {LastName}, License: {LicenseNumber}",
+                    id, doctor.FirstName, doctor.LastName, doctor.LicenseNumber);
+
                 await doctorRepository.DeleteAsync(id);
 
                 if (doctor.Address != null)
@@ -259,18 +306,23 @@ namespace MedNet.API.Services
                     if (!identityResult.Succeeded)
                     {
                         await transaction.RollbackAsync();
-                        throw new CustomException("Failed to delete associated Identity user: " +
-                            string.Join(", ", identityResult.Errors.Select(e => e.Description)));
+                        var errors = string.Join(", ", identityResult.Errors.Select(e => e.Description));
+                        logger.LogError("Failed to delete Identity user for doctor {DoctorId}: {Errors}", id, errors);
+                        throw new CustomException("Failed to delete associated Identity user: " + errors);
                     }
                 }
 
                 await transaction.CommitAsync();
+
+                logger.LogInformation("Doctor {DoctorId} deleted successfully - {FirstName} {LastName}, License: {LicenseNumber}",
+                    id, doctor.FirstName, doctor.LastName, doctor.LicenseNumber);
 
                 return "Doctor has been deleted successfully!";
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
+                logger.LogError(ex, "Failed to delete doctor with ID: {DoctorId}", id);
                 throw new CustomException("An unexpected error occurred while deleting the doctor: " + ex.Message, ex);
             }
         }
