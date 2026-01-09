@@ -1,25 +1,33 @@
-﻿using MedNet.API.Models;
+﻿using MedNet.API.Exceptions;
+using MedNet.API.Models;
 using MedNet.API.Models.DTO;
 using MedNet.API.Repositories.Interface;
 using MedNet.API.Services.Interface;
+using Microsoft.Extensions.Logging;
 
 namespace MedNet.API.Services.Implementation
 {
     public class InsuranceService : IInsuranceService
     {
         private readonly IInsuranceRepository insuranceRepository;
+        private readonly ILogger<InsuranceService> logger;
 
-        public InsuranceService(IInsuranceRepository insuranceRepository)
+        public InsuranceService(IInsuranceRepository insuranceRepository, ILogger<InsuranceService> logger)
         {
             this.insuranceRepository = insuranceRepository;
+            this.logger = logger;
         }
 
         public async Task<InsuranceDto> CreateInsuranceAsync(CreateInsuranceRequestDto request)
         {
             if (!request.PatientId.HasValue)
             {
+                logger.LogWarning("Insurance creation failed - PatientId is null");
                 throw new InvalidOperationException("PatientId cannot be null.");
             }
+
+            logger.LogInformation("Creating insurance for Patient {PatientId}, Provider: {Provider}, Policy: {PolicyNumber}", 
+                request.PatientId.Value, request.Provider, request.PolicyNumber);
 
             var insurance = new Insurance
             {
@@ -32,6 +40,9 @@ namespace MedNet.API.Services.Implementation
             };
 
             await insuranceRepository.CreateAsync(insurance);
+
+            logger.LogInformation("Insurance {InsuranceId} created successfully for Patient {PatientId} - Provider: {Provider}", 
+                insurance.Id, insurance.PatientId, insurance.Provider);
 
             return new InsuranceDto
             {
@@ -46,9 +57,11 @@ namespace MedNet.API.Services.Implementation
 
         public async Task<IEnumerable<InsuranceDto>> GetAllInsurancesAsync()
         {
+            logger.LogInformation("Retrieving all insurances");
+
             var insurances = await insuranceRepository.GetAllAsync();
 
-            return insurances.Select(insurance => new InsuranceDto
+            var insuranceList = insurances.Select(insurance => new InsuranceDto
             {
                 Id = insurance.Id,
                 PatientId = insurance.PatientId,
@@ -57,15 +70,25 @@ namespace MedNet.API.Services.Implementation
                 CoverageStartDate = insurance.CoverageStartDate,
                 CoverageEndDate = insurance.CoverageEndDate
             }).ToList();
+
+            logger.LogInformation("Retrieved {Count} insurances", insuranceList.Count);
+
+            return insuranceList;
         }
 
         public async Task<InsuranceDto?> GetInsuranceByIdAsync(Guid id)
         {
+            logger.LogInformation("Retrieving insurance with ID: {InsuranceId}", id);
+
             var insurance = await insuranceRepository.GetById(id);
             if(insurance == null)
             {
+                logger.LogWarning("Insurance not found with ID: {InsuranceId}", id);
                 return null;
             }
+
+            logger.LogInformation("Insurance {InsuranceId} retrieved - Patient: {PatientId}, Provider: {Provider}", 
+                insurance.Id, insurance.PatientId, insurance.Provider);
 
             return new InsuranceDto
             {
@@ -80,9 +103,11 @@ namespace MedNet.API.Services.Implementation
 
         public async Task<IEnumerable<InsuranceDto>> GetInsurancesByPatientIdAsync(Guid patientId)
         {
+            logger.LogInformation("Retrieving insurances for Patient {PatientId}", patientId);
+
             var insurances = await insuranceRepository.GetAllByPatientIdAsync(patientId);
 
-            return insurances.Select(insurance => new InsuranceDto
+            var insuranceList = insurances.Select(insurance => new InsuranceDto
             {
                 Id = insurance.Id,
                 PatientId = insurance.PatientId,
@@ -91,13 +116,26 @@ namespace MedNet.API.Services.Implementation
                 CoverageStartDate = insurance.CoverageStartDate,
                 CoverageEndDate = insurance.CoverageEndDate
             }).ToList();
-        }
 
+            logger.LogInformation("Retrieved {Count} insurances for Patient {PatientId}", 
+                insuranceList.Count, patientId);
+
+            return insuranceList;
+        }
 
         public async Task<InsuranceDto> UpdateInsuranceAsync(Guid id, UpdateInsuranceRequestDto request)
         {
+            logger.LogInformation("Updating insurance with ID: {InsuranceId}", id);
+
             var existingInsurance = await insuranceRepository.GetById(id);
-            if (existingInsurance == null) return null;
+            if (existingInsurance == null)
+            {
+                logger.LogWarning("Insurance not found for update with ID: {InsuranceId}", id);
+                return null;
+            }
+
+            var oldProvider = existingInsurance.Provider;
+            var oldPolicyNumber = existingInsurance.PolicyNumber;
 
             existingInsurance.Provider = request.Provider;
             existingInsurance.PolicyNumber = request.PolicyNumber;
@@ -106,7 +144,14 @@ namespace MedNet.API.Services.Implementation
 
             var updatedInsurance = await insuranceRepository.UpdateAsync(existingInsurance);
 
-            if (updatedInsurance == null) return null;
+            if (updatedInsurance == null)
+            {
+                logger.LogError("Failed to update insurance with ID: {InsuranceId}", id);
+                return null;
+            }
+
+            logger.LogInformation("Insurance {InsuranceId} updated successfully - Provider: '{OldProvider}' → '{NewProvider}', Policy: '{OldPolicy}' → '{NewPolicy}'", 
+                id, oldProvider, updatedInsurance.Provider, oldPolicyNumber, updatedInsurance.PolicyNumber);
 
             return new InsuranceDto
             {
@@ -119,20 +164,23 @@ namespace MedNet.API.Services.Implementation
             };
         }
 
-        public async Task<InsuranceDto> DeleteInsuranceAsync(Guid id)
+        public async Task<string?> DeleteInsuranceAsync(Guid id)
         {
-            var insurance = await insuranceRepository.DeleteAsync(id);
-            if (insurance == null) return null;
+            logger.LogInformation("Deleting insurance with ID: {InsuranceId}", id);
 
-            return new InsuranceDto
+            var insurance = await insuranceRepository.DeleteAsync(id);
+            if (insurance == null)
             {
-                Id = insurance.Id,
-                PatientId = insurance.PatientId,
-                Provider = insurance.Provider,
-                PolicyNumber = insurance.PolicyNumber,
-                CoverageStartDate = insurance.CoverageStartDate,
-                CoverageEndDate = insurance.CoverageEndDate
-            };
+                logger.LogWarning("Insurance not found for deletion with ID: {InsuranceId}", id);
+                return null;
+            }
+
+            logger.LogInformation("Insurance {InsuranceId} deleted successfully - Patient: {PatientId}, Provider: {Provider}", 
+                insurance.Id, insurance.PatientId, insurance.Provider);
+
+            return $"Insurance with ID {insurance.Id} deleted successfully!";
+
+
         }
     }
 }
