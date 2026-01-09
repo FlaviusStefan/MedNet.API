@@ -18,6 +18,7 @@ namespace MedNet.API.Services.Implementation
         private readonly IMedicationService medicationService;
         private readonly IMedicalFileService medicalFileService;
         private readonly IUserManagementService userManagementService;
+        private readonly ILogger<PatientService> logger;
 
         public PatientService(IPatientRepository patientRepository,
             IAddressService addressService,
@@ -25,7 +26,8 @@ namespace MedNet.API.Services.Implementation
             IInsuranceService insuranceService,
             IMedicationService medicationService,
             IMedicalFileService medicalFileService,
-            IUserManagementService userManagementService)
+            IUserManagementService userManagementService,
+            ILogger<PatientService> logger)
         {
             this.patientRepository = patientRepository;
             this.addressService = addressService;
@@ -34,11 +36,15 @@ namespace MedNet.API.Services.Implementation
             this.medicationService = medicationService;
             this.medicalFileService = medicalFileService;
             this.userManagementService = userManagementService;
+            this.logger = logger;
         }
 
 
         public async Task<CreatedPatientDto> CreatePatientAsync(CreatePatientRequestDto request)
         {
+            logger.LogInformation("Creating patient: {FirstName} {LastName}, UserId: {UserId}",
+                request.FirstName, request.LastName, request.UserId);
+
             using var transaction = await patientRepository.BeginTransactionAsync();
 
             try
@@ -60,6 +66,9 @@ namespace MedNet.API.Services.Implementation
                     ContactId = contactDto.Id
                 };
 
+                logger.LogInformation("Patient {PatientId} created successfully - {FirstName} {LastName}, UserId: {UserId}",
+                    patient.Id, patient.FirstName, patient.LastName, patient.UserId);
+
                 await patientRepository.CreateAsync(patient);
                 await transaction.CommitAsync();
 
@@ -80,12 +89,16 @@ namespace MedNet.API.Services.Implementation
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
+                logger.LogError(ex, "Failed to create patient {FirstName} {LastName} with UserId: {UserId}",
+                    request.FirstName, request.LastName, request.UserId);
                 throw new CustomException("An unexpected error occurred: " + ex.Message, ex);
             }
         }
 
         public async Task<IEnumerable<PatientBasicSummaryDto>> GetAllPatientsAsync()
         {
+            logger.LogInformation("Retrieving all patients");
+
             var patients = await patientRepository.GetAllAsync();
             var patientDtos = new List<PatientBasicSummaryDto>();
 
@@ -122,17 +135,19 @@ namespace MedNet.API.Services.Implementation
                 });
             }
 
+            logger.LogInformation("Retrieved {Count} patients", patientDtos.Count);
+
             return patientDtos;
         }
 
         public async Task<PatientResponseDto?> GetPatientByUserIdAsync(string userId)
         {
-            Console.WriteLine($"[DEBUG] Searching for patient with UserId: {userId}");
+            logger.LogInformation("Searching for patient with UserId: {UserId}", userId);
 
             var patient = await patientRepository.GetByUserIdAsync(userId);
             if (patient == null)
             {
-                Console.WriteLine($"[ERROR] No patient found for UserId: {userId}");
+                logger.LogWarning("No patient found for UserId: {UserId}", userId);
                 return null;
             }
 
@@ -190,7 +205,9 @@ namespace MedNet.API.Services.Implementation
                     DateUploaded = mf.DateUploaded
                 }).ToList();
 
-            Console.WriteLine($"[SUCCESS] Found patient: {patient.FirstName} {patient.LastName}");
+            logger.LogInformation("Successfully retrieved patient {PatientName} (ID: {PatientId}) for UserId: {UserId} with {InsuranceCount} insurances, {MedicationCount} medications, {FileCount} files",
+                $"{patient.FirstName} {patient.LastName}", patient.Id, userId, insurances.Count, medications.Count, medicalFiles.Count);
+
 
             return new PatientResponseDto
             {
@@ -213,8 +230,14 @@ namespace MedNet.API.Services.Implementation
 
         public async Task<PatientResponseDto?> GetPatientByIdAsync(Guid id)
         {
+            logger.LogInformation("Retrieving patient with ID: {PatientId}", id);
+
             var patient = await patientRepository.GetById(id);
-            if (patient == null) return null;
+            if (patient == null)
+            {
+                logger.LogWarning("Patient not found with ID: {PatientId}", id);
+                return null;
+            }
 
             var addressDto = await addressService.GetAddressByIdAsync(patient.AddressId);
             AddressResponseDto? addressResponse = null;
@@ -230,6 +253,7 @@ namespace MedNet.API.Services.Implementation
                     Country = addressDto.Country
                 };
             }
+
             var contactDto = await contactService.GetContactByIdAsync(patient.ContactId);
             ContactResponseDto? contactResponse = null;
             if (contactDto != null)
@@ -270,6 +294,9 @@ namespace MedNet.API.Services.Implementation
                     DateUploaded = mf.DateUploaded
                 }).ToList();
 
+            logger.LogInformation("Successfully retrieved patient {PatientName} (ID: {PatientId}) with {InsuranceCount} insurances, {MedicationCount} medications, {FileCount} files",
+                $"{patient.FirstName} {patient.LastName}", patient.Id, insurances.Count, medications.Count, medicalFiles.Count);
+
             return new PatientResponseDto
             {
                 Id = patient.Id,
@@ -290,9 +317,18 @@ namespace MedNet.API.Services.Implementation
 
         public async Task<UpdatedPatientDto?> UpdatePatientAsync(Guid id, UpdatePatientRequestDto request)
         {
+            logger.LogInformation("Updating patient with ID: {PatientId}", id);
+
             var existingPatient = await patientRepository.GetById(id);
 
-            if(existingPatient == null) return null;
+            if (existingPatient == null)
+            {
+                logger.LogWarning("Patient not found for update with ID: {PatientId}", id);
+                return null;
+            }
+
+            var oldHeight = existingPatient.Height;
+            var oldWeight = existingPatient.Weight;
 
             existingPatient.FirstName = request.FirstName;
             existingPatient.LastName = request.LastName;
@@ -303,7 +339,15 @@ namespace MedNet.API.Services.Implementation
 
             var updatedPatient = await patientRepository.UpdateAsync(existingPatient);
 
-            if (updatedPatient == null) return null;
+            if (updatedPatient == null)
+            {
+                logger.LogError("Failed to update patient with ID: {PatientId}", id);
+                return null;
+            }
+
+            logger.LogInformation("Patient {PatientId} updated successfully - {FirstName} {LastName}, Height: {OldHeight} → {NewHeight}, Weight: {OldWeight} → {NewWeight}",
+                id, updatedPatient.FirstName, updatedPatient.LastName, oldHeight, updatedPatient.Height, oldWeight, updatedPatient.Weight);
+
 
             return new UpdatedPatientDto
             {
@@ -318,14 +362,18 @@ namespace MedNet.API.Services.Implementation
         }
         public async Task<string?> DeletePatientAsync(Guid id)
         {
-            if(id == Guid.Empty)
+            logger.LogInformation("Attempting to delete patient with ID: {PatientId}", id);
+
+            if (id == Guid.Empty)
             {
+                logger.LogWarning("Delete attempt with invalid empty GUID");
                 throw new ArgumentException("Invalid ID", nameof(id));
             }
 
             var patient = await patientRepository.GetById(id);
             if (patient == null)
             {
+                logger.LogWarning("Patient not found for deletion with ID: {PatientId}", id);
                 return null;
             }
 
@@ -333,6 +381,9 @@ namespace MedNet.API.Services.Implementation
 
             try
             {
+                logger.LogDebug("Deleting patient {PatientId} - {FirstName} {LastName}, UserId: {UserId}",
+                    id, patient.FirstName, patient.LastName, patient.UserId);
+
                 await patientRepository.DeleteAsync(id);
 
                 if (patient.Address != null)
@@ -351,18 +402,23 @@ namespace MedNet.API.Services.Implementation
                     if (!identityResult.Succeeded)
                     {
                         await transaction.RollbackAsync();
-                        throw new CustomException("Failed to delete associated Identity user: " +
-                            string.Join(", ", identityResult.Errors.Select(e => e.Description)));
+                        var errors = string.Join(", ", identityResult.Errors.Select(e => e.Description));
+                        logger.LogError("Failed to delete Identity user for patient {PatientId}: {Errors}", id, errors);
+                        throw new CustomException("Failed to delete associated Identity user: " + errors);
                     }
                 }
 
                 await transaction.CommitAsync();
 
+                logger.LogInformation("Patient {PatientId} deleted successfully - {FirstName} {LastName}, UserId: {UserId}",
+                    id, patient.FirstName, patient.LastName, patient.UserId);
+
                 return "Patient has been deleted successfully!";
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync(); 
+                await transaction.RollbackAsync();
+                logger.LogError(ex, "Failed to delete patient with ID: {PatientId}", id);
                 throw new CustomException("An unexpected error occurred while deleting the patient: " + ex.Message, ex);
             }
         }
