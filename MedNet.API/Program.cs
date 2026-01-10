@@ -136,13 +136,18 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Seed roles at application startup
-using (var scope = builder.Services.BuildServiceProvider().CreateScope())
+var app = builder.Build();
+
+// Seed roles and admin user at application startup
+using (var scope = app.Services.CreateScope())
 {
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    var serviceProvider = scope.ServiceProvider;
+    var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    var userManager = serviceProvider.GetRequiredService<UserManager<IdentityUser>>();
+    var configuration = serviceProvider.GetRequiredService<IConfiguration>();
 
+    // Seed roles
     string[] roles = { "Admin", "Doctor", "Patient" };
-
     foreach (var role in roles)
     {
         if (!await roleManager.RoleExistsAsync(role))
@@ -150,15 +155,8 @@ using (var scope = builder.Services.BuildServiceProvider().CreateScope())
             await roleManager.CreateAsync(new IdentityRole(role));
         }
     }
-}
 
-// Seed "ADMIN" at application startup
-using (var scope = builder.Services.BuildServiceProvider().CreateScope())
-{
-    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-    var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-
+    // Seed admin user
     string adminEmail = configuration["DefaultAdmin:Email"]
         ?? throw new InvalidOperationException("DefaultAdmin:Email is not configured in secrets.json");
     string adminPassword = configuration["DefaultAdmin:Password"]
@@ -178,9 +176,6 @@ using (var scope = builder.Services.BuildServiceProvider().CreateScope())
         }
     }
 }
-
-
-var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
