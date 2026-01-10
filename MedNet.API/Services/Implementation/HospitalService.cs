@@ -46,7 +46,7 @@ namespace MedNet.API.Services.Implementation
                 };
 
                 await hospitalRepository.CreateAsync(hospital);
-                await unitOfWork.SaveChangesAsync(); // ✅ Still save, but no explicit transaction
+                await unitOfWork.SaveChangesAsync();
 
                 logger.LogInformation("Hospital {HospitalId} created successfully - {HospitalName}",
                     hospital.Id, hospital.Name);
@@ -63,7 +63,7 @@ namespace MedNet.API.Services.Implementation
             {
                 logger.LogError(ex, "Failed to create hospital {HospitalName} with UserId: {UserId}",
                     request.Name, request.UserId);
-                throw; // ✅ Just re-throw, TransactionScope will rollback
+                throw; 
             }
         }
 

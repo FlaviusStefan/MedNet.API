@@ -1,7 +1,7 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using System.Transactions; // ✅ Add this
+using System.Transactions;
 using MedNet.API.Exceptions;
 using MedNet.API.Models.DTO;
 using MedNet.API.Models.DTO.Auth;
@@ -45,60 +45,70 @@ namespace MedNet.API.Services.Implementation
                 throw new CustomException($"An account with email '{registerPatientDto.Email}' already exists.");
             }
 
-            var user = new IdentityUser
+            IdentityUser user;
+            Guid patientId;    
+
+            using (var scope = new TransactionScope(
+                TransactionScopeOption.Required,
+                new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
+                TransactionScopeAsyncFlowOption.Enabled))
             {
-                UserName = registerPatientDto.Email,
-                Email = registerPatientDto.Email,
-                PhoneNumber = registerPatientDto.PhoneNumber
-            };
-
-            var result = await _userManager.CreateAsync(user, registerPatientDto.Password);
-            if (!result.Succeeded)
-            {
-                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                _logger.LogWarning("Patient registration failed for {Email}: {Errors}", registerPatientDto.Email, errors);
-                throw new Exception(errors);
-            }
-
-            _logger.LogInformation("Identity user created successfully for patient: {Email}, UserId: {UserId}",
-                registerPatientDto.Email, user.Id);
-
-            try
-            {
-                await _userManager.AddToRoleAsync(user, UserRole.Patient.ToString());
-                _logger.LogDebug("Patient role assigned to user {UserId}", user.Id);
-
-                var createPatientDto = new CreatePatientRequestDto
+                try
                 {
-                    FirstName = registerPatientDto.FirstName,
-                    LastName = registerPatientDto.LastName,
-                    UserId = user.Id,
-                    DateOfBirth = registerPatientDto.DateOfBirth,
-                    Gender = registerPatientDto.Gender,
-                    Height = registerPatientDto.Height,
-                    Weight = registerPatientDto.Weight,
-                    Address = registerPatientDto.Address,
-                    Contact = new CreateContactRequestDto
+                    user = new IdentityUser
                     {
+                        UserName = registerPatientDto.Email,
                         Email = registerPatientDto.Email,
-                        Phone = registerPatientDto.PhoneNumber
+                        PhoneNumber = registerPatientDto.PhoneNumber
+                    };
+
+                    var result = await _userManager.CreateAsync(user, registerPatientDto.Password);
+                    if (!result.Succeeded)
+                    {
+                        var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                        _logger.LogWarning("Patient registration failed for {Email}: {Errors}", registerPatientDto.Email, errors);
+                        throw new Exception(errors);
                     }
-                };
 
-                var createdPatient = await _patientService.CreatePatientAsync(createPatientDto);
+                    _logger.LogInformation("Identity user created successfully for patient: {Email}, UserId: {UserId}",
+                        registerPatientDto.Email, user.Id);
 
-                _logger.LogInformation("Patient self-registration completed successfully - Email: {Email}, UserId: {UserId}, PatientId: {PatientId}",
-                    registerPatientDto.Email, user.Id, createdPatient.Id);
+                    await _userManager.AddToRoleAsync(user, UserRole.Patient.ToString());
+                    _logger.LogDebug("Patient role assigned to user {UserId}", user.Id);
 
-                return await GenerateJwtToken(user);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error during patient self-registration for email: {Email}, rolling back user creation", registerPatientDto.Email);
-                await _userManager.DeleteAsync(user);
-                _logger.LogInformation("Rolled back user creation for failed patient registration: {Email}", registerPatientDto.Email);
-                throw new CustomException("An error occurred while registering the patient: " + ex.Message, ex);
-            }
+                    var createPatientDto = new CreatePatientRequestDto
+                    {
+                        FirstName = registerPatientDto.FirstName,
+                        LastName = registerPatientDto.LastName,
+                        UserId = user.Id,
+                        DateOfBirth = registerPatientDto.DateOfBirth,
+                        Gender = registerPatientDto.Gender,
+                        Height = registerPatientDto.Height,
+                        Weight = registerPatientDto.Weight,
+                        Address = registerPatientDto.Address,
+                        Contact = new CreateContactRequestDto
+                        {
+                            Email = registerPatientDto.Email,
+                            Phone = registerPatientDto.PhoneNumber
+                        }
+                    };
+
+                    var createdPatient = await _patientService.CreatePatientAsync(createPatientDto);
+                    patientId = createdPatient.Id;
+
+                    scope.Complete();
+
+                    _logger.LogInformation("Patient self-registration completed successfully - Email: {Email}, UserId: {UserId}, PatientId: {PatientId}",
+                        registerPatientDto.Email, user.Id, patientId);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error during patient self-registration for email: {Email}, transaction rolled back", registerPatientDto.Email);
+                    throw new CustomException("An error occurred while registering the patient: " + ex.Message, ex);
+                }
+            } 
+
+            return await GenerateJwtToken(user);
         }
 
         public async Task<string> RegisterPatientByAdminAsync(RegisterPatientByAdminDto registerDto)
@@ -112,26 +122,31 @@ namespace MedNet.API.Services.Implementation
                 throw new CustomException($"An account with email '{registerDto.Email}' already exists.");
             }
 
-            var user = new IdentityUser
-            {
-                UserName = registerDto.Email,
-                Email = registerDto.Email,
-                PhoneNumber = registerDto.PhoneNumber
-            };
-
-            var result = await _userManager.CreateAsync(user, registerDto.Password);
-            if (!result.Succeeded)
-            {
-                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                _logger.LogWarning("Admin patient registration failed for {Email}: {Errors}", registerDto.Email, errors);
-                throw new Exception(errors);
-            }
-
-            _logger.LogInformation("Identity user created by admin for patient: {Email}, UserId: {UserId}",
-                registerDto.Email, user.Id);
+            using var scope = new TransactionScope(
+                TransactionScopeOption.Required,
+                new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
+                TransactionScopeAsyncFlowOption.Enabled);
 
             try
             {
+                var user = new IdentityUser
+                {
+                    UserName = registerDto.Email,
+                    Email = registerDto.Email,
+                    PhoneNumber = registerDto.PhoneNumber
+                };
+
+                var result = await _userManager.CreateAsync(user, registerDto.Password);
+                if (!result.Succeeded)
+                {
+                    var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                    _logger.LogWarning("Admin patient registration failed for {Email}: {Errors}", registerDto.Email, errors);
+                    throw new Exception(errors);
+                }
+
+                _logger.LogInformation("Identity user created by admin for patient: {Email}, UserId: {UserId}",
+                    registerDto.Email, user.Id);
+
                 await _userManager.AddToRoleAsync(user, UserRole.Patient.ToString());
 
                 var createPatientDto = new CreatePatientRequestDto
@@ -153,6 +168,8 @@ namespace MedNet.API.Services.Implementation
 
                 var createdPatient = await _patientService.CreatePatientAsync(createPatientDto);
 
+                scope.Complete();
+
                 _logger.LogInformation("Patient account created successfully by admin - Email: {Email}, UserId: {UserId}, PatientId: {PatientId}",
                     registerDto.Email, user.Id, createdPatient.Id);
 
@@ -160,10 +177,8 @@ namespace MedNet.API.Services.Implementation
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during admin patient registration for email: {Email}, rolling back user creation", registerDto.Email);
-                await _userManager.DeleteAsync(user);
-                _logger.LogInformation("Rolled back user creation for failed admin patient registration: {Email}", registerDto.Email);
-                throw;
+                _logger.LogError(ex, "Error creating patient profile for {Email}, transaction rolled back", registerDto.Email);
+                throw new CustomException("An unexpected error occurred while creating the patient account: " + ex.Message, ex);
             }
         }
 
@@ -325,7 +340,6 @@ namespace MedNet.API.Services.Implementation
                 throw new CustomException($"An account with email '{registerDto.Email}' already exists.");
             }
 
-            // ✅ Start distributed transaction (covers both DbContexts)
             using var scope = new TransactionScope(
                 TransactionScopeOption.Required,
                 new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
@@ -365,7 +379,6 @@ namespace MedNet.API.Services.Implementation
 
                 var createdHospital = await _hospitalService.CreateHospitalAsync(createHospitalDto);
 
-                // ✅ Commit BOTH transactions atomically
                 scope.Complete();
 
                 _logger.LogInformation("Hospital account created successfully by admin - Name: {Name}, UserId: {UserId}, HospitalId: {HospitalId}",
@@ -375,7 +388,6 @@ namespace MedNet.API.Services.Implementation
             }
             catch (Exception ex)
             {
-                // ✅ Both transactions will be rolled back automatically (no manual cleanup needed)
                 _logger.LogError(ex, "Error creating hospital profile for {Name}, transaction rolled back", registerDto.Name);
                 throw new CustomException("An unexpected error occurred while creating the hospital account: " + ex.Message, ex);
             }

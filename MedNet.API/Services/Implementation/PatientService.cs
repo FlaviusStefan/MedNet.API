@@ -18,6 +18,7 @@ namespace MedNet.API.Services.Implementation
         private readonly IMedicationService medicationService;
         private readonly IMedicalFileService medicalFileService;
         private readonly IUserManagementService userManagementService;
+        private readonly IUnitOfWork unitOfWork;
         private readonly ILogger<PatientService> logger;
 
         public PatientService(IPatientRepository patientRepository,
@@ -27,7 +28,8 @@ namespace MedNet.API.Services.Implementation
             IMedicationService medicationService,
             IMedicalFileService medicalFileService,
             IUserManagementService userManagementService,
-            ILogger<PatientService> logger)
+            ILogger<PatientService> logger,
+            IUnitOfWork unitOfWork)
         {
             this.patientRepository = patientRepository;
             this.addressService = addressService;
@@ -37,6 +39,7 @@ namespace MedNet.API.Services.Implementation
             this.medicalFileService = medicalFileService;
             this.userManagementService = userManagementService;
             this.logger = logger;
+            this.unitOfWork = unitOfWork;
         }
 
 
@@ -44,8 +47,6 @@ namespace MedNet.API.Services.Implementation
         {
             logger.LogInformation("Creating patient: {FirstName} {LastName}, UserId: {UserId}",
                 request.FirstName, request.LastName, request.UserId);
-
-            using var transaction = await patientRepository.BeginTransactionAsync();
 
             try
             {
@@ -66,11 +67,12 @@ namespace MedNet.API.Services.Implementation
                     ContactId = contactDto.Id
                 };
 
+                await patientRepository.CreateAsync(patient);
+
+                await unitOfWork.SaveChangesAsync();
+
                 logger.LogInformation("Patient {PatientId} created successfully - {FirstName} {LastName}, UserId: {UserId}",
                     patient.Id, patient.FirstName, patient.LastName, patient.UserId);
-
-                await patientRepository.CreateAsync(patient);
-                await transaction.CommitAsync();
 
                 return new CreatedPatientDto
                 {
@@ -88,10 +90,9 @@ namespace MedNet.API.Services.Implementation
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
                 logger.LogError(ex, "Failed to create patient {FirstName} {LastName} with UserId: {UserId}",
                     request.FirstName, request.LastName, request.UserId);
-                throw new CustomException("An unexpected error occurred: " + ex.Message, ex);
+                throw; 
             }
         }
 
