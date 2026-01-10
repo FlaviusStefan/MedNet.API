@@ -18,7 +18,6 @@ namespace MedNet.API.Repositories.Implementation
         public async Task<Contact> CreateAsync(Contact contact)
         {
             await dbContext.Contacts.AddAsync(contact);
-            await dbContext.SaveChangesAsync();
             return contact;
         }
 

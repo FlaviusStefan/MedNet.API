@@ -1,6 +1,7 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Transactions; // ✅ Add this
 using MedNet.API.Exceptions;
 using MedNet.API.Models.DTO;
 using MedNet.API.Models.DTO.Auth;
@@ -324,26 +325,32 @@ namespace MedNet.API.Services.Implementation
                 throw new CustomException($"An account with email '{registerDto.Email}' already exists.");
             }
 
-            var user = new IdentityUser
-            {
-                UserName = registerDto.Email,
-                Email = registerDto.Email,
-                PhoneNumber = registerDto.PhoneNumber
-            };
-
-            var result = await _userManager.CreateAsync(user, registerDto.Password);
-            if (!result.Succeeded)
-            {
-                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                _logger.LogWarning("Admin hospital registration failed for {Name}: {Errors}", registerDto.Name, errors);
-                throw new Exception(errors);
-            }
-
-            _logger.LogInformation("Identity user created by admin for hospital: {Name}, UserId: {UserId}",
-                registerDto.Name, user.Id);
+            // ✅ Start distributed transaction (covers both DbContexts)
+            using var scope = new TransactionScope(
+                TransactionScopeOption.Required,
+                new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
+                TransactionScopeAsyncFlowOption.Enabled);
 
             try
             {
+                var user = new IdentityUser
+                {
+                    UserName = registerDto.Email,
+                    Email = registerDto.Email,
+                    PhoneNumber = registerDto.PhoneNumber
+                };
+
+                var result = await _userManager.CreateAsync(user, registerDto.Password);
+                if (!result.Succeeded)
+                {
+                    var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                    _logger.LogWarning("Admin hospital registration failed for {Name}: {Errors}", registerDto.Name, errors);
+                    throw new Exception(errors);
+                }
+
+                _logger.LogInformation("Identity user created by admin for hospital: {Name}, UserId: {UserId}",
+                    registerDto.Name, user.Id);
+
                 var createHospitalDto = new CreateHospitalRequestDto
                 {
                     Name = registerDto.Name,
@@ -358,6 +365,9 @@ namespace MedNet.API.Services.Implementation
 
                 var createdHospital = await _hospitalService.CreateHospitalAsync(createHospitalDto);
 
+                // ✅ Commit BOTH transactions atomically
+                scope.Complete();
+
                 _logger.LogInformation("Hospital account created successfully by admin - Name: {Name}, UserId: {UserId}, HospitalId: {HospitalId}",
                     registerDto.Name, user.Id, createdHospital.Id);
 
@@ -365,10 +375,9 @@ namespace MedNet.API.Services.Implementation
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating hospital profile for {Name}, rolling back user creation", registerDto.Name);
-                await _userManager.DeleteAsync(user);
-                _logger.LogInformation("Rolled back user creation for failed hospital registration: {Name}", registerDto.Name);
-                throw;
+                // ✅ Both transactions will be rolled back automatically (no manual cleanup needed)
+                _logger.LogError(ex, "Error creating hospital profile for {Name}, transaction rolled back", registerDto.Name);
+                throw new CustomException("An unexpected error occurred while creating the hospital account: " + ex.Message, ex);
             }
         }
     }

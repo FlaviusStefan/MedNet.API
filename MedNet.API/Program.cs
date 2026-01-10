@@ -117,6 +117,8 @@ builder.Services.AddScoped<ILabAnalysisService, LabAnalysisService>();
 builder.Services.AddScoped<ILabTestService, LabTestService>();
 builder.Services.AddScoped<IUserManagementService, UserManagementService>();
 
+// Unit of work
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // Service for authentication
 builder.Services.AddScoped<IAuthService, AuthService>();

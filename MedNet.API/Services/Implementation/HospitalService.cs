@@ -14,22 +14,22 @@ namespace MedNet.API.Services.Implementation
         private readonly IAddressService addressService;
         private readonly IContactService contactService;
         private readonly IUserManagementService userManagementService;
+        private readonly IUnitOfWork unitOfWork;
         private readonly ILogger<HospitalService> logger;
 
-        public HospitalService(IHospitalRepository hospitalRepository, IAddressService addressService, IContactService contactService, ILogger<HospitalService> logger, IUserManagementService userManagementService)
+        public HospitalService(IHospitalRepository hospitalRepository, IAddressService addressService, IContactService contactService, ILogger<HospitalService> logger, IUserManagementService userManagementService, IUnitOfWork unitOfWork)
         {
             this.hospitalRepository = hospitalRepository;
             this.addressService = addressService;
             this.contactService = contactService;
             this.logger = logger;
             this.userManagementService = userManagementService;
+            this.unitOfWork = unitOfWork;
         }
         public async Task<HospitalDto> CreateHospitalAsync(CreateHospitalRequestDto request)
         {
             logger.LogInformation("Creating hospital: {HospitalName}, UserId: {UserId}",
                 request.Name, request.UserId);
-
-            using var transaction = await hospitalRepository.BeginTransactionAsync();
 
             try
             {
@@ -46,7 +46,7 @@ namespace MedNet.API.Services.Implementation
                 };
 
                 await hospitalRepository.CreateAsync(hospital);
-                await transaction.CommitAsync();
+                await unitOfWork.SaveChangesAsync(); // ✅ Still save, but no explicit transaction
 
                 logger.LogInformation("Hospital {HospitalId} created successfully - {HospitalName}",
                     hospital.Id, hospital.Name);
@@ -61,10 +61,9 @@ namespace MedNet.API.Services.Implementation
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
                 logger.LogError(ex, "Failed to create hospital {HospitalName} with UserId: {UserId}",
                     request.Name, request.UserId);
-                throw new CustomException("An unexpected error occurred: " + ex.Message, ex);
+                throw; // ✅ Just re-throw, TransactionScope will rollback
             }
         }
 

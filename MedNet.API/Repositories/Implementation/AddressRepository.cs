@@ -17,7 +17,6 @@ namespace MedNet.API.Repositories.Implementation
         public async Task<Address> CreateAsync(Address address)
         {
             await dbContext.Addresses.AddAsync(address);
-            await dbContext.SaveChangesAsync();
             return address;
         }
 
