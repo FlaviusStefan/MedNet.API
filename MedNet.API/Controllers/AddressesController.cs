@@ -31,7 +31,7 @@ namespace MedNet.API.Controllers
             var addresses = await addressService.GetAllAddressesAsync();
 
             logger.LogInformation("Returned {Count} addresses to user {UserId}",
-                ((IEnumerable<ContactDto>)addresses).Count(), userId);
+                ((IEnumerable<AddressDto>)addresses).Count(), userId);
             return Ok(addresses);
         }
 

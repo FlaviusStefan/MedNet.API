@@ -17,6 +17,7 @@ namespace MedNet.API.Services
         private readonly ISpecializationService specializationService;
         private readonly IQualificationService qualificationService;
         private readonly IUserManagementService userManagementService;
+        private readonly IUnitOfWork unitOfWork;
         private readonly ILogger<DoctorService> logger;
 
 
@@ -27,7 +28,8 @@ namespace MedNet.API.Services
             ISpecializationService specializationService,
             IQualificationService qualificationService,
             IUserManagementService userManagementService,
-            ILogger<DoctorService> logger)
+            ILogger<DoctorService> logger,
+            IUnitOfWork unitOfWork)
         {
             this.doctorRepository = doctorRepository;
             this.addressService = addressService;
@@ -36,14 +38,13 @@ namespace MedNet.API.Services
             this.qualificationService = qualificationService;
             this.userManagementService = userManagementService;
             this.logger = logger;
+            this.unitOfWork = unitOfWork;
         }
 
         public async Task<CreatedDoctorDto> CreateDoctorAsync(CreateDoctorRequestDto request)
         {
             logger.LogInformation("Creating doctor: {FirstName} {LastName}, License: {LicenseNumber}, UserId: {UserId}",
                request.FirstName, request.LastName, request.LicenseNumber, request.UserId);
-
-            using var transaction = await doctorRepository.BeginTransactionAsync();
 
             try
             {
@@ -75,7 +76,6 @@ namespace MedNet.API.Services
 
                 await doctorRepository.CreateAsync(doctor);
 
-                // CREATE QUALIFICATIONS
                 var createdQualifications = new List<QualificationDto>();
                 logger.LogDebug("Creating {Count} qualifications for doctor {DoctorId}",
                     request.Qualifications.Count, doctor.Id);
@@ -96,7 +96,7 @@ namespace MedNet.API.Services
                 logger.LogInformation("Created {Count} qualifications for doctor {DoctorId}",
                     createdQualifications.Count, doctor.Id);
 
-                await transaction.CommitAsync();
+                await unitOfWork.SaveChangesAsync();
 
                 logger.LogInformation("Doctor {DoctorId} created successfully - {FirstName} {LastName}, License: {LicenseNumber}, with {QualCount} qualifications",
                     doctor.Id, doctor.FirstName, doctor.LastName, doctor.LicenseNumber, createdQualifications.Count);
@@ -118,10 +118,9 @@ namespace MedNet.API.Services
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
                 logger.LogError(ex, "Failed to create doctor {FirstName} {LastName} with UserId: {UserId}",
                     request.FirstName, request.LastName, request.UserId);
-                throw new CustomException("An unexpected error occurred: " + ex.Message, ex);
+                throw; 
             }
         }
 

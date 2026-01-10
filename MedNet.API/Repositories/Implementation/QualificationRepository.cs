@@ -17,8 +17,6 @@ namespace MedNet.API.Repositories.Implementation
         public async Task<Qualification> CreateAsync(Qualification qualification)
         {
             await dbContext.Qualifications.AddAsync(qualification);
-            await dbContext.SaveChangesAsync();
-
             return qualification;
         }
 

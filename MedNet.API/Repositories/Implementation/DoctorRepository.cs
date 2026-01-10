@@ -18,8 +18,6 @@ namespace MedNet.API.Repositories.Implementation
         public async Task<Doctor> CreateAsync(Doctor doctor)
         {
             await dbContext.Doctors.AddAsync(doctor);
-            await dbContext.SaveChangesAsync();
-
             return doctor;
         }
 

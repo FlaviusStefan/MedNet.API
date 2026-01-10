@@ -269,26 +269,31 @@ namespace MedNet.API.Services.Implementation
                 throw new CustomException($"An account with email '{registerDto.Email}' already exists.");
             }
 
-            var user = new IdentityUser
-            {
-                UserName = registerDto.Email,
-                Email = registerDto.Email,
-                PhoneNumber = registerDto.PhoneNumber
-            };
-
-            var result = await _userManager.CreateAsync(user, registerDto.Password);
-            if (!result.Succeeded)
-            {
-                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                _logger.LogWarning("Admin doctor registration failed for {Email}: {Errors}", registerDto.Email, errors);
-                throw new Exception(errors);
-            }
-
-            _logger.LogInformation("Identity user created by admin for doctor: {Email}, UserId: {UserId}",
-                registerDto.Email, user.Id);
+            using var scope = new TransactionScope(
+                TransactionScopeOption.Required,
+                new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
+                TransactionScopeAsyncFlowOption.Enabled);
 
             try
             {
+                var user = new IdentityUser
+                {
+                    UserName = registerDto.Email,
+                    Email = registerDto.Email,
+                    PhoneNumber = registerDto.PhoneNumber
+                };
+
+                var result = await _userManager.CreateAsync(user, registerDto.Password);
+                if (!result.Succeeded)
+                {
+                    var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                    _logger.LogWarning("Admin doctor registration failed for {Email}: {Errors}", registerDto.Email, errors);
+                    throw new Exception(errors);
+                }
+
+                _logger.LogInformation("Identity user created by admin for doctor: {Email}, UserId: {UserId}",
+                    registerDto.Email, user.Id);
+
                 await _userManager.AddToRoleAsync(user, UserRole.Doctor.ToString());
 
                 var createDoctorDto = new CreateDoctorRequestDto
@@ -314,6 +319,8 @@ namespace MedNet.API.Services.Implementation
 
                 var createdDoctor = await _doctorService.CreateDoctorAsync(createDoctorDto);
 
+                scope.Complete();
+
                 _logger.LogInformation("Doctor account created successfully by admin - Email: {Email}, UserId: {UserId}, DoctorId: {DoctorId}, License: {LicenseNumber}",
                     registerDto.Email, user.Id, createdDoctor.Id, registerDto.LicenseNumber);
 
@@ -321,10 +328,8 @@ namespace MedNet.API.Services.Implementation
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating doctor profile for {Email}, rolling back user creation", registerDto.Email);
-                await _userManager.DeleteAsync(user);
-                _logger.LogInformation("Rolled back user creation for failed doctor registration: {Email}", registerDto.Email);
-                throw;
+                _logger.LogError(ex, "Error creating doctor profile for {Email}, transaction rolled back", registerDto.Email);
+                throw new CustomException("An unexpected error occurred while creating the doctor account: " + ex.Message, ex);
             }
         }
 
