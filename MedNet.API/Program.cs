@@ -141,9 +141,12 @@ using (var scope = builder.Services.BuildServiceProvider().CreateScope())
 {
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
 
-    string adminEmail = "admin@mednet.com";
-    string adminPassword = "Admin@123";
+    string adminEmail = configuration["DefaultAdmin:Email"]
+        ?? throw new InvalidOperationException("DefaultAdmin:Email is not configured in secrets.json");
+    string adminPassword = configuration["DefaultAdmin:Password"]
+        ?? throw new InvalidOperationException("DefaultAdmin:Password is not configured in secrets.json");
 
     if (await userManager.FindByEmailAsync(adminEmail) == null)
     {
