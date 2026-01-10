@@ -120,6 +120,22 @@ builder.Services.AddScoped<IUserManagementService, UserManagementService>();
 // Service for authentication
 builder.Services.AddScoped<IAuthService, AuthService>();
 
+// Configure CORS policy
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("MedNetCorsPolicy", policy =>
+    {
+        policy.WithOrigins(
+            "https://localhost:7274",  // Your API (Swagger)
+            "http://localhost:7274",   // only for testing
+            "http://localhost:4200"    // Angular
+        )
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials();
+    });
+});
+
 // Seed roles at application startup
 using (var scope = builder.Services.BuildServiceProvider().CreateScope())
 {
@@ -175,12 +191,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseCors(options =>
-{
-    options.AllowAnyHeader();
-    options.AllowAnyOrigin();
-    options.AllowAnyMethod();
-});
+app.UseCors("MedNetCorsPolicy");
 
 app.UseAuthentication();
 app.UseAuthorization();
