@@ -148,7 +148,7 @@ using (var scope = app.Services.CreateScope())
     var configuration = serviceProvider.GetRequiredService<IConfiguration>();
 
     // Seed roles
-    string[] roles = { "Admin", "Doctor", "Patient" };
+    string[] roles = { "Admin", "Doctor", "Patient", "Hospital" };
     foreach (var role in roles)
     {
         if (!await roleManager.RoleExistsAsync(role))

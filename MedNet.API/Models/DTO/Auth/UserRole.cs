@@ -6,6 +6,7 @@ namespace MedNet.API.Models.DTO.Auth
     {
         Admin,
         Doctor,
-        Patient
+        Patient,
+        Hospital
     }
 }
