@@ -1,4 +1,5 @@
 using MedNet.API.Data;
+using MedNet.API.Middleware;
 using MedNet.API.Repositories.Implementation;
 using MedNet.API.Repositories.Interface;
 using MedNet.API.Services;
@@ -176,6 +177,8 @@ using (var scope = app.Services.CreateScope())
         }
     }
 }
+
+app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
