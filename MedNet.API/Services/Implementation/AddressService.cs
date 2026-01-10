@@ -18,6 +18,9 @@ namespace MedNet.API.Services
         }
         public async Task<AddressDto> CreateAddressAsync(CreateAddressRequestDto request)
         {
+            logger.LogInformation("Creating new address with Street: {Street}, StreeNr: {StreetNr}, City: {City}, State: {State}, Country: {Country}, Postal Code: {PostalCode}",
+                request.Street, request.StreetNr, request.City, request.State, request.Country, request.PostalCode);
+
             var address = new Address
             {
                 Id = Guid.NewGuid(), 
@@ -50,9 +53,7 @@ namespace MedNet.API.Services
 
             var addresses = await addressRepository.GetAllAsync();
 
-            logger.LogInformation("Retrieved {Count} addresses", addresses.Count());
-
-            return addresses.Select(address => new AddressDto
+            var addressList = addresses.Select(address => new AddressDto
             {
                 Id = address.Id,
                 Street = address.Street,
@@ -62,6 +63,10 @@ namespace MedNet.API.Services
                 Country = address.Country,
                 PostalCode = address.PostalCode
             }).ToList();
+
+            logger.LogInformation("Retrieved {Count} addresses", addressList.Count);
+
+            return addressList;
         }
 
         public async Task<AddressDto?> GetAddressByIdAsync(Guid id)
