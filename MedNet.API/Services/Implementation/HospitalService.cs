@@ -226,6 +226,8 @@ namespace MedNet.API.Services.Implementation
                     }
                 }
 
+                await unitOfWork.SaveChangesAsync();
+
                 scope.Complete();
 
                 logger.LogInformation("Hospital {HospitalId} deleted successfully - {HospitalName}",

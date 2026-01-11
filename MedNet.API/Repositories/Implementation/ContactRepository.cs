@@ -23,26 +23,31 @@ namespace MedNet.API.Repositories.Implementation
 
         public async Task<IEnumerable<Contact>> GetAllAsync()
         {
-            return await dbContext.Contacts.ToListAsync();
+            return await dbContext.Contacts
+                .AsNoTracking()
+                .ToListAsync();
         }
 
         public async Task<Contact?> GetById(Guid id)
         {
-            return await dbContext.Contacts.FirstOrDefaultAsync(x => x.Id == id);
+            return await dbContext.Contacts
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == id);
         }
 
         public async Task<Contact?> UpdateAsync(Contact contact)
         {
             var existingContact = await dbContext.Contacts.FirstOrDefaultAsync(x => x.Id == contact.Id);
 
-            if (existingContact != null)
+            if (existingContact is null)
             {
-                dbContext.Entry(existingContact).CurrentValues.SetValues(contact);
-                await dbContext.SaveChangesAsync();
-                return contact;
+                return null;
             }
 
-            return null;
+            existingContact.Email = contact.Email;
+            existingContact.Phone = contact.Phone;
+
+            return existingContact;
         }
 
         public async Task<Contact?> DeleteAsync(Guid id)
@@ -55,7 +60,6 @@ namespace MedNet.API.Repositories.Implementation
             }
 
             dbContext.Contacts.Remove(existingContact);
-            await dbContext.SaveChangesAsync();
             return existingContact;
         }
     }

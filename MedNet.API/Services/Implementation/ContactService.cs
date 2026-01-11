@@ -1,21 +1,26 @@
 ﻿using MedNet.API.Models.Domain;
 using MedNet.API.Models.DTO;
-using MedNet.API.Repositories.Implementation;
 using MedNet.API.Repositories.Interface;
 using MedNet.API.Services.Interface;
+using Microsoft.Extensions.Logging;
 
 namespace MedNet.API.Services.Implementation
 {
     public class ContactService : IContactService
     {
         private readonly IContactRepository contactRepository;
+        private readonly IUnitOfWork unitOfWork;
         private readonly ILogger<ContactService> logger;
 
-        public ContactService(IContactRepository contactRepository, ILogger<ContactService> logger)
+        public ContactService(IContactRepository contactRepository,
+            IUnitOfWork unitOfWork,
+            ILogger<ContactService> logger)
         {
             this.contactRepository = contactRepository;
+            this.unitOfWork = unitOfWork;
             this.logger = logger;
         }
+
         public async Task<ContactDto> CreateContactAsync(CreateContactRequestDto request)
         {
             logger.LogInformation("Creating new contact with Email: {Email}, Phone: {Phone}",
@@ -30,7 +35,7 @@ namespace MedNet.API.Services.Implementation
 
             await contactRepository.CreateAsync(contact);
 
-            logger.LogInformation("Contact {ContactId} created successfully", contact.Id);
+            logger.LogInformation("Contact {ContactId} created (pending transaction commit)", contact.Id);
 
             return new ContactDto
             {
@@ -63,7 +68,7 @@ namespace MedNet.API.Services.Implementation
             logger.LogDebug("Retrieving contact with ID: {ContactId}", id);
 
             var contact = await contactRepository.GetById(id);
-            if (contact == null)
+            if (contact is null)
             {
                 logger.LogWarning("Contact not found with ID: {ContactId}", id);
                 return null;
@@ -85,7 +90,7 @@ namespace MedNet.API.Services.Implementation
 
             var existingContact = await contactRepository.GetById(id);
 
-            if (existingContact == null)
+            if (existingContact is null)
             {
                 logger.LogWarning("Contact not found for update with ID: {ContactId}", id);
                 return null;
@@ -99,13 +104,16 @@ namespace MedNet.API.Services.Implementation
 
             var updatedContact = await contactRepository.UpdateAsync(existingContact);
 
-            if (updatedContact == null)
+            if (updatedContact is null)
             {
                 logger.LogError("Failed to update contact with ID: {ContactId}", id);
                 return null;
             }
 
-            logger.LogInformation("Contact {ContactId} updated successfully - Email: {OldEmail} → {NewEmail}, Phone: {OldPhone} → {NewPhone}",
+            await unitOfWork.SaveChangesAsync();
+
+            logger.LogInformation(
+                "Contact {ContactId} updated successfully - Email: {OldEmail} → {NewEmail}, Phone: {OldPhone} → {NewPhone}",
                 id, oldEmail, updatedContact.Email, oldPhone, updatedContact.Phone);
 
             return new ContactDto
@@ -115,24 +123,20 @@ namespace MedNet.API.Services.Implementation
                 Phone = updatedContact.Phone
             };
         }
-
-
         public async Task<string?> DeleteContactAsync(Guid id)
         {
             logger.LogInformation("Deleting contact with ID: {ContactId}", id);
 
             var contact = await contactRepository.DeleteAsync(id);
-            if (contact == null)
+            if (contact is null)
             {
                 logger.LogWarning("Contact not found for deletion with ID: {ContactId}", id);
                 return null;
             }
 
-            logger.LogInformation("Contact {ContactId} deleted successfully - Email: {Email}",
-                contact.Id, contact.Email);
+            logger.LogInformation("Contact {ContactId} marked for deletion (pending transaction commit)", id);
 
-            return $"Contact with ID {contact.Id} of deleted successfully!";
-
+            return $"Contact with ID {contact.Id} deleted successfully!";
         }
     }
 }

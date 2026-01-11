@@ -336,6 +336,8 @@ namespace MedNet.API.Services
                     }
                 }
 
+                await unitOfWork.SaveChangesAsync();
+
                 scope.Complete();
 
                 logger.LogInformation("Doctor {DoctorId} deleted successfully - {FirstName} {LastName}, License: {LicenseNumber}",

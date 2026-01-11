@@ -22,32 +22,43 @@ namespace MedNet.API.Repositories.Implementation
 
         public async Task<IEnumerable<Address>> GetAllAsync()
         {
-            return await dbContext.Addresses.ToListAsync();
+            return await dbContext.Addresses
+                .AsNoTracking()
+                .ToListAsync();
         }
 
         public async Task<Address?> GetById(Guid id)
         {
-            return await dbContext.Addresses.FirstOrDefaultAsync(x => x.Id == id);
+            return await dbContext.Addresses
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == id);
 
         }
 
         public async Task<Address?> UpdateAsync(Address address)
         {
-            var existingAddress = await dbContext.Addresses.FirstOrDefaultAsync(x => x.Id == address.Id);
+            var existingAddress = await dbContext.Addresses
+                .FirstOrDefaultAsync(x => x.Id == address.Id);
 
-            if (existingAddress != null)
+            if (existingAddress is null)
             {
-                dbContext.Entry(existingAddress).CurrentValues.SetValues(address);
-                await dbContext.SaveChangesAsync();
-                return address;
+                return null;
             }
 
-            return null;
+            existingAddress.Street = address.Street;
+            existingAddress.StreetNr = address.StreetNr;
+            existingAddress.City = address.City;
+            existingAddress.State = address.State;
+            existingAddress.Country = address.Country;
+            existingAddress.PostalCode = address.PostalCode;
+
+            return existingAddress;
         }
 
         public async Task<Address?> DeleteAsync(Guid id)
         {
-            var existingAddress = await dbContext.Addresses.FirstOrDefaultAsync(x => x.Id == id);
+            var existingAddress = await dbContext.Addresses
+                .FirstOrDefaultAsync(x => x.Id == id);
 
             if (existingAddress is null)
             {
@@ -55,7 +66,6 @@ namespace MedNet.API.Repositories.Implementation
             }
 
             dbContext.Addresses.Remove(existingAddress);
-            await dbContext.SaveChangesAsync();
             return existingAddress;
         }
     }

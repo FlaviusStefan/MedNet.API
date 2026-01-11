@@ -371,6 +371,8 @@ namespace MedNet.API.Services.Implementation
                     }
                 }
 
+                await unitOfWork.SaveChangesAsync();
+
                 scope.Complete();
 
                 logger.LogInformation("Patient {PatientId} deleted successfully - {FirstName} {LastName}, UserId: {UserId}",

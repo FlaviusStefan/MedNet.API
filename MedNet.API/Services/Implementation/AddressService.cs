@@ -1,24 +1,31 @@
 ﻿using MedNet.API.Models.Domain;
 using MedNet.API.Models.DTO;
-
 using MedNet.API.Repositories.Interface;
+using MedNet.API.Services.Interface;
+using Microsoft.Extensions.Logging;
 
-
-namespace MedNet.API.Services
+namespace MedNet.API.Services.Implementation
 {
     public class AddressService : IAddressService
     {
         private readonly IAddressRepository addressRepository;
+        private readonly IUnitOfWork unitOfWork;
         private readonly ILogger<AddressService> logger;
 
-        public AddressService(IAddressRepository addressRepository, ILogger<AddressService> logger)
+        public AddressService(
+            IAddressRepository addressRepository,
+            IUnitOfWork unitOfWork,
+            ILogger<AddressService> logger)
         {
             this.addressRepository = addressRepository;
+            this.unitOfWork = unitOfWork;
             this.logger = logger;
         }
+
         public async Task<AddressDto> CreateAddressAsync(CreateAddressRequestDto request)
         {
-            logger.LogInformation("Creating new address with Street: {Street}, StreeNr: {StreetNr}, City: {City}, State: {State}, Country: {Country}, Postal Code: {PostalCode}",
+            logger.LogInformation(
+                "Creating new address with Street: {Street}, StreetNr: {StreetNr}, City: {City}, State: {State}, Country: {Country}, Postal Code: {PostalCode}",
                 request.Street, request.StreetNr, request.City, request.State, request.Country, request.PostalCode);
 
             var address = new Address
@@ -33,8 +40,8 @@ namespace MedNet.API.Services
             };
 
             await addressRepository.CreateAsync(address);
-
-            logger.LogInformation("Address {AddressId} created succesfully", address.Id);
+            
+            logger.LogInformation("Address {AddressId} created (pending transaction commit)", address.Id);
 
             return new AddressDto
             {
@@ -47,6 +54,7 @@ namespace MedNet.API.Services
                 PostalCode = address.PostalCode
             };
         }
+
         public async Task<IEnumerable<AddressDto>> GetAllAddressesAsync()
         {
             logger.LogInformation("Retrieving all addresses");
@@ -74,7 +82,7 @@ namespace MedNet.API.Services
             logger.LogDebug("Retrieving address with ID: {AddressId}", id);
 
             var address = await addressRepository.GetById(id);
-            if (address == null)
+            if (address is null)
             {
                 logger.LogWarning("Address not found with ID: {AddressId}", id);
                 return null;
@@ -100,7 +108,7 @@ namespace MedNet.API.Services
 
             var existingAddress = await addressRepository.GetById(id);
 
-            if (existingAddress == null)
+            if (existingAddress is null)
             {
                 logger.LogWarning("Address not found for update with ID: {AddressId}", id);
                 return null;
@@ -115,11 +123,13 @@ namespace MedNet.API.Services
 
             var updatedAddress = await addressRepository.UpdateAsync(existingAddress);
 
-            if (updatedAddress == null)
+            if (updatedAddress is null)
             {
                 logger.LogError("Failed to update address with ID: {AddressId}", id);
                 return null;
             }
+
+            await unitOfWork.SaveChangesAsync();
 
             logger.LogInformation("Address {AddressId} updated successfully", id);
 
@@ -140,13 +150,13 @@ namespace MedNet.API.Services
             logger.LogInformation("Deleting address with ID: {AddressId}", id);
 
             var address = await addressRepository.DeleteAsync(id);
-            if (address == null)
+            if (address is null)
             {
                 logger.LogWarning("Address not found for deletion with ID: {AddressId}", id);
                 return null;
             }
 
-            logger.LogInformation("Address {AddressId} deleted successfully", id);
+            logger.LogInformation("Address {AddressId} marked for deletion (pending transaction commit)", id);
 
             return $"Address with ID {address.Id} deleted successfully!";
         }
