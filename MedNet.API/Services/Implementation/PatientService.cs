@@ -102,40 +102,30 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Retrieving all patients");
 
             var patients = await patientRepository.GetAllAsync();
-            var patientDtos = new List<PatientBasicSummaryDto>();
-
-            foreach (var patient in patients)
+            var patientDtos = patients.Select(patient => new PatientBasicSummaryDto
             {
-                var addressDto = new AddressResponseDto
+                Id = patient.Id,
+                FirstName = patient.FirstName,
+                LastName = patient.LastName,
+                DateOfBirth = patient.DateOfBirth,
+                Gender = patient.Gender,
+                Height = patient.Height,
+                Weight = patient.Weight,
+                Address = patient.Address != null ? new AddressResponseDto
                 {
-                    Street = patient.Address?.Street,
-                    StreetNr = patient.Address?.StreetNr ?? 0,
-                    City = patient.Address?.City,
-                    State = patient.Address?.State,
-                    Country = patient.Address?.Country,
-                    PostalCode = patient.Address?.PostalCode
-
-                };
-
-                var contactDto = new ContactResponseDto
+                    Street = patient.Address.Street,
+                    StreetNr = patient.Address.StreetNr,
+                    City = patient.Address.City,
+                    State = patient.Address.State,
+                    Country = patient.Address.Country,
+                    PostalCode = patient.Address.PostalCode
+                } : null,
+                Contact = patient.Contact != null ? new ContactResponseDto
                 {
-                    Phone = patient.Contact?.Phone,
-                    Email = patient.Contact?.Email
-                };
-
-                patientDtos.Add(new PatientBasicSummaryDto
-                {
-                    Id = patient.Id,
-                    FirstName = patient.FirstName,
-                    LastName = patient.LastName,
-                    DateOfBirth = patient.DateOfBirth,
-                    Gender = patient.Gender,
-                    Height = patient.Height,
-                    Weight = patient.Weight,
-                    Address = addressDto,
-                    Contact = contactDto
-                });
-            }
+                    Phone = patient.Contact.Phone,
+                    Email = patient.Contact.Email
+                } : null
+            }).ToList();
 
             logger.LogInformation("Retrieved {Count} patients", patientDtos.Count);
 
@@ -148,7 +138,7 @@ namespace MedNet.API.Services.Implementation
 
             var patient = await patientRepository.GetByUserIdAsync(userId);
             
-            if (patient == null)
+            if (patient is null)
             {
                 logger.LogWarning("No patient found for UserId: {UserId}", userId);
                 return null;
@@ -214,7 +204,7 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Retrieving patient with ID: {PatientId}", id);
 
             var patient = await patientRepository.GetById(id);
-            if (patient == null)
+            if (patient is null)
             {
                 logger.LogWarning("Patient not found with ID: {PatientId}", id);
                 return null;
@@ -279,7 +269,7 @@ namespace MedNet.API.Services.Implementation
 
             var existingPatient = await patientRepository.GetById(id);
 
-            if (existingPatient == null)
+            if (existingPatient is null)
             {
                 logger.LogWarning("Patient not found for update with ID: {PatientId}", id);
                 return null;
@@ -288,24 +278,30 @@ namespace MedNet.API.Services.Implementation
             var oldHeight = existingPatient.Height;
             var oldWeight = existingPatient.Weight;
 
-            existingPatient.FirstName = request.FirstName;
-            existingPatient.LastName = request.LastName;
-            existingPatient.DateOfBirth = request.DateOfBirth;
-            existingPatient.Gender = request.Gender;
-            existingPatient.Height = request.Height;
-            existingPatient.Weight = request.Weight;
+            var patientToUpdate = new Patient
+            {
+                Id = id,
+                FirstName = request.FirstName,
+                LastName = request.LastName,
+                DateOfBirth = request.DateOfBirth,
+                Gender = request.Gender,
+                Height = request.Height,
+                Weight = request.Weight
+            };
 
-            var updatedPatient = await patientRepository.UpdateAsync(existingPatient);
+            var updatedPatient = await patientRepository.UpdateAsync(patientToUpdate);
 
-            if (updatedPatient == null)
+            if (updatedPatient is null)
             {
                 logger.LogError("Failed to update patient with ID: {PatientId}", id);
                 return null;
             }
 
-            logger.LogInformation("Patient {PatientId} updated successfully - {FirstName} {LastName}, Height: {OldHeight} → {NewHeight}, Weight: {OldWeight} → {NewWeight}",
-                id, updatedPatient.FirstName, updatedPatient.LastName, oldHeight, updatedPatient.Height, oldWeight, updatedPatient.Weight);
+            await unitOfWork.SaveChangesAsync();
 
+            logger.LogInformation(
+                "Patient {PatientId} updated successfully - {FirstName} {LastName}, Height: {OldHeight} → {NewHeight}, Weight: {OldWeight} → {NewWeight}",
+                id, updatedPatient.FirstName, updatedPatient.LastName, oldHeight, updatedPatient.Height, oldWeight, updatedPatient.Weight);
 
             return new UpdatedPatientDto
             {

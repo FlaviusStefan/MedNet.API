@@ -60,20 +60,28 @@ namespace MedNet.API.Repositories.Implementation
 
         public async Task<Patient?> UpdateAsync(Patient patient)
         {
-            var existingPatient = await dbContext.Patients.FirstOrDefaultAsync(x => x.Id == patient.Id);
+            var existingPatient = await dbContext.Patients
+                .FirstOrDefaultAsync(x => x.Id == patient.Id);
 
-            if (existingPatient != null)
+            if (existingPatient is null)
             {
-                dbContext.Entry(existingPatient).CurrentValues.SetValues(patient);
-                return patient;
+                return null;
             }
 
-            return null;
+            existingPatient.FirstName = patient.FirstName;
+            existingPatient.LastName = patient.LastName;
+            existingPatient.DateOfBirth = patient.DateOfBirth;
+            existingPatient.Gender = patient.Gender;
+            existingPatient.Height = patient.Height;
+            existingPatient.Weight = patient.Weight;
+
+            return existingPatient;
         }
 
         public async Task<Patient?> DeleteAsync(Guid id)
         {
-            var existingPatient = await dbContext.Patients.FirstOrDefaultAsync(x => x.Id == id);
+            var existingPatient = await dbContext.Patients
+                .FirstOrDefaultAsync(x => x.Id == id);
 
             if(existingPatient is null)
             {
