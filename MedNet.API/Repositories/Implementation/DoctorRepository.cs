@@ -47,16 +47,22 @@ namespace MedNet.API.Repositories.Implementation
 
         public async Task<Doctor?> UpdateAsync(Doctor doctor)
         {
-            var existingDoctor = await dbContext.Doctors.FirstOrDefaultAsync(x => x.Id == doctor.Id);
+            var existingDoctor = await dbContext.Doctors
+                .FirstOrDefaultAsync(x => x.Id == doctor.Id);
 
-            if (existingDoctor != null)
+            if (existingDoctor is null)
             {
-                dbContext.Entry(existingDoctor).CurrentValues.SetValues(doctor);
-                await dbContext.SaveChangesAsync();
-                return doctor;
+                return null;
             }
 
-            return null;
+            existingDoctor.FirstName = doctor.FirstName;
+            existingDoctor.LastName = doctor.LastName;
+            existingDoctor.DateOfBirth = doctor.DateOfBirth;
+            existingDoctor.Gender = doctor.Gender;
+            existingDoctor.LicenseNumber = doctor.LicenseNumber;
+            existingDoctor.YearsOfExperience = doctor.YearsOfExperience;
+
+            return existingDoctor;
         }
 
         public async Task<Doctor?> DeleteAsync(Guid id)
@@ -69,7 +75,6 @@ namespace MedNet.API.Repositories.Implementation
             }
 
             dbContext.Doctors.Remove(existingDoctor);
-            await dbContext.SaveChangesAsync();
             return existingDoctor;
         }
 
@@ -88,7 +93,6 @@ namespace MedNet.API.Repositories.Implementation
             });
 
             await dbContext.DoctorSpecializations.AddRangeAsync(newSpecializations);
-            await dbContext.SaveChangesAsync();
         }
     }
 }

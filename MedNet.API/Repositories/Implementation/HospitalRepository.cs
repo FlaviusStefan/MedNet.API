@@ -46,7 +46,6 @@ namespace MedNet.API.Repositories.Implementation
             if (existingHospital != null)
             {
                 dbContext.Entry(existingHospital).CurrentValues.SetValues(hospital);
-                await dbContext.SaveChangesAsync();
                 return hospital;
             }
 
@@ -62,7 +61,6 @@ namespace MedNet.API.Repositories.Implementation
             }
 
             dbContext.Hospitals.Remove(existingHospital);
-            await dbContext.SaveChangesAsync();
             return existingHospital;
         }
     }

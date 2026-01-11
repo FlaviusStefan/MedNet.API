@@ -17,8 +17,6 @@ namespace MedNet.API.Repositories.Implementation
         public async Task<Specialization> CreateAsync(Specialization specialization)
         {
             await dbContext.Specializations.AddAsync(specialization);
-            await dbContext.SaveChangesAsync();
-
             return specialization;
         }
 
@@ -53,7 +51,6 @@ namespace MedNet.API.Repositories.Implementation
             if (existingSpecialization != null)
             {
                 dbContext.Entry(existingSpecialization).CurrentValues.SetValues(specialization);
-                await dbContext.SaveChangesAsync();
                 return specialization;
             }
 
@@ -69,7 +66,6 @@ namespace MedNet.API.Repositories.Implementation
             }
 
             dbContext.Specializations.Remove(existingSpecialization);
-            await dbContext.SaveChangesAsync();
             return existingSpecialization;
         }
     }

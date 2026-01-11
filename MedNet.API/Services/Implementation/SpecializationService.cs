@@ -10,12 +10,14 @@ namespace MedNet.API.Services.Implementation
     public class SpecializationService : ISpecializationService
     {
         private readonly ISpecializationRepository specializationRepository;
+        private readonly IUnitOfWork unitOfWork;
         private readonly ILogger<SpecializationService> logger;
 
-        public SpecializationService(ISpecializationRepository specializationRepository, ILogger<SpecializationService> logger)
+        public SpecializationService(ISpecializationRepository specializationRepository, ILogger<SpecializationService> logger, IUnitOfWork unitOfWork)
         {
             this.specializationRepository = specializationRepository;
             this.logger = logger;
+            this.unitOfWork = unitOfWork;
         }
 
         public async Task<SpecializationDto> CreateSpecializationAsync(CreateSpecializationRequestDto request)
@@ -31,6 +33,7 @@ namespace MedNet.API.Services.Implementation
             };
 
             await specializationRepository.CreateAsync(specialization);
+            await unitOfWork.SaveChangesAsync();
 
             logger.LogInformation("Specialization {SpecializationId} created successfully - {Name}",
                 specialization.Id, specialization.Name);
@@ -127,6 +130,8 @@ namespace MedNet.API.Services.Implementation
                 return null;
             }
 
+            await unitOfWork.SaveChangesAsync();
+
             logger.LogInformation("Specialization {SpecializationId} updated successfully - Name: '{OldName}' → '{NewName}'",
                 id, oldName, updatedSpecialization.Name);
 
@@ -148,6 +153,8 @@ namespace MedNet.API.Services.Implementation
                 logger.LogWarning("Specialization not found for deletion with ID: {SpecializationId}", id);
                 return null;
             }
+
+            await unitOfWork.SaveChangesAsync();
 
             logger.LogInformation("Specialization {SpecializationId} deleted successfully - {Name}",
                 specialization.Id, specialization.Name);

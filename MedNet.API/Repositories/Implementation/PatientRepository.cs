@@ -65,7 +65,6 @@ namespace MedNet.API.Repositories.Implementation
             if (existingPatient != null)
             {
                 dbContext.Entry(existingPatient).CurrentValues.SetValues(patient);
-                await dbContext.SaveChangesAsync();
                 return patient;
             }
 
@@ -82,7 +81,6 @@ namespace MedNet.API.Repositories.Implementation
             }
 
             dbContext.Patients.Remove(existingPatient);
-            await dbContext.SaveChangesAsync();
             return existingPatient;
         }
     }
