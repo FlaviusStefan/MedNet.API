@@ -22,17 +22,24 @@ namespace MedNet.API.Repositories.Implementation
 
         public async Task<IEnumerable<Qualification>> GetAllAsync()
         {
-            return await dbContext.Qualifications.ToListAsync();
+            return await dbContext.Qualifications
+                .AsNoTracking()
+                .ToListAsync();
         }
 
         public async Task<Qualification?> GetById(Guid id)
         {
-            return await dbContext.Qualifications.FirstOrDefaultAsync(x => x.Id == id);
+            return await dbContext.Qualifications
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == id);
         }
 
         public async Task<IEnumerable<Qualification>> GetAllByDoctorIdAsync(Guid doctorId)
         {
-            return await dbContext.Qualifications.Where(x => x.DoctorId == doctorId).ToListAsync();
+            return await dbContext.Qualifications
+                .AsNoTracking()
+                .Where(x => x.DoctorId == doctorId)
+                .ToListAsync();
         }
 
         public async Task<Qualification?> UpdateAsync(Qualification qualification)

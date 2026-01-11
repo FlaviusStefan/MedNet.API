@@ -5,7 +5,7 @@ namespace MedNet.API.Services.Interface
 {
     public interface IQualificationService
     {
-        Task<QualificationDto> CreateQualificationAsync(CreateQualificationRequestDto request);
+        Task<QualificationDto> CreateQualificationAsync(CreateQualificationRequestDto request, bool autoSave = true);
         Task<IEnumerable<QualificationDto>> GetAllQualificationsAsync();
         Task<QualificationDto?> GetQualificationByIdAsync(Guid id);
         Task<IEnumerable<QualificationDto>> GetQualificationsByDoctorIdAsync(Guid doctorId);

@@ -10,15 +10,17 @@ namespace MedNet.API.Services.Implementation
     public class QualificationService : IQualificationService
     {
         private readonly IQualificationRepository qualificationRepository;
+        private readonly IUnitOfWork unitOfWork;
         private readonly ILogger<QualificationService> logger;
 
-        public QualificationService(IQualificationRepository qualificationRepository, ILogger<QualificationService> logger)
+        public QualificationService(IQualificationRepository qualificationRepository, ILogger<QualificationService> logger, IUnitOfWork unitOfWork)
         {
             this.qualificationRepository = qualificationRepository;
             this.logger = logger;
+            this.unitOfWork = unitOfWork;
         }
 
-        public async Task<QualificationDto> CreateQualificationAsync(CreateQualificationRequestDto request)
+        public async Task<QualificationDto> CreateQualificationAsync(CreateQualificationRequestDto request, bool autoSave = true)
         {
             logger.LogInformation("Creating qualification for Doctor {DoctorId}, Degree: {Degree}, Institution: {Institution}",
                 request.DoctorId, request.Degree, request.Institution);
@@ -35,8 +37,15 @@ namespace MedNet.API.Services.Implementation
 
             await qualificationRepository.CreateAsync(qualification);
 
-            logger.LogInformation("Qualification {QualificationId} created successfully for Doctor {DoctorId} - {Degree} from {Institution}",
-                qualification.Id, qualification.DoctorId, qualification.Degree, qualification.Institution);
+            if (autoSave)
+            {
+                await unitOfWork.SaveChangesAsync();
+                logger.LogInformation("Qualification {QualificationId} created and saved", qualification.Id);
+            }
+            else
+            {
+                logger.LogDebug("Qualification {QualificationId} tracked (deferred save)", qualification.Id);
+            }
 
             return new QualificationDto
             {
@@ -121,21 +130,14 @@ namespace MedNet.API.Services.Implementation
         {
             logger.LogInformation("Updating qualification with ID: {QualificationId}", id);
 
-            var existingQualification = await qualificationRepository.GetById(id);
-
-            if (existingQualification == null)
+            var qualification = new Qualification
             {
-                logger.LogWarning("Qualification not found for update with ID: {QualificationId}", id);
-                return null;
-            }
+                Id = id,
+                Degree = request.Degree,
+                Institution = request.Institution,
+            };
 
-            var oldDegree = existingQualification.Degree;
-            var oldInstitution = existingQualification.Institution;
-
-            existingQualification.Degree = request.Degree;
-            existingQualification.Institution = request.Institution;
-
-            var updatedQualification = await qualificationRepository.UpdateAsync(existingQualification);
+            var updatedQualification = await qualificationRepository.UpdateAsync(qualification);
 
             if (updatedQualification == null)
             {
@@ -143,8 +145,8 @@ namespace MedNet.API.Services.Implementation
                 return null;
             }
 
-            logger.LogInformation("Qualification {QualificationId} updated successfully - Degree: '{OldDegree}' → '{NewDegree}', Institution: '{OldInstitution}' → '{NewInstitution}'",
-                id, oldDegree, updatedQualification.Degree, oldInstitution, updatedQualification.Institution);
+            logger.LogInformation("Qualification {QualificationId} updated successfully - Degree: {Degree}, Institution: {Institution}",
+                id, updatedQualification.Degree, updatedQualification.Institution);
 
             return new QualificationDto
             {

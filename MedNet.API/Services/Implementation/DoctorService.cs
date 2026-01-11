@@ -89,7 +89,8 @@ namespace MedNet.API.Services
                         Institution = qualificationRequest.Institution,
                         StudiedYears = qualificationRequest.StudiedYears,
                         YearOfCompletion = qualificationRequest.YearOfCompletion
-                    });
+                    },
+                    autoSave: false);
                     createdQualifications.Add(qualificationDto);
                 }
 
