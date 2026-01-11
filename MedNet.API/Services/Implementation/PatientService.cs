@@ -147,69 +147,16 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Searching for patient with UserId: {UserId}", userId);
 
             var patient = await patientRepository.GetByUserIdAsync(userId);
+            
             if (patient == null)
             {
                 logger.LogWarning("No patient found for UserId: {UserId}", userId);
                 return null;
             }
 
-            var addressDto = await addressService.GetAddressByIdAsync(patient.AddressId);
-            AddressResponseDto? addressResponse = null;
-            if (addressDto != null)
-            {
-                addressResponse = new AddressResponseDto
-                {
-                    Street = addressDto.Street,
-                    StreetNr = addressDto.StreetNr,
-                    City = addressDto.City,
-                    State = addressDto.State,
-                    PostalCode = addressDto.PostalCode,
-                    Country = addressDto.Country
-                };
-            }
-            var contactDto = await contactService.GetContactByIdAsync(patient.ContactId);
-            ContactResponseDto? contactResponse = null;
-            if (contactDto != null)
-            {
-                contactResponse = new ContactResponseDto
-                {
-                    Phone = contactDto.Phone,
-                    Email = contactDto.Email
-                };
-            }
-
-            var insurances = (await insuranceService.GetInsurancesByPatientIdAsync(patient.Id))
-                .Select(i => new DisplayInsuranceDto
-                {
-                    Id = i.Id,
-                    Provider = i.Provider,
-                    PolicyNumber = i.PolicyNumber,
-                    CoverageStartDate = i.CoverageStartDate,
-                    CoverageEndDate = i.CoverageEndDate
-                }).ToList();  
-
-            var medications = (await medicationService.GetMedicationsByPatientIdAsync(patient.Id))
-                .Select(m => new DisplayMedicationDto
-                {
-                    Id = m.Id,
-                    Name = m.Name,
-                    Dosage = m.Dosage,
-                    Frequency = m.Frequency
-                }).ToList();
-
-            var medicalFiles = (await medicalFileService.GetMedicalFilesByPatientIdAsync(patient.Id))
-                .Select(mf => new DisplayMedicalFileDto
-                {
-                    Id = mf.Id,
-                    FileName = mf.FileName,
-                    FileType = mf.FileType,
-                    FilePath = mf.FilePath,
-                    DateUploaded = mf.DateUploaded
-                }).ToList();
-
             logger.LogInformation("Successfully retrieved patient {PatientName} (ID: {PatientId}) for UserId: {UserId} with {InsuranceCount} insurances, {MedicationCount} medications, {FileCount} files",
-                $"{patient.FirstName} {patient.LastName}", patient.Id, userId, insurances.Count, medications.Count, medicalFiles.Count);
-
+                $"{patient.FirstName} {patient.LastName}", patient.Id, userId,
+                patient.Insurances.Count, patient.Medications.Count, patient.MedicalFiles.Count);
 
             return new PatientResponseDto
             {
@@ -220,11 +167,43 @@ namespace MedNet.API.Services.Implementation
                 Gender = patient.Gender,
                 Height = patient.Height,
                 Weight = patient.Weight,
-                Address = addressResponse,
-                Contact = contactResponse,
-                Insurances = insurances, 
-                Medications = medications,
-                MedicalFiles = medicalFiles
+                Address = patient.Address != null ? new AddressResponseDto
+                {
+                    Street = patient.Address.Street,
+                    StreetNr = patient.Address.StreetNr,
+                    City = patient.Address.City,
+                    State = patient.Address.State,
+                    PostalCode = patient.Address.PostalCode,
+                    Country = patient.Address.Country
+                } : null,
+                Contact = patient.Contact != null ? new ContactResponseDto
+                {
+                    Phone = patient.Contact.Phone,
+                    Email = patient.Contact.Email
+                } : null,
+                Insurances = patient.Insurances.Select(i => new DisplayInsuranceDto
+                {
+                    Id = i.Id,
+                    Provider = i.Provider,
+                    PolicyNumber = i.PolicyNumber,
+                    CoverageStartDate = i.CoverageStartDate,
+                    CoverageEndDate = i.CoverageEndDate
+                }).ToList(),
+                Medications = patient.Medications.Select(m => new DisplayMedicationDto
+                {
+                    Id = m.Id,
+                    Name = m.Name,
+                    Dosage = m.Dosage,
+                    Frequency = m.Frequency
+                }).ToList(),
+                MedicalFiles = patient.MedicalFiles.Select(mf => new DisplayMedicalFileDto
+                {
+                    Id = mf.Id,
+                    FileName = mf.FileName,
+                    FileType = mf.FileType,
+                    FilePath = mf.FilePath,
+                    DateUploaded = mf.DateUploaded
+                }).ToList()
             };
         }
 
@@ -241,63 +220,8 @@ namespace MedNet.API.Services.Implementation
                 return null;
             }
 
-            var addressDto = await addressService.GetAddressByIdAsync(patient.AddressId);
-            AddressResponseDto? addressResponse = null;
-            if (addressDto != null)
-            {
-                addressResponse = new AddressResponseDto
-                {
-                    Street = addressDto.Street,
-                    StreetNr = addressDto.StreetNr,
-                    City = addressDto.City,
-                    State = addressDto.State,
-                    PostalCode = addressDto.PostalCode,
-                    Country = addressDto.Country
-                };
-            }
-
-            var contactDto = await contactService.GetContactByIdAsync(patient.ContactId);
-            ContactResponseDto? contactResponse = null;
-            if (contactDto != null)
-            {
-                contactResponse = new ContactResponseDto
-                {
-                    Phone = contactDto.Phone,
-                    Email = contactDto.Email
-                };
-            }
-
-            var insurances = (await insuranceService.GetInsurancesByPatientIdAsync(patient.Id))
-                .Select(i => new DisplayInsuranceDto
-                {
-                    Id = i.Id,
-                    Provider = i.Provider,
-                    PolicyNumber = i.PolicyNumber,
-                    CoverageStartDate = i.CoverageStartDate,
-                    CoverageEndDate = i.CoverageEndDate
-                }).ToList();
-
-            var medications = (await medicationService.GetMedicationsByPatientIdAsync(patient.Id))
-                .Select(m => new DisplayMedicationDto
-                {
-                    Id = m.Id,
-                    Name = m.Name,
-                    Dosage = m.Dosage,
-                    Frequency = m.Frequency
-                }).ToList();
-
-            var medicalFiles = (await medicalFileService.GetMedicalFilesByPatientIdAsync(patient.Id))
-                .Select(mf => new DisplayMedicalFileDto
-                {
-                    Id = mf.Id,
-                    FileName = mf.FileName,
-                    FileType = mf.FileType,
-                    FilePath = mf.FilePath,
-                    DateUploaded = mf.DateUploaded
-                }).ToList();
-
             logger.LogInformation("Successfully retrieved patient {PatientName} (ID: {PatientId}) with {InsuranceCount} insurances, {MedicationCount} medications, {FileCount} files",
-                $"{patient.FirstName} {patient.LastName}", patient.Id, insurances.Count, medications.Count, medicalFiles.Count);
+                $"{patient.FirstName} {patient.LastName}", patient.Id, patient.Insurances.Count, patient.Medications.Count, patient.MedicalFiles.Count);
 
             return new PatientResponseDto
             {
@@ -308,11 +232,43 @@ namespace MedNet.API.Services.Implementation
                 Gender = patient.Gender,
                 Height = patient.Height,
                 Weight = patient.Weight,
-                Address = addressResponse,
-                Contact = contactResponse,
-                Insurances = insurances,
-                Medications = medications,
-                MedicalFiles = medicalFiles
+                Address = patient.Address != null ? new AddressResponseDto
+                {
+                    Street = patient.Address.Street,
+                    StreetNr = patient.Address.StreetNr,
+                    City = patient.Address.City,
+                    State = patient.Address.State,
+                    PostalCode = patient.Address.PostalCode,
+                    Country = patient.Address.Country
+                } : null,
+                Contact = patient.Contact != null ? new ContactResponseDto
+                {
+                    Phone = patient.Contact.Phone,
+                    Email = patient.Contact.Email
+                } : null,
+                Insurances = patient.Insurances.Select(i => new DisplayInsuranceDto
+                {
+                    Id = i.Id,
+                    Provider = i.Provider,
+                    PolicyNumber = i.PolicyNumber,
+                    CoverageStartDate = i.CoverageStartDate,
+                    CoverageEndDate = i.CoverageEndDate
+                }).ToList(),
+                Medications = patient.Medications.Select(m => new DisplayMedicationDto
+                {
+                    Id = m.Id,
+                    Name = m.Name,
+                    Dosage = m.Dosage,
+                    Frequency = m.Frequency
+                }).ToList(),
+                MedicalFiles = patient.MedicalFiles.Select(mf => new DisplayMedicalFileDto
+                {
+                    Id = mf.Id,
+                    FileName = mf.FileName,
+                    FileType = mf.FileType,
+                    FilePath = mf.FilePath,
+                    DateUploaded = mf.DateUploaded
+                }).ToList()
             };
         }
 
