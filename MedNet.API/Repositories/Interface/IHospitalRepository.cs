@@ -10,7 +10,6 @@ namespace MedNet.API.Repositories.Interface
         Task<Hospital?> GetById(Guid id);
         Task<Hospital?> UpdateAsync(Hospital hospital);
         Task<Hospital?> DeleteAsync(Guid id);
-        Task<IDbContextTransaction> BeginTransactionAsync();
 
     }
 }

@@ -24,10 +24,11 @@ namespace MedNet.API.Repositories.Implementation
         public async Task<IEnumerable<Doctor>> GetAllAsync()
         {
             return await dbContext.Doctors
+                .AsNoTracking()
                 .Include(d => d.Address)
                 .Include(d => d.Contact)
                 .Include(d => d.DoctorSpecializations)
-                .ThenInclude(d => d.Specialization)
+                    .ThenInclude(d => d.Specialization)
                 .Include(d => d.Qualifications)
                 .ToListAsync();
         }
@@ -35,6 +36,7 @@ namespace MedNet.API.Repositories.Implementation
         public async Task<Doctor?> GetById(Guid id)
         {
             return await dbContext.Doctors
+                .AsNoTracking()
                 .Include(d => d.Address)
                 .Include(d => d.Contact)
                 .Include(d => d.DoctorSpecializations)
@@ -88,11 +90,5 @@ namespace MedNet.API.Repositories.Implementation
             await dbContext.DoctorSpecializations.AddRangeAsync(newSpecializations);
             await dbContext.SaveChangesAsync();
         }
-
-        public async Task<IDbContextTransaction> BeginTransactionAsync()
-        {
-            return await dbContext.Database.BeginTransactionAsync();
-        }
-
     }
 }

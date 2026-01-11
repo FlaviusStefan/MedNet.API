@@ -85,9 +85,5 @@ namespace MedNet.API.Repositories.Implementation
             await dbContext.SaveChangesAsync();
             return existingPatient;
         }
-        public async Task<IDbContextTransaction> BeginTransactionAsync()
-        {
-            return await dbContext.Database.BeginTransactionAsync();
-        }
     }
 }

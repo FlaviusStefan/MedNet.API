@@ -11,6 +11,5 @@ namespace MedNet.API.Repositories.Interface
         Task<Doctor?> UpdateAsync(Doctor doctor);
         Task<Doctor?> DeleteAsync(Guid id);
         Task UpdateDoctorSpecializationsAsync(Guid doctorId, IEnumerable<Guid> specializationIds);
-        Task<IDbContextTransaction> BeginTransactionAsync();
     }
 }

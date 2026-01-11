@@ -3,6 +3,7 @@ using MedNet.API.Models.Domain;
 using MedNet.API.Models.DTO;
 using MedNet.API.Repositories.Interface;
 using MedNet.API.Services.Interface;
+using System.Transactions;
 
 namespace MedNet.API.Services.Implementation
 {
@@ -189,13 +190,13 @@ namespace MedNet.API.Services.Implementation
                 return null;
             }
 
-            using var scope = new System.Transactions.TransactionScope(
-                System.Transactions.TransactionScopeOption.Required,
-                new System.Transactions.TransactionOptions 
+            using var scope = new TransactionScope(
+                TransactionScopeOption.Required,
+                new TransactionOptions
                 { 
-                    IsolationLevel = System.Transactions.IsolationLevel.ReadCommitted 
+                    IsolationLevel = IsolationLevel.ReadCommitted 
                 },
-                System.Transactions.TransactionScopeAsyncFlowOption.Enabled);
+                TransactionScopeAsyncFlowOption.Enabled);
 
             try
             {

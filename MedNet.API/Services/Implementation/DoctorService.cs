@@ -6,6 +6,7 @@ using MedNet.API.Services.Implementation;
 using MedNet.API.Services.Interface;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Transactions;
 
 namespace MedNet.API.Services
 {
@@ -304,7 +305,13 @@ namespace MedNet.API.Services
                 return null;
             }
 
-            using var transaction = await doctorRepository.BeginTransactionAsync();
+            using var scope = new TransactionScope(
+                TransactionScopeOption.Required,
+                new TransactionOptions
+                {
+                    IsolationLevel = IsolationLevel.ReadCommitted
+                },
+                TransactionScopeAsyncFlowOption.Enabled);
 
             try
             {
@@ -328,14 +335,13 @@ namespace MedNet.API.Services
                     var identityResult = await userManagementService.DeleteUserByIdAsync(doctor.UserId);
                     if (!identityResult.Succeeded)
                     {
-                        await transaction.RollbackAsync();
                         var errors = string.Join(", ", identityResult.Errors.Select(e => e.Description));
                         logger.LogError("Failed to delete Identity user for doctor {DoctorId}: {Errors}", id, errors);
                         throw new CustomException("Failed to delete associated Identity user: " + errors);
                     }
                 }
 
-                await transaction.CommitAsync();
+                scope.Complete();
 
                 logger.LogInformation("Doctor {DoctorId} deleted successfully - {FirstName} {LastName}, License: {LicenseNumber}",
                     id, doctor.FirstName, doctor.LastName, doctor.LicenseNumber);
@@ -344,7 +350,6 @@ namespace MedNet.API.Services
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
                 logger.LogError(ex, "Failed to delete doctor with ID: {DoctorId}", id);
                 throw new CustomException("An unexpected error occurred while deleting the doctor: " + ex.Message, ex);
             }

@@ -24,18 +24,23 @@ namespace MedNet.API.Repositories.Implementation
 
         public async Task<IEnumerable<Specialization>> GetAllAsync()
         {
-            return await dbContext.Specializations.ToListAsync();
+            return await dbContext.Specializations
+                .AsNoTracking()
+                .ToListAsync();
         }
 
         public async Task<Specialization?> GetById(Guid id)
         {
-            return await dbContext.Specializations.FirstOrDefaultAsync(x => x.Id == id);
+            return await dbContext.Specializations
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == id);
 
         }
 
         public async Task<IEnumerable<Specialization>> GetAllByDoctorIdAsync(Guid doctorId)
         {
             return await dbContext.DoctorSpecializations
+                .AsNoTracking()
                 .Where(ds => ds.DoctorId == doctorId)
                 .Select(ds => ds.Specialization)
                 .ToListAsync();

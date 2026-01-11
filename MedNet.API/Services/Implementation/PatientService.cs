@@ -6,6 +6,7 @@ using MedNet.API.Repositories.Interface;
 using MedNet.API.Services.Interface;
 using Microsoft.AspNetCore.Identity;
 using System.Numerics;
+using System.Transactions;
 
 namespace MedNet.API.Services.Implementation
 {
@@ -378,7 +379,13 @@ namespace MedNet.API.Services.Implementation
                 return null;
             }
 
-            using var transaction = await patientRepository.BeginTransactionAsync();
+            using var scope = new TransactionScope(
+                TransactionScopeOption.Required,
+                new TransactionOptions
+                {
+                    IsolationLevel = IsolationLevel.ReadCommitted
+                },
+                TransactionScopeAsyncFlowOption.Enabled);
 
             try
             {
@@ -402,14 +409,13 @@ namespace MedNet.API.Services.Implementation
                     var identityResult = await userManagementService.DeleteUserByIdAsync(patient.UserId);
                     if (!identityResult.Succeeded)
                     {
-                        await transaction.RollbackAsync();
                         var errors = string.Join(", ", identityResult.Errors.Select(e => e.Description));
                         logger.LogError("Failed to delete Identity user for patient {PatientId}: {Errors}", id, errors);
                         throw new CustomException("Failed to delete associated Identity user: " + errors);
                     }
                 }
 
-                await transaction.CommitAsync();
+                scope.Complete();
 
                 logger.LogInformation("Patient {PatientId} deleted successfully - {FirstName} {LastName}, UserId: {UserId}",
                     id, patient.FirstName, patient.LastName, patient.UserId);
@@ -418,7 +424,6 @@ namespace MedNet.API.Services.Implementation
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
                 logger.LogError(ex, "Failed to delete patient with ID: {PatientId}", id);
                 throw new CustomException("An unexpected error occurred while deleting the patient: " + ex.Message, ex);
             }
