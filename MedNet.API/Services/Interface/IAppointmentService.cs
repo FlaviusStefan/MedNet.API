@@ -4,10 +4,10 @@ namespace MedNet.API.Services.Interface
 {
     public interface IAppointmentService
     {
-        Task<AppointmentDto> CreateAppointmentAsync(CreateAppointmentRequestDto request);
-        Task<IEnumerable<AppointmentDto>> GetAllAppointmentsAsync();
-        Task<AppointmentDto?> GetAppointmentByIdAsync(Guid id);
-        Task<AppointmentDto?> UpdateAppointmentAsync(Guid id, UpdateAppointmentRequestDto request);
+        Task<CreatedAppointmentDto> CreateAppointmentAsync(CreateAppointmentRequestDto request);
+        Task<IEnumerable<AppointmentSummaryDto>> GetAllAppointmentsAsync();
+        Task<AppointmentDetailDto?> GetAppointmentByIdAsync(Guid id);
+        Task<UpdatedAppointmentDto?> UpdateAppointmentAsync(Guid id, UpdateAppointmentRequestDto request);
         Task<string?> DeleteAppointmentAsync(Guid id);
     }
 }

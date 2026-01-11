@@ -16,38 +16,49 @@ namespace MedNet.API.Repositories.Implementation
         public async Task<Appointment> CreateAsync(Appointment appointment)
         {
             await dbContext.Appointments.AddAsync(appointment);
-            await dbContext.SaveChangesAsync();
-
             return appointment;
         }
 
         public async Task<IEnumerable<Appointment>> GetAllAsync()
         {
-            return await dbContext.Appointments.ToListAsync();
+            return await dbContext.Appointments
+                .Include(a => a.Doctor)
+                .Include(a => a.Patient)
+                .AsNoTracking()
+                .ToListAsync();
         }
 
         public async Task<Appointment?> GetById(Guid id)
         {
-            return await dbContext.Appointments.FirstOrDefaultAsync(x => x.Id == id);
+            return await dbContext.Appointments
+                .Include(a => a.Doctor)
+                .Include(a => a.Patient)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == id);
         }
 
         public async Task<Appointment?> UpdateAsync(Appointment appointment)
         {
-            var existingAppointment = await dbContext.Appointments.FirstOrDefaultAsync(x => x.Id == appointment.Id);
+            var existingAppointment = await dbContext.Appointments
+                .FirstOrDefaultAsync(x => x.Id == appointment.Id);
 
-            if (existingAppointment != null)
+            if (existingAppointment is null)
             {
-                dbContext.Entry(existingAppointment).CurrentValues.SetValues(appointment);
-                await dbContext.SaveChangesAsync();
-                return appointment;
+                return null;
             }
 
-            return null;
+            existingAppointment.Date = appointment.Date;
+            existingAppointment.Status = appointment.Status;
+            existingAppointment.Reason = appointment.Reason;
+            existingAppointment.Details = appointment.Details;
+
+            return existingAppointment;
         }
 
         public async Task<Appointment?> DeleteAsync(Guid id)
         {
-            var existingAppointment = await dbContext.Appointments.FirstOrDefaultAsync(x => x.Id == id);
+            var existingAppointment = await dbContext.Appointments
+                .FirstOrDefaultAsync(x => x.Id == id);
             
             if(existingAppointment is null) 
             {
@@ -55,10 +66,7 @@ namespace MedNet.API.Repositories.Implementation
             }
 
             dbContext.Appointments.Remove(existingAppointment);
-            await dbContext.SaveChangesAsync();
             return existingAppointment;
         }
-
-
     }
 }

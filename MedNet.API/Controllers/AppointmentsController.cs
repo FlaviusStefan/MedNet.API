@@ -75,7 +75,7 @@ namespace MedNet.API.Controllers
             var response = await appointmentService.GetAllAppointmentsAsync();
 
             logger.LogInformation("Returned {Count} appointments to user {UserId}",
-                ((IEnumerable<AppointmentDto>)response).Count(), userId);
+                ((IEnumerable<AppointmentSummaryDto>)response).Count(), userId);
 
             return Ok(response);
         }
