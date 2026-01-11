@@ -23,6 +23,7 @@ namespace MedNet.API.Repositories.Implementation
         public async Task<IEnumerable<Hospital>> GetAllAsync()
         {
             return await dbContext.Hospitals
+                .AsNoTracking()
                 .Include(h => h.Address)
                 .Include(h => h.Contact)
                 .ToListAsync();
@@ -32,6 +33,7 @@ namespace MedNet.API.Repositories.Implementation
         public async Task<Hospital?> GetById(Guid id)
         {
             return await dbContext.Hospitals
+                .AsNoTracking()
                 .Include(h => h.Address)
                 .Include(h => h.Contact)
                 .FirstOrDefaultAsync(x => x.Id == id);

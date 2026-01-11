@@ -1,10 +1,8 @@
 ﻿using MedNet.API.Exceptions;
 using MedNet.API.Models.Domain;
 using MedNet.API.Models.DTO;
-using MedNet.API.Repositories.Implementation;
 using MedNet.API.Repositories.Interface;
 using MedNet.API.Services.Interface;
-using System.Numerics;
 
 namespace MedNet.API.Services.Implementation
 {
@@ -17,7 +15,13 @@ namespace MedNet.API.Services.Implementation
         private readonly IUnitOfWork unitOfWork;
         private readonly ILogger<HospitalService> logger;
 
-        public HospitalService(IHospitalRepository hospitalRepository, IAddressService addressService, IContactService contactService, ILogger<HospitalService> logger, IUserManagementService userManagementService, IUnitOfWork unitOfWork)
+        public HospitalService(
+            IHospitalRepository hospitalRepository, 
+            IAddressService addressService, 
+            IContactService contactService, 
+            ILogger<HospitalService> logger, 
+            IUserManagementService userManagementService, 
+            IUnitOfWork unitOfWork)
         {
             this.hospitalRepository = hospitalRepository;
             this.addressService = addressService;
@@ -26,6 +30,7 @@ namespace MedNet.API.Services.Implementation
             this.userManagementService = userManagementService;
             this.unitOfWork = unitOfWork;
         }
+
         public async Task<HospitalDto> CreateHospitalAsync(CreateHospitalRequestDto request)
         {
             logger.LogInformation("Creating hospital: {HospitalName}, UserId: {UserId}",
@@ -73,44 +78,25 @@ namespace MedNet.API.Services.Implementation
 
             var hospitals = await hospitalRepository.GetAllAsync();
 
-            var result = new List<HospitalResponseDto>();
-
-            foreach (var hospital in hospitals)
+            var result = hospitals.Select(hospital => new HospitalResponseDto
             {
-                var addressDto = await addressService.GetAddressByIdAsync(hospital.AddressId);
-                AddressResponseDto? addressResponse = null;
-                if (addressDto != null)
+                Id = hospital.Id,
+                Name = hospital.Name,
+                Address = hospital.Address != null ? new AddressResponseDto
                 {
-                    addressResponse = new AddressResponseDto
-                    {
-                        Street = addressDto.Street,
-                        StreetNr = addressDto.StreetNr,
-                        City = addressDto.City,
-                        State = addressDto.State,
-                        PostalCode = addressDto.PostalCode,
-                        Country = addressDto.Country
-                    };
-                }
-
-                var contactDto = await contactService.GetContactByIdAsync(hospital.ContactId);
-                ContactResponseDto? contactResponse = null;
-                if (contactDto != null)
+                    Street = hospital.Address.Street,
+                    StreetNr = hospital.Address.StreetNr,
+                    City = hospital.Address.City,
+                    State = hospital.Address.State,
+                    PostalCode = hospital.Address.PostalCode,
+                    Country = hospital.Address.Country
+                } : null,
+                Contact = hospital.Contact != null ? new ContactResponseDto
                 {
-                    contactResponse = new ContactResponseDto
-                    {
-                        Phone = contactDto.Phone,
-                        Email = contactDto.Email
-                    };
-                }
-
-                result.Add(new HospitalResponseDto
-                {
-                    Id = hospital.Id,
-                    Name = hospital.Name,
-                    Address = addressResponse,
-                    Contact = contactResponse
-                });
-            }
+                    Phone = hospital.Contact.Phone,
+                    Email = hospital.Contact.Email
+                } : null
+            }).ToList();
 
             logger.LogInformation("Retrieved {Count} hospitals", result.Count);
 
@@ -129,32 +115,6 @@ namespace MedNet.API.Services.Implementation
                 return null;
             }
 
-            var addressDto = await addressService.GetAddressByIdAsync(hospital.AddressId);
-            AddressResponseDto? addressResponse = null;
-            if (addressDto != null)
-            {
-                addressResponse = new AddressResponseDto
-                {
-                    Street = addressDto.Street,
-                    StreetNr = addressDto.StreetNr,
-                    City = addressDto.City,
-                    State = addressDto.State,
-                    PostalCode = addressDto.PostalCode,
-                    Country = addressDto.Country
-                };
-            }
-
-            var contactDto = await contactService.GetContactByIdAsync(hospital.ContactId);
-            ContactResponseDto? contactResponse = null;
-            if (contactDto != null)
-            {
-                contactResponse = new ContactResponseDto
-                {
-                    Phone = contactDto.Phone,
-                    Email = contactDto.Email
-                };
-            }
-
             logger.LogInformation("Hospital {HospitalId} retrieved - {HospitalName}",
                 hospital.Id, hospital.Name);
 
@@ -162,8 +122,20 @@ namespace MedNet.API.Services.Implementation
             {
                 Id = hospital.Id,
                 Name = hospital.Name,
-                Address = addressResponse,
-                Contact = contactResponse
+                Address = hospital.Address != null ? new AddressResponseDto
+                {
+                    Street = hospital.Address.Street,
+                    StreetNr = hospital.Address.StreetNr,
+                    City = hospital.Address.City,
+                    State = hospital.Address.State,
+                    PostalCode = hospital.Address.PostalCode,
+                    Country = hospital.Address.Country
+                } : null,
+                Contact = hospital.Contact != null ? new ContactResponseDto
+                {
+                    Phone = hospital.Contact.Phone,
+                    Email = hospital.Contact.Email
+                } : null
             };
         }
 
@@ -217,7 +189,13 @@ namespace MedNet.API.Services.Implementation
                 return null;
             }
 
-            using var transaction = await hospitalRepository.BeginTransactionAsync();
+            using var scope = new System.Transactions.TransactionScope(
+                System.Transactions.TransactionScopeOption.Required,
+                new System.Transactions.TransactionOptions 
+                { 
+                    IsolationLevel = System.Transactions.IsolationLevel.ReadCommitted 
+                },
+                System.Transactions.TransactionScopeAsyncFlowOption.Enabled);
 
             try
             {
@@ -241,14 +219,13 @@ namespace MedNet.API.Services.Implementation
                     var identityResult = await userManagementService.DeleteUserByIdAsync(hospital.UserId);
                     if (!identityResult.Succeeded)
                     {
-                        await transaction.RollbackAsync();
                         var errors = string.Join(", ", identityResult.Errors.Select(e => e.Description));
                         logger.LogError("Failed to delete Identity user for hospital {HospitalId}: {Errors}", id, errors);
                         throw new CustomException("Failed to delete associated Identity user: " + errors);
                     }
                 }
 
-                await transaction.CommitAsync();
+                scope.Complete();
 
                 logger.LogInformation("Hospital {HospitalId} deleted successfully - {HospitalName}",
                     id, hospital.Name);
@@ -257,11 +234,9 @@ namespace MedNet.API.Services.Implementation
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
                 logger.LogError(ex, "Failed to delete hospital with ID: {HospitalId}", id);
                 throw new CustomException("An unexpected error occurred while deleting the hospital: " + ex.Message, ex);
             }
         }
-
     }
 }
