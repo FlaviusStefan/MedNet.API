@@ -56,9 +56,11 @@ namespace MedNet.API.Services
                 var addressDto = await addressService.CreateAddressAsync(request.Address);
                 var contactDto = await contactService.CreateContactAsync(request.Contact);
 
+                var doctorId = Guid.NewGuid();
+
                 var doctor = new Doctor
                 {
-                    Id = Guid.NewGuid(),
+                    Id = doctorId,
                     FirstName = request.FirstName,
                     LastName = request.LastName,
                     UserId = request.UserId.Trim(),
@@ -70,7 +72,7 @@ namespace MedNet.API.Services
                     ContactId = contactDto.Id,
                     DoctorSpecializations = validSpecializations.Keys.Select(sid => new DoctorSpecialization
                     {
-                        DoctorId = Guid.NewGuid(),
+                        DoctorId = doctorId,
                         SpecializationId = sid
                     }).ToList()
                 };
@@ -187,20 +189,6 @@ namespace MedNet.API.Services
                 return null;
             }
 
-            var specializationDtos = await specializationService.GetAllSpecializationsAsync();
-            var qualificationDtos = await qualificationService.GetQualificationsByDoctorIdAsync(doctor.Id);
-            var qualificationResponses = await qualificationService.GetQualificationsByDoctorIdAsync<QualificationResponseDto>(
-                doctor.Id,
-                q => new QualificationResponseDto
-                {
-                    Degree = q.Degree,
-                    Institution = q.Institution,
-                    StudiedYears = q.StudiedYears,
-                    YearOfCompletion = q.YearOfCompletion
-                });
-            var addressDto = await addressService.GetAddressByIdAsync(doctor.AddressId);
-            var contactDto = await contactService.GetContactByIdAsync(doctor.ContactId);
-
             logger.LogInformation("Doctor {DoctorId} retrieved - {FirstName} {LastName}, License: {LicenseNumber}, Specializations: {SpecCount}",
                 doctor.Id, doctor.FirstName, doctor.LastName, doctor.LicenseNumber, doctor.DoctorSpecializations.Count);
 
@@ -230,7 +218,14 @@ namespace MedNet.API.Services
                 Specializations = doctor.DoctorSpecializations
                     .Select(ds => ds.Specialization.Name)
                     .ToList(),
-                Qualifications = qualificationResponses.ToList()
+                Qualifications = doctor.Qualifications
+                    .Select(q => new QualificationResponseDto
+                    {
+                        Degree = q.Degree,
+                        Institution = q.Institution,
+                        StudiedYears = q.StudiedYears,
+                        YearOfCompletion = q.YearOfCompletion
+                    }).ToList()
             };
         }
 
