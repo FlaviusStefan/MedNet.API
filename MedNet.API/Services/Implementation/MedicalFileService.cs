@@ -8,12 +8,14 @@ namespace MedNet.API.Services.Implementation
     public class MedicalFileService : IMedicalFileService
     {
         private readonly IMedicalFileRepository medicalFileRepository;
+        private readonly IUnitOfWork unitOfWork;
         private readonly ILogger<MedicalFileService> logger;
 
-        public MedicalFileService(IMedicalFileRepository medicalFileRepository, ILogger<MedicalFileService> logger)
+        public MedicalFileService(IMedicalFileRepository medicalFileRepository, ILogger<MedicalFileService> logger, IUnitOfWork unitOfWork)
         {
             this.medicalFileRepository = medicalFileRepository;
             this.logger = logger;
+            this.unitOfWork = unitOfWork;
         }
         public async Task<MedicalFileDto> CreateMedicalFileAsync(CreateMedicalFileRequestDto request)
         {
@@ -31,6 +33,7 @@ namespace MedNet.API.Services.Implementation
             };
 
             await medicalFileRepository.CreateAsync(medicalFile);
+            await unitOfWork.SaveChangesAsync();
 
             logger.LogInformation("Medical file {FileId} created successfully for Patient {PatientId} - {FileName}",
                 medicalFile.Id, medicalFile.PatientId, medicalFile.FileName);
@@ -73,7 +76,7 @@ namespace MedNet.API.Services.Implementation
 
             var medicalFile = await medicalFileRepository.GetById(id);
 
-            if (medicalFile == null)
+            if (medicalFile is null)
             {
                 logger.LogWarning("Medical file not found with ID: {FileId}", id);
                 return null;
@@ -115,13 +118,12 @@ namespace MedNet.API.Services.Implementation
             return fileList;
         }
 
-
         public async Task<MedicalFileDto?> UpdateMedicalFileAsync(Guid id, UpdateMedicalFileRequestDto request)
         {
             logger.LogInformation("Updating medical file with ID: {FileId}", id);
 
             var existingMedicalFile = await medicalFileRepository.GetById(id);
-            if (existingMedicalFile == null)
+            if (existingMedicalFile is null)  
             {
                 logger.LogWarning("Medical file not found for update with ID: {FileId}", id);
                 return null;
@@ -129,18 +131,25 @@ namespace MedNet.API.Services.Implementation
 
             var oldFileName = existingMedicalFile.FileName;
 
-            existingMedicalFile.FileName = request.FileName;
-            existingMedicalFile.FileType = request.FileType;
-            existingMedicalFile.FilePath = request.FilePath;
-            existingMedicalFile.DateUploaded = request.DateUploaded;
+            var fileToUpdate = new MedicalFile
+            {
+                Id = id,
+                PatientId = existingMedicalFile.PatientId,
+                FileName = request.FileName,
+                FileType = request.FileType,
+                FilePath = request.FilePath,
+                DateUploaded = request.DateUploaded
+            };
 
-            var updatedMedicalFile = await medicalFileRepository.UpdateAsync(existingMedicalFile);
+            var updatedMedicalFile = await medicalFileRepository.UpdateAsync(fileToUpdate);
 
-            if (updatedMedicalFile == null)
+            if (updatedMedicalFile is null)  
             {
                 logger.LogError("Failed to update medical file with ID: {FileId}", id);
                 return null;
             }
+
+            await unitOfWork.SaveChangesAsync();
 
             logger.LogInformation("Medical file {FileId} updated successfully - FileName: '{OldName}' → '{NewName}'",
                 id, oldFileName, updatedMedicalFile.FileName);
@@ -155,16 +164,19 @@ namespace MedNet.API.Services.Implementation
                 DateUploaded = updatedMedicalFile.DateUploaded
             };
         }
+
         public async Task<string?> DeleteMedicalFileAsync(Guid id)
         {
             logger.LogInformation("Deleting medical file with ID: {FileId}", id);
 
             var medicalFile = await medicalFileRepository.DeleteAsync(id);
-            if (medicalFile == null)
+            if (medicalFile is null)
             {
                 logger.LogWarning("Medical file not found for deletion with ID: {FileId}", id);
                 return null;
             }
+
+            await unitOfWork.SaveChangesAsync();
 
             logger.LogInformation("Medical file {FileId} deleted successfully - Patient: {PatientId}, File: {FileName}",
                 medicalFile.Id, medicalFile.PatientId, medicalFile.FileName);

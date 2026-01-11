@@ -17,25 +17,28 @@ namespace MedNet.API.Repositories.Implementation
         public async Task<Insurance> CreateAsync(Insurance insurance)
         {
             await dbContext.Insurances.AddAsync(insurance);
-            await dbContext.SaveChangesAsync();
-
             return insurance;
         }
 
         public async Task<IEnumerable<Insurance>> GetAllAsync()
         {
-            return await dbContext.Insurances.ToListAsync();
+            return await dbContext.Insurances
+                .AsNoTracking()
+                .ToListAsync();
         }
 
         public async Task<Insurance?> GetById(Guid id)
         {
-            return await dbContext.Insurances.FirstOrDefaultAsync(x => x.Id == id);
+            return await dbContext.Insurances
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == id);
 
         }
 
         public async Task<IEnumerable<Insurance>> GetAllByPatientIdAsync(Guid patientId)
         {
             return await dbContext.Insurances
+                .AsNoTracking()
                 .Where(i => i.PatientId == patientId)
                 .ToListAsync();
         }
@@ -43,17 +46,22 @@ namespace MedNet.API.Repositories.Implementation
 
         public async Task<Insurance?> UpdateAsync(Insurance insurance)
         {
-            var existingInsurance = await dbContext.Insurances.FirstOrDefaultAsync(x => x.Id == insurance.Id);
+            var existingInsurance = await dbContext.Insurances
+                .FirstOrDefaultAsync(x => x.Id == insurance.Id);
 
-            if (existingInsurance != null)
+            if (existingInsurance is null)
             {
-                dbContext.Entry(existingInsurance).CurrentValues.SetValues(insurance);
-                await dbContext.SaveChangesAsync();
-                return insurance;
+                return null;
             }
 
-            return null;
+            existingInsurance.Provider = insurance.Provider;
+            existingInsurance.PolicyNumber = insurance.PolicyNumber;
+            existingInsurance.CoverageStartDate = insurance.CoverageStartDate;
+            existingInsurance.CoverageEndDate = insurance.CoverageEndDate;
+
+            return existingInsurance;
         }
+
         public async Task<Insurance?> DeleteAsync(Guid id)
         {
             var existingInsurance = await dbContext.Insurances.FirstOrDefaultAsync(x => x.Id == id);
@@ -64,9 +72,7 @@ namespace MedNet.API.Repositories.Implementation
             }
 
             dbContext.Insurances.Remove(existingInsurance);
-            await dbContext.SaveChangesAsync();
             return existingInsurance;
-
         }
     }
 }

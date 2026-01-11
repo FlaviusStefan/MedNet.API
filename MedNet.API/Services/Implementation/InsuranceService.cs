@@ -10,12 +10,14 @@ namespace MedNet.API.Services.Implementation
     public class InsuranceService : IInsuranceService
     {
         private readonly IInsuranceRepository insuranceRepository;
+        private readonly IUnitOfWork unitOfWork;
         private readonly ILogger<InsuranceService> logger;
 
-        public InsuranceService(IInsuranceRepository insuranceRepository, ILogger<InsuranceService> logger)
+        public InsuranceService(IInsuranceRepository insuranceRepository, ILogger<InsuranceService> logger, IUnitOfWork unitOfWork)
         {
             this.insuranceRepository = insuranceRepository;
             this.logger = logger;
+            this.unitOfWork = unitOfWork;
         }
 
         public async Task<InsuranceDto> CreateInsuranceAsync(CreateInsuranceRequestDto request)
@@ -40,6 +42,7 @@ namespace MedNet.API.Services.Implementation
             };
 
             await insuranceRepository.CreateAsync(insurance);
+            await unitOfWork.SaveChangesAsync();
 
             logger.LogInformation("Insurance {InsuranceId} created successfully for Patient {PatientId} - Provider: {Provider}", 
                 insurance.Id, insurance.PatientId, insurance.Provider);
@@ -81,7 +84,7 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Retrieving insurance with ID: {InsuranceId}", id);
 
             var insurance = await insuranceRepository.GetById(id);
-            if(insurance == null)
+            if(insurance is null)
             {
                 logger.LogWarning("Insurance not found with ID: {InsuranceId}", id);
                 return null;
@@ -128,7 +131,7 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Updating insurance with ID: {InsuranceId}", id);
 
             var existingInsurance = await insuranceRepository.GetById(id);
-            if (existingInsurance == null)
+            if (existingInsurance is null)
             {
                 logger.LogWarning("Insurance not found for update with ID: {InsuranceId}", id);
                 return null;
@@ -137,20 +140,27 @@ namespace MedNet.API.Services.Implementation
             var oldProvider = existingInsurance.Provider;
             var oldPolicyNumber = existingInsurance.PolicyNumber;
 
-            existingInsurance.Provider = request.Provider;
-            existingInsurance.PolicyNumber = request.PolicyNumber;
-            existingInsurance.CoverageStartDate = request.CoverageStartDate;
-            existingInsurance.CoverageEndDate = request.CoverageEndDate;
+            var insuranceToUpdate = new Insurance
+            {
+                Id = id,
+                PatientId = existingInsurance.PatientId,
+                Provider = request.Provider,
+                PolicyNumber = request.PolicyNumber,
+                CoverageStartDate = request.CoverageStartDate,
+                CoverageEndDate = request.CoverageEndDate
+            };
 
-            var updatedInsurance = await insuranceRepository.UpdateAsync(existingInsurance);
+            var updatedInsurance = await insuranceRepository.UpdateAsync(insuranceToUpdate);
 
-            if (updatedInsurance == null)
+            if (updatedInsurance is null)
             {
                 logger.LogError("Failed to update insurance with ID: {InsuranceId}", id);
                 return null;
             }
 
-            logger.LogInformation("Insurance {InsuranceId} updated successfully - Provider: '{OldProvider}' → '{NewProvider}', Policy: '{OldPolicy}' → '{NewPolicy}'", 
+            await unitOfWork.SaveChangesAsync();
+
+            logger.LogInformation("Insurance {InsuranceId} updated successfully - Provider: '{OldProvider}' → '{NewProvider}', Policy: '{OldPolicy}' → '{NewPolicy}'",
                 id, oldProvider, updatedInsurance.Provider, oldPolicyNumber, updatedInsurance.PolicyNumber);
 
             return new InsuranceDto
@@ -169,11 +179,13 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Deleting insurance with ID: {InsuranceId}", id);
 
             var insurance = await insuranceRepository.DeleteAsync(id);
-            if (insurance == null)
+            if (insurance is null)
             {
                 logger.LogWarning("Insurance not found for deletion with ID: {InsuranceId}", id);
                 return null;
             }
+
+            await unitOfWork.SaveChangesAsync();
 
             logger.LogInformation("Insurance {InsuranceId} deleted successfully - Patient: {PatientId}, Provider: {Provider}", 
                 insurance.Id, insurance.PatientId, insurance.Provider);

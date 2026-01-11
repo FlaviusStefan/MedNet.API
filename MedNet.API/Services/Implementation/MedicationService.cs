@@ -8,11 +8,13 @@ namespace MedNet.API.Services.Implementation
     public class MedicationService : IMedicationService
     {
         private readonly IMedicationRepository medicationRepository;
+        private readonly IUnitOfWork unitOfWork;
         private readonly ILogger<MedicationService> logger;
-        public MedicationService(IMedicationRepository medicationRepository, ILogger<MedicationService> logger)
+        public MedicationService(IMedicationRepository medicationRepository, ILogger<MedicationService> logger, IUnitOfWork unitOfWork)
         {
             this.medicationRepository = medicationRepository;
             this.logger = logger;
+            this.unitOfWork = unitOfWork;
         }
         public async Task<MedicationDto> CreateMedicationAsync(CreateMedicationRequestDto request)
         {
@@ -29,6 +31,7 @@ namespace MedNet.API.Services.Implementation
             };
 
             await medicationRepository.CreateAsync(medication);
+            await unitOfWork.SaveChangesAsync();
 
             logger.LogInformation("Medication {MedicationId} created successfully for Patient {PatientId} - {Name}",
                 medication.Id, medication.PatientId, medication.Name);
@@ -68,7 +71,7 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Retrieving medication with ID: {MedicationId}", id);
 
             var medication = await medicationRepository.GetById(id);
-            if (medication == null)
+            if (medication is null)
             {
                 logger.LogWarning("Medication not found with ID: {MedicationId}", id);
                 return null;
@@ -113,7 +116,7 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Updating medication with ID: {MedicationId}", id);
 
             var existingMedication = await medicationRepository.GetById(id);
-            if (existingMedication == null)
+            if (existingMedication is null)
             {
                 logger.LogWarning("Medication not found for update with ID: {MedicationId}", id);
                 return null;
@@ -122,17 +125,24 @@ namespace MedNet.API.Services.Implementation
             var oldName = existingMedication.Name;
             var oldDosage = existingMedication.Dosage;
 
-            existingMedication.Name = request.Name;
-            existingMedication.Dosage = request.Dosage;
-            existingMedication.Frequency = request.Frequency;
+            var medicationToUpdate = new Medication
+            {
+                Id = id,
+                PatientId = existingMedication.PatientId,
+                Name = request.Name,
+                Dosage = request.Dosage,
+                Frequency = request.Frequency
+            };
 
-            var updatedMedication = await medicationRepository.UpdateAsync(existingMedication);
+            var updatedMedication = await medicationRepository.UpdateAsync(medicationToUpdate);
 
-            if (updatedMedication == null)
+            if (updatedMedication is null)
             {
                 logger.LogError("Failed to update medication with ID: {MedicationId}", id);
                 return null;
             }
+
+            await unitOfWork.SaveChangesAsync();
 
             logger.LogInformation("Medication {MedicationId} updated successfully - Name: '{OldName}' → '{NewName}', Dosage: '{OldDosage}' → '{NewDosage}'",
                 id, oldName, updatedMedication.Name, oldDosage, updatedMedication.Dosage);
@@ -152,11 +162,13 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Deleting medication with ID: {MedicationId}", id);
 
             var medication = await medicationRepository.DeleteAsync(id);
-            if (medication == null)
+            if (medication is null)
             {
                 logger.LogWarning("Medication not found for deletion with ID: {MedicationId}", id);
                 return null;
             }
+
+            await unitOfWork.SaveChangesAsync();
 
             logger.LogInformation("Medication {MedicationId} deleted successfully - Patient: {PatientId}, Name: {Name}",
                 medication.Id, medication.PatientId, medication.Name);
