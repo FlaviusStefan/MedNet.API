@@ -17,38 +17,45 @@ namespace MedNet.API.Repositories.Implementation
         public async Task<LabTest> CreateAsync(LabTest labTest)
         {
             await dbContext.LabTests.AddAsync(labTest);
-            await dbContext.SaveChangesAsync();
-
             return labTest;
         }
 
         public async Task<IEnumerable<LabTest>> GetAllAsync()
         {
-            return await dbContext.LabTests.ToListAsync();
+            return await dbContext.LabTests
+                .AsNoTracking()
+                .ToListAsync();
         }
 
         public async Task<LabTest?> GetById(Guid id)
         {
-            return await dbContext.LabTests.FirstOrDefaultAsync(x => x.Id == id);
+            return await dbContext.LabTests
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == id);
         }
 
         public async Task<LabTest?> UpdateAsync(LabTest labTest)
         {
-            var existingTest= await dbContext.LabTests.FirstOrDefaultAsync(x => x.Id == labTest.Id);
+            var existingTest= await dbContext.LabTests
+                .FirstOrDefaultAsync(x => x.Id == labTest.Id);
 
-            if (existingTest != null)
+            if (existingTest is null)
             {
-                dbContext.Entry(existingTest).CurrentValues.SetValues(labTest);
-                await dbContext.SaveChangesAsync();
-                return existingTest;
+                return null;
             }
 
-            return null;
+            existingTest.TestName = labTest.TestName;
+            existingTest.Result = labTest.Result;
+            existingTest.Units = labTest.Units;
+            existingTest.ReferenceRange = labTest.ReferenceRange;
+
+            return existingTest;
         }
 
         public async Task<LabTest> DeleteAsync(Guid id)
         {
-            var existingTest = await dbContext.LabTests.FirstOrDefaultAsync(x => x.Id == id);
+            var existingTest = await dbContext.LabTests
+                .FirstOrDefaultAsync(x => x.Id == id);
 
             if (existingTest is null)
             {
@@ -56,7 +63,6 @@ namespace MedNet.API.Repositories.Implementation
             }
 
             dbContext.LabTests.Remove(existingTest);
-            await dbContext.SaveChangesAsync();
             return existingTest;
         }
     }
