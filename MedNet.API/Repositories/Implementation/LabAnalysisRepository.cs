@@ -17,33 +17,39 @@ namespace MedNet.API.Repositories.Implementation
         public async Task<LabAnalysis> CreateAsync(LabAnalysis labAnalysis)
         {
             await dbContext.LabAnalyses.AddAsync(labAnalysis);
-            await dbContext.SaveChangesAsync();
-
             return labAnalysis;
         }
 
         public async Task<IEnumerable<LabAnalysis>> GetAllAsync()
         {
-            return await dbContext.LabAnalyses.ToListAsync();
+            return await dbContext.LabAnalyses
+                .AsNoTracking()
+                .Include(la => la.LabTests)
+                .ToListAsync();
         }
 
         public async Task<LabAnalysis?> GetById(Guid id)
         {
-            return await dbContext.LabAnalyses.FirstOrDefaultAsync(x => x.Id == id);
+            return await dbContext.LabAnalyses
+                .AsNoTracking()
+                .Include(la => la.LabTests)
+                .FirstOrDefaultAsync(x => x.Id == id);
         }
 
         public async Task<LabAnalysis?> UpdateAsync(LabAnalysis labAnalysis)
         {
-            var existingAnalysis = await dbContext.LabAnalyses.FirstOrDefaultAsync(x => x.Id == labAnalysis.Id);
+            var existingAnalysis = await dbContext.LabAnalyses
+                .FirstOrDefaultAsync(x => x.Id == labAnalysis.Id);
 
-            if (existingAnalysis != null)
+            if (existingAnalysis is null)
             {
-                dbContext.Entry(existingAnalysis).CurrentValues.SetValues(labAnalysis);
-                await dbContext.SaveChangesAsync();
-                return existingAnalysis;
+                return null;
             }
 
-            return null;
+            existingAnalysis.AnalysisDate = labAnalysis.AnalysisDate;
+            existingAnalysis.AnalysisType = labAnalysis.AnalysisType;
+
+            return existingAnalysis;
         }
 
         public async Task<LabAnalysis?> DeleteAsync(Guid id)
@@ -56,7 +62,6 @@ namespace MedNet.API.Repositories.Implementation
             }
 
             dbContext.LabAnalyses.Remove(existingAnalysis);
-            await dbContext.SaveChangesAsync();
             return existingAnalysis;
 
         }
