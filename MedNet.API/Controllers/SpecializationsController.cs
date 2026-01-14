@@ -44,6 +44,11 @@ namespace MedNet.API.Controllers
 
                 return CreatedAtAction(nameof(GetSpecializationById), new { id = specializationDto.Id }, specializationDto);
             }
+            catch (ArgumentException ex)
+            {
+                logger.LogWarning(ex, "Validation error creating specialization {Name} by admin {UserId}", request.Name, userId);
+                return BadRequest(new { error = ex.Message });
+            }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Unexpected error creating specialization {Name} by admin {UserId}",
@@ -124,15 +129,23 @@ namespace MedNet.API.Controllers
                 return BadRequest(ModelState);
             }
 
-            var response = await specializationService.UpdateSpecializationAsync(id, request);
-            if (response == null)
+            try
             {
-                logger.LogWarning("Specialization {SpecializationId} not found for update by admin {UserId}", id, userId);
-                return NotFound();
-            }
+                var response = await specializationService.UpdateSpecializationAsync(id, request);
+                if (response == null)
+                {
+                    logger.LogWarning("Specialization {SpecializationId} not found for update by admin {UserId}", id, userId);
+                    return NotFound();
+                }
 
-            logger.LogInformation("Specialization {SpecializationId} updated successfully by admin {UserId}", id, userId);
-            return Ok(response);
+                logger.LogInformation("Specialization {SpecializationId} updated successfully by admin {UserId}", id, userId);
+                return Ok(response);
+            }
+            catch (ArgumentException ex)
+            {
+                logger.LogWarning(ex, "Validation error updating specialization {SpecializationId} by admin {UserId}", id, userId);
+                return BadRequest(new { error = ex.Message });
+            }
         }
 
         [Authorize(Roles = "Admin")]

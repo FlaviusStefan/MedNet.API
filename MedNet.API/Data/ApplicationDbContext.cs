@@ -102,11 +102,23 @@ namespace MedNet.API.Data
                 .HasForeignKey(ds => ds.DoctorId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<Specialization>()
-                .HasMany(s => s.DoctorSpecializations)
+            modelBuilder.Entity<Specialization>(b =>
+            {
+                b.HasKey(s => s.Id);
+
+                b.Property(s => s.Name)
+                    .IsRequired()
+                    .HasMaxLength(200);
+
+                b.Property(s => s.Description)
+                    .IsRequired()
+                    .HasMaxLength(1000);
+
+                b.HasMany(s => s.DoctorSpecializations)
                 .WithOne(ds => ds.Specialization)
                 .HasForeignKey(ds => ds.SpecializationId)
                 .OnDelete(DeleteBehavior.Cascade);
+            });
 
             modelBuilder.Entity<DoctorSpecialization>()
                 .HasKey(ds => new { ds.DoctorId, ds.SpecializationId });
@@ -199,10 +211,6 @@ namespace MedNet.API.Data
                 .WithOne(la => la.Patient)
                 .HasForeignKey(la => la.PatientId)
                 .OnDelete(DeleteBehavior.Cascade);
-
-            // Specialization configuration 
-            modelBuilder.Entity<Specialization>()
-                .HasKey(s => s.Id);
 
             // Primary key configurations for entities (no duplicate relationship configs)
             modelBuilder.Entity<MedicalFile>()

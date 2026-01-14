@@ -22,6 +22,15 @@ namespace MedNet.API.Services.Implementation
 
         public async Task<SpecializationDto> CreateSpecializationAsync(CreateSpecializationRequestDto request)
         {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            if (string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.Description))
+            {
+                logger.LogWarning("CreateSpecializationAsync called with invalid request");
+                throw new ArgumentException("Name and Description are required.");
+            }
+
             logger.LogInformation("Creating specialization: {Name} - {Description}",
                 request.Name, request.Description);
 
@@ -107,6 +116,15 @@ namespace MedNet.API.Services.Implementation
 
         public async Task<SpecializationDto?> UpdateSpecializationAsync(Guid id, UpdateSpecializationRequestDto request)
         {
+            if(request == null)
+                throw new ArgumentNullException(nameof(request));
+            
+            if(string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.Description))
+            {
+                logger.LogWarning("UpdateSpecializationAsync called with invalid request for id {Id}", id);
+                throw new ArgumentException("Name and Description are required.");
+            }
+            
             logger.LogInformation("Updating specialization with ID: {SpecializationId}", id);
 
             var existingSpecialization = await specializationRepository.GetById(id);
