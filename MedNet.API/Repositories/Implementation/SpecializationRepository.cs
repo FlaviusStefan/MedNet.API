@@ -2,11 +2,10 @@
 using MedNet.API.Models.Domain;
 using MedNet.API.Repositories.Interface;
 using Microsoft.EntityFrameworkCore;
-using System.Numerics;
 
 namespace MedNet.API.Repositories.Implementation
 {
-    public class SpecializationRepository :ISpecializationRepository
+    public class SpecializationRepository : ISpecializationRepository
     {
         private readonly ApplicationDbContext dbContext;
 
@@ -14,6 +13,7 @@ namespace MedNet.API.Repositories.Implementation
         {
             this.dbContext = dbContext;
         }
+
         public async Task<Specialization> CreateAsync(Specialization specialization)
         {
             await dbContext.Specializations.AddAsync(specialization);
@@ -32,7 +32,6 @@ namespace MedNet.API.Repositories.Implementation
             return await dbContext.Specializations
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == id);
-
         }
 
         public async Task<IEnumerable<Specialization>> GetAllByDoctorIdAsync(Guid doctorId)
@@ -56,6 +55,7 @@ namespace MedNet.API.Repositories.Implementation
 
             return null;
         }
+
         public async Task<Specialization?> DeleteAsync(Guid id)
         {
             var existingSpecialization = await dbContext.Specializations.FirstOrDefaultAsync(x => x.Id == id);

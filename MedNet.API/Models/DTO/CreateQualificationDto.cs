@@ -11,7 +11,7 @@ namespace MedNet.API.Models.DTO
         public string Institution { get; set; }
 
         [Required(ErrorMessage = "Studied years are required.")]
-        [Range(1, 20, ErrorMessage = "Studied years must be between 1 and 20.")]
+        [Range(1, 15, ErrorMessage = "Studied years must be between 1 and 15.")]
         public int StudiedYears { get; set; }
 
         [Required(ErrorMessage = "Year of Completion is required.")]

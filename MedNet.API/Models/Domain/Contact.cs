@@ -12,10 +12,5 @@ namespace MedNet.API.Models.Domain
 
         [EmailAddress]
         public string Email { get; set; }
-
-        public ICollection<Doctor> Doctors { get; set; }
-        public ICollection<Patient> Patients { get; set; }
-        public ICollection<Hospital> Hospitals { get; set; }
-
     }
 }

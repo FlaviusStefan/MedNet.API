@@ -11,7 +11,5 @@ namespace MedNet.API.Services.Interface
         Task<IEnumerable<QualificationDto>> GetQualificationsByDoctorIdAsync(Guid doctorId);
         Task<QualificationDto?> UpdateQualificationAsync(Guid id, UpdateQualificationRequestDto request);
         Task<string?> DeleteQualificationAsync(Guid id);
-        Task<IEnumerable<TDto>> GetQualificationsByDoctorIdAsync<TDto>(Guid doctorId, Func<Qualification, TDto> selector);
-
     }
 }

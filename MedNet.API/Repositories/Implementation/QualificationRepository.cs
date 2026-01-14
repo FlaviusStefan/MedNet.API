@@ -49,7 +49,6 @@ namespace MedNet.API.Repositories.Implementation
             if (existingQualification != null)
             {
                 dbContext.Entry(existingQualification).CurrentValues.SetValues(qualification);
-                await dbContext.SaveChangesAsync();
                 return qualification;
             }
 
@@ -65,7 +64,6 @@ namespace MedNet.API.Repositories.Implementation
             }
 
             dbContext.Qualifications.Remove(existingQualification);
-            await dbContext.SaveChangesAsync();
             return existingQualification;
         }
     }

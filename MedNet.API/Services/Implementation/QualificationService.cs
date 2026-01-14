@@ -1,6 +1,5 @@
 ﻿using MedNet.API.Models.Domain;
 using MedNet.API.Models.DTO;
-using MedNet.API.Repositories.Implementation;
 using MedNet.API.Repositories.Interface;
 using MedNet.API.Services.Interface;
 using Microsoft.Extensions.Logging;
@@ -22,7 +21,34 @@ namespace MedNet.API.Services.Implementation
 
         public async Task<QualificationDto> CreateQualificationAsync(CreateQualificationRequestDto request, bool autoSave = true)
         {
-            logger.LogInformation("Creating qualification for Doctor {DoctorId}, Degree: {Degree}, Institution: {Institution}",
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            if (request.DoctorId == Guid.Empty)
+            {
+                logger.LogWarning("CreateQualificationAsync called with empty DoctorId");
+                throw new ArgumentException("DoctorId is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Degree) || string.IsNullOrWhiteSpace(request.Institution))
+            {
+                logger.LogWarning("CreateQualificationAsync called with invalid request values for Doctor {DoctorId}", request.DoctorId);
+                throw new ArgumentException("Degree and Institution are required.");
+            }
+
+            if (request.StudiedYears < 1 || request.StudiedYears > 15)
+            {
+                logger.LogWarning("CreateQualificationAsync called with invalid StudiedYears for Doctor {DoctorId}: {StudiedYears}", request.DoctorId, request.StudiedYears);
+                throw new ArgumentException("StudiedYears must be between 1 and 15.");
+            }
+
+            if (request.YearOfCompletion < 1950 || request.YearOfCompletion > 2100)
+            {
+                logger.LogWarning("CreateQualificationAsync called with invalid YearOfCompletion for Doctor {DoctorId}: {YearOfCompletion}", request.DoctorId, request.YearOfCompletion);
+                throw new ArgumentException("YearOfCompletion must be between 1950 and 2100.");
+            }
+
+            logger.LogInformation("Creating qualification for Doctor {DoctorId}: {Degree} from {Institution}",
                 request.DoctorId, request.Degree, request.Institution);
 
             var qualification = new Qualification
@@ -40,11 +66,13 @@ namespace MedNet.API.Services.Implementation
             if (autoSave)
             {
                 await unitOfWork.SaveChangesAsync();
-                logger.LogInformation("Qualification {QualificationId} created and saved", qualification.Id);
+                logger.LogInformation("Qualification {QualificationId} created and saved for Doctor {DoctorId} - {Degree} from {Institution}",
+                    qualification.Id, qualification.DoctorId, qualification.Degree, qualification.Institution);
             }
             else
             {
-                logger.LogDebug("Qualification {QualificationId} tracked (deferred save)", qualification.Id);
+                logger.LogDebug("Qualification {QualificationId} tracked (deferred save) for Doctor {DoctorId}",
+                    qualification.Id, qualification.DoctorId);
             }
 
             return new QualificationDto
@@ -90,8 +118,8 @@ namespace MedNet.API.Services.Implementation
                 return null;
             }
 
-            logger.LogInformation("Qualification {QualificationId} retrieved - Doctor: {DoctorId}, Degree: {Degree}",
-                qualification.Id, qualification.DoctorId, qualification.Degree);
+            logger.LogInformation("Qualification {QualificationId} retrieved - Doctor: {DoctorId}, {Degree} from {Institution}",
+                qualification.Id, qualification.DoctorId, qualification.Degree, qualification.Institution);
 
             return new QualificationDto
             {
@@ -128,16 +156,46 @@ namespace MedNet.API.Services.Implementation
 
         public async Task<QualificationDto?> UpdateQualificationAsync(Guid id, UpdateQualificationRequestDto request)
         {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            if (string.IsNullOrWhiteSpace(request.Degree) || string.IsNullOrWhiteSpace(request.Institution))
+            {
+                logger.LogWarning("UpdateQualificationAsync called with invalid request for id {Id}", id);
+                throw new ArgumentException("Degree and Institution are required.");
+            }
+
+            if (request.StudiedYears < 1 || request.StudiedYears > 15)
+            {
+                logger.LogWarning("UpdateQualificationAsync called with invalid StudiedYears for id {Id}: {StudiedYears}", id, request.StudiedYears);
+                throw new ArgumentException("StudiedYears must be between 1 and 15.");
+            }
+
+            if (request.YearOfCompletion < 1950 || request.YearOfCompletion > 2100)
+            {
+                logger.LogWarning("UpdateQualificationAsync called with invalid YearOfCompletion for id {Id}: {YearOfCompletion}", id, request.YearOfCompletion);
+                throw new ArgumentException("YearOfCompletion must be between 1950 and 2100.");
+            }
+
             logger.LogInformation("Updating qualification with ID: {QualificationId}", id);
 
-            var qualification = new Qualification
-            {
-                Id = id,
-                Degree = request.Degree,
-                Institution = request.Institution,
-            };
+            var existingQualification = await qualificationRepository.GetById(id);
 
-            var updatedQualification = await qualificationRepository.UpdateAsync(qualification);
+            if (existingQualification == null)
+            {
+                logger.LogWarning("Qualification not found for update with ID: {QualificationId}", id);
+                return null;
+            }
+
+            var oldDegree = existingQualification.Degree;
+            var oldInstitution = existingQualification.Institution;
+
+            existingQualification.Degree = request.Degree;
+            existingQualification.Institution = request.Institution;
+            existingQualification.StudiedYears = request.StudiedYears;
+            existingQualification.YearOfCompletion = request.YearOfCompletion;
+
+            var updatedQualification = await qualificationRepository.UpdateAsync(existingQualification);
 
             if (updatedQualification == null)
             {
@@ -145,8 +203,10 @@ namespace MedNet.API.Services.Implementation
                 return null;
             }
 
-            logger.LogInformation("Qualification {QualificationId} updated successfully - Degree: {Degree}, Institution: {Institution}",
-                id, updatedQualification.Degree, updatedQualification.Institution);
+            await unitOfWork.SaveChangesAsync();
+
+            logger.LogInformation("Qualification {QualificationId} updated successfully - Degree: '{OldDegree}' → '{NewDegree}', Institution: '{OldInstitution}' → '{NewInstitution}'",
+                id, oldDegree, updatedQualification.Degree, oldInstitution, updatedQualification.Institution);
 
             return new QualificationDto
             {
@@ -170,24 +230,12 @@ namespace MedNet.API.Services.Implementation
                 return null;
             }
 
-            logger.LogInformation("Qualification {QualificationId} deleted successfully - Doctor: {DoctorId}, Degree: {Degree} from {Institution}",
+            await unitOfWork.SaveChangesAsync();
+
+            logger.LogInformation("Qualification {QualificationId} deleted successfully - Doctor: {DoctorId}, {Degree} from {Institution}",
                 qualification.Id, qualification.DoctorId, qualification.Degree, qualification.Institution);
 
-            return $"Qualification '{qualification.Degree}' from {qualification.Institution} deleted successfully!";
-        }
-
-        public async Task<IEnumerable<TDto>> GetQualificationsByDoctorIdAsync<TDto>(Guid doctorId, Func<Qualification, TDto> selector)
-        {
-            logger.LogDebug("Retrieving qualifications for Doctor {DoctorId} with custom selector", doctorId);
-
-            var qualifications = await qualificationRepository.GetAllByDoctorIdAsync(doctorId);
-
-            var result = qualifications.Select(selector).ToList();
-
-            logger.LogDebug("Retrieved and transformed {Count} qualifications for Doctor {DoctorId}",
-                result.Count, doctorId);
-
-            return result;
+            return $"Qualification '{qualification.Degree}' from {qualification.Institution} (ID: {qualification.Id}) deleted successfully!";
         }
     }
 }

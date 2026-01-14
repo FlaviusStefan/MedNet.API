@@ -1,9 +1,7 @@
 ﻿using MedNet.API.Models.DTO;
 using MedNet.API.Services;
-using MedNet.API.Services.Implementation;
 using MedNet.API.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -33,8 +31,8 @@ namespace MedNet.API.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            logger.LogInformation("Admin {UserId} creating qualification for Doctor {DoctorId}",
-                userId, request.DoctorId);
+            logger.LogInformation("Admin {UserId} creating qualification for Doctor {DoctorId}: {Degree} from {Institution}",
+                userId, request.DoctorId, request.Degree, request.Institution);
 
             if (!ModelState.IsValid)
             {
@@ -53,10 +51,16 @@ namespace MedNet.API.Controllers
             {
                 var qualificationDto = await qualificationService.CreateQualificationAsync(request);
 
-                logger.LogInformation("Qualification {QualificationId} created successfully by admin {UserId} for Doctor {DoctorId}",
-                    qualificationDto.Id, userId, request.DoctorId);
+                logger.LogInformation("Qualification {QualificationId} created successfully by admin {UserId} for Doctor {DoctorId} - {Degree} from {Institution}",
+                    qualificationDto.Id, userId, request.DoctorId, qualificationDto.Degree, qualificationDto.Institution);
 
                 return CreatedAtAction(nameof(GetQualificationById), new { id = qualificationDto.Id }, qualificationDto);
+            }
+            catch (ArgumentException ex)
+            {
+                logger.LogWarning(ex, "Validation error creating qualification for Doctor {DoctorId} by admin {UserId}",
+                    request.DoctorId, userId);
+                return BadRequest(new { error = ex.Message });
             }
             catch (Exception ex)
             {
@@ -138,15 +142,23 @@ namespace MedNet.API.Controllers
                 return BadRequest(ModelState);
             }
 
-            var response = await qualificationService.UpdateQualificationAsync(id, request);
-            if (response == null)
+            try
             {
-                logger.LogWarning("Qualification {QualificationId} not found for update by admin {UserId}", id, userId);
-                return NotFound();
-            }
+                var response = await qualificationService.UpdateQualificationAsync(id, request);
+                if (response == null)
+                {
+                    logger.LogWarning("Qualification {QualificationId} not found for update by admin {UserId}", id, userId);
+                    return NotFound();
+                }
 
-            logger.LogInformation("Qualification {QualificationId} updated successfully by admin {UserId}", id, userId);
-            return Ok(response);
+                logger.LogInformation("Qualification {QualificationId} updated successfully by admin {UserId}", id, userId);
+                return Ok(response);
+            }
+            catch (ArgumentException ex)
+            {
+                logger.LogWarning(ex, "Validation error updating qualification {QualificationId} by admin {UserId}", id, userId);
+                return BadRequest(new { error = ex.Message });
+            }
         }
 
         [Authorize(Roles = "Admin")]

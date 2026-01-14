@@ -36,71 +36,48 @@ namespace MedNet.API.Data
             modelBuilder.Entity<DoctorHospital>()
                 .ToTable("DoctorHospitals");
 
-            // Address configuration
-            modelBuilder.Entity<Address>()
-                .HasKey(a => a.Id);
+            // Address configuration - One-to-One relationships
+            modelBuilder.Entity<Address>(b =>
+            {
+                b.HasKey(a => a.Id);
+            });
 
-            modelBuilder.Entity<Address>()
-                .HasMany(a => a.Doctors)
-                .WithOne(d => d.Address)
-                .HasForeignKey(d => d.AddressId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Address>()
-                .HasMany(a => a.Patients)
-                .WithOne(d => d.Address)
-                .HasForeignKey(d => d.AddressId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Address>()
-                .HasMany(a => a.Hospitals)
-                .WithOne(d => d.Address)
-                .HasForeignKey(d => d.AddressId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // Contact configuration
-            modelBuilder.Entity<Contact>()
-                .HasKey(c => c.Id);
-
-            modelBuilder.Entity<Contact>()
-                .HasMany(c => c.Doctors)
-                .WithOne(d => d.Contact)
-                .HasForeignKey(d => d.ContactId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Contact>()
-                .HasMany(c => c.Patients)
-                .WithOne(d => d.Contact)
-                .HasForeignKey(d => d.ContactId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Contact>()
-                .HasMany(c => c.Hospitals)
-                .WithOne(d => d.Contact)
-                .HasForeignKey(d => d.ContactId)
-                .OnDelete(DeleteBehavior.Restrict);
+            // Contact configuration - One-to-One relationships
+            modelBuilder.Entity<Contact>(b =>
+            {
+                b.HasKey(c => c.Id);
+            });
 
             // Doctor configuration
-            modelBuilder.Entity<Doctor>()
-                .HasKey(d => d.Id);
+            modelBuilder.Entity<Doctor>(b =>
+            {
+                b.HasKey(d => d.Id);
 
-            modelBuilder.Entity<Doctor>()
-                .HasOne(d => d.Address)
-                .WithMany(a => a.Doctors)
-                .HasForeignKey(d => d.AddressId)
-                .OnDelete(DeleteBehavior.Cascade);
+                b.HasOne(d => d.Address)
+                    .WithOne()
+                    .HasForeignKey<Doctor>(d => d.AddressId)
+                    .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<Doctor>()
-                .HasOne(d => d.Contact)
-                .WithMany(c => c.Doctors)
-                .HasForeignKey(d => d.ContactId)
-                .OnDelete(DeleteBehavior.Cascade);
+                b.HasOne(d => d.Contact)
+                    .WithOne()
+                    .HasForeignKey<Doctor>(d => d.ContactId)
+                    .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<Doctor>()
-                .HasMany(d => d.DoctorSpecializations)
-                .WithOne(ds => ds.Doctor)
-                .HasForeignKey(ds => ds.DoctorId)
-                .OnDelete(DeleteBehavior.Cascade);
+                b.HasMany(d => d.DoctorSpecializations)
+                    .WithOne(ds => ds.Doctor)
+                    .HasForeignKey(ds => ds.DoctorId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasMany(d => d.DoctorHospitals)
+                    .WithOne(dh => dh.Doctor)
+                    .HasForeignKey(dh => dh.DoctorId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasMany(d => d.Appointments)
+                    .WithOne(a => a.Doctor)
+                    .HasForeignKey(a => a.DoctorId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
 
             modelBuilder.Entity<Specialization>(b =>
             {
@@ -115,102 +92,78 @@ namespace MedNet.API.Data
                     .HasMaxLength(1000);
 
                 b.HasMany(s => s.DoctorSpecializations)
-                .WithOne(ds => ds.Specialization)
-                .HasForeignKey(ds => ds.SpecializationId)
-                .OnDelete(DeleteBehavior.Cascade);
+                    .WithOne(ds => ds.Specialization)
+                    .HasForeignKey(ds => ds.SpecializationId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<DoctorSpecialization>()
                 .HasKey(ds => new { ds.DoctorId, ds.SpecializationId });
 
-            modelBuilder.Entity<Doctor>()
-                .HasMany(d => d.DoctorHospitals)
-                .WithOne(dh => dh.Doctor)
-                .HasForeignKey(dh => dh.DoctorId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<Hospital>()
-                .HasMany(h => h.DoctorHospitals)
-                .WithOne(dh => dh.Hospital)
-                .HasForeignKey(dh => dh.HospitalId)
-                .OnDelete(DeleteBehavior.Cascade);
-
             modelBuilder.Entity<DoctorHospital>()
                 .HasKey(dh => new { dh.DoctorId, dh.HospitalId });
 
-            modelBuilder.Entity<Doctor>()
-                .HasMany(d => d.Qualifications)
-                .WithOne(q => q.Doctor)
-                .HasForeignKey(q => q.DoctorId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<Doctor>()
-                .HasMany(d => d.Appointments)
-                .WithOne(a => a.Doctor)
-                .HasForeignKey(a => a.DoctorId)
-                .OnDelete(DeleteBehavior.Cascade);
-
             // Hospital Configuration
-            modelBuilder.Entity<Hospital>()
-                .HasKey(h => h.Id);
+            modelBuilder.Entity<Hospital>(b =>
+            {
+                b.HasKey(h => h.Id);
 
-            modelBuilder.Entity<Hospital>()
-                .HasOne(h => h.Address)
-                .WithMany(a => a.Hospitals)
-                .HasForeignKey(h => h.AddressId)
-                .OnDelete(DeleteBehavior.Restrict);
+                b.HasOne(h => h.Address)
+                    .WithOne()
+                    .HasForeignKey<Hospital>(h => h.AddressId)
+                    .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<Hospital>()
-                .HasOne(h => h.Contact)
-                .WithMany(c => c.Hospitals)
-                .HasForeignKey(h => h.ContactId)
-                .OnDelete(DeleteBehavior.Restrict);
+                b.HasOne(h => h.Contact)
+                    .WithOne()
+                    .HasForeignKey<Hospital>(h => h.ContactId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasMany(h => h.DoctorHospitals)
+                    .WithOne(dh => dh.Hospital)
+                    .HasForeignKey(dh => dh.HospitalId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
 
             // Patient configuration - CASCADE DELETE FOR ALL PATIENT-OWNED DATA
-            modelBuilder.Entity<Patient>()
-                .HasKey(d => d.Id);
+            modelBuilder.Entity<Patient>(b =>
+            {
+                b.HasKey(p => p.Id);
 
-            modelBuilder.Entity<Patient>()
-                .HasOne(d => d.Address)
-                .WithMany(a => a.Patients)
-                .HasForeignKey(d => d.AddressId)
-                .OnDelete(DeleteBehavior.Restrict);
+                b.HasOne(p => p.Address)
+                    .WithOne()
+                    .HasForeignKey<Patient>(p => p.AddressId)
+                    .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<Patient>()
-                .HasOne(d => d.Contact)
-                .WithMany(c => c.Patients)
-                .HasForeignKey(d => d.ContactId)
-                .OnDelete(DeleteBehavior.Restrict);
+                b.HasOne(p => p.Contact)
+                    .WithOne()
+                    .HasForeignKey<Patient>(p => p.ContactId)
+                    .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<Patient>()
-                .HasMany(p => p.MedicalFiles)
-                .WithOne(mf => mf.Patient)
-                .HasForeignKey(mf => mf.PatientId)
-                .OnDelete(DeleteBehavior.Cascade);
+                b.HasMany(p => p.MedicalFiles)
+                    .WithOne(mf => mf.Patient)
+                    .HasForeignKey(mf => mf.PatientId)
+                    .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<Patient>()
-                .HasMany(p => p.Medications)
-                .WithOne(m => m.Patient)
-                .HasForeignKey(m => m.PatientId)
-                .OnDelete(DeleteBehavior.Cascade);
+                b.HasMany(p => p.Medications)
+                    .WithOne(m => m.Patient)
+                    .HasForeignKey(m => m.PatientId)
+                    .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<Patient>()
-                .HasMany(p => p.Insurances)
-                .WithOne(i => i.Patient)
-                .HasForeignKey(i => i.PatientId)
-                .OnDelete(DeleteBehavior.Cascade);
+                b.HasMany(p => p.Insurances)
+                    .WithOne(i => i.Patient)
+                    .HasForeignKey(i => i.PatientId)
+                    .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<Patient>()
-                .HasMany(p => p.Appointments)
-                .WithOne(a => a.Patient)
-                .HasForeignKey(a => a.PatientId)
-                .OnDelete(DeleteBehavior.Cascade);
+                b.HasMany(p => p.Appointments)
+                    .WithOne(a => a.Patient)
+                    .HasForeignKey(a => a.PatientId)
+                    .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<Patient>()
-                .HasMany(p => p.LabAnalyses)
-                .WithOne(la => la.Patient)
-                .HasForeignKey(la => la.PatientId)
-                .OnDelete(DeleteBehavior.Cascade);
+                b.HasMany(p => p.LabAnalyses)
+                    .WithOne(la => la.Patient)
+                    .HasForeignKey(la => la.PatientId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
 
             // Primary key configurations for entities (no duplicate relationship configs)
             modelBuilder.Entity<MedicalFile>()
@@ -222,8 +175,33 @@ namespace MedNet.API.Data
             modelBuilder.Entity<Insurance>()
                 .HasKey(i => i.Id);
 
-            modelBuilder.Entity<Qualification>()
-                .HasKey(q => q.Id);
+            modelBuilder.Entity<Qualification>(b =>
+            {
+                b.HasKey(q => q.Id);
+
+                b.Property(q => q.Degree)
+                    .IsRequired()
+                    .HasMaxLength(200)
+                    .HasColumnType("nvarchar(200)");
+
+                b.Property(q => q.Institution)
+                    .IsRequired()
+                    .HasMaxLength(200)
+                    .HasColumnType("nvarchar(200)");
+
+                b.Property(q => q.StudiedYears)
+                    .IsRequired()
+                    .HasColumnType("int");
+
+                b.Property(q => q.YearOfCompletion)
+                    .IsRequired()
+                    .HasColumnType("int");
+
+                b.HasOne(q => q.Doctor)
+                 .WithMany(d => d.Qualifications)
+                 .HasForeignKey(q => q.DoctorId)
+                 .OnDelete(DeleteBehavior.Cascade);
+            });
 
             // Appointment configuration
             modelBuilder.Entity<Appointment>()
