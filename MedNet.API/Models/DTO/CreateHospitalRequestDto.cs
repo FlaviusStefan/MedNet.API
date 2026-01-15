@@ -5,6 +5,7 @@ namespace MedNet.API.Models.DTO
     public class CreateHospitalRequestDto
     {
         [Required(ErrorMessage = "Name is required.")]
+        [MaxLength(200, ErrorMessage = "Name cannot exceed 200 characters.")]
         public string Name {  get; set; }
 
         public string UserId { get; set; }

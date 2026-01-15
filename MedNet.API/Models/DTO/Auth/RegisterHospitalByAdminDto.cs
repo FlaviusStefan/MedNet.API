@@ -7,6 +7,7 @@ namespace MedNet.API.Models.DTO.Auth
         // USER AUTH FIELDS
         [Required(ErrorMessage = "Email is required.")]
         [EmailAddress(ErrorMessage = "Invalid email format.")]
+        [MaxLength(256, ErrorMessage = "Email cannot exceed 256 characters.")]
         public string Email { get; set; }
 
         [Required(ErrorMessage = "Password is required.")]
@@ -16,10 +17,12 @@ namespace MedNet.API.Models.DTO.Auth
 
         // PERSONAL INFO
         [Required(ErrorMessage = "Name is required.")]
+        [MaxLength(200, ErrorMessage = "Name cannot exceed 200 characters.")]
         public string Name { get; set; }
 
-        [Phone(ErrorMessage = "Invalid phone number format.")]
-        public string PhoneNumber { get; set; } 
+        [Required(ErrorMessage = "Phone number is required.")]
+        [RegularExpression("^(?!0+$)(\\+\\d{1,3}[- ]?)?(?!0+$)\\d{10,15}$", ErrorMessage = "Please enter valid phone number.")]
+        public string PhoneNumber { get; set; }
 
         // ADDRESS INFO
         [Required(ErrorMessage = "Address is required.")]

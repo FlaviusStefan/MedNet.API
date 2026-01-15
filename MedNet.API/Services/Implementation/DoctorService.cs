@@ -239,6 +239,11 @@ namespace MedNet.API.Services
             var oldLicense = existingDoctor.LicenseNumber;
             var oldExperience = existingDoctor.YearsOfExperience;
 
+            var validSpecializations = await specializationService.ValidateSpecializationsAsync(request.SpecializationIds);
+            
+            logger.LogDebug("Validated {Count} specializations for doctor update {DoctorId}",
+                validSpecializations.Count, id);
+
             var doctorToUpdate = new Doctor
             {
                 Id = id,
@@ -258,20 +263,7 @@ namespace MedNet.API.Services
                 return null;
             }
 
-            var specializationDtos = await specializationService.GetAllSpecializationsAsync();
-
-            var validSpecializationIds = request.SpecializationIds
-                .Where(sid => specializationDtos.Any(dto => dto.Id == sid))
-                .ToList();
-
-            if (validSpecializationIds.Count != request.SpecializationIds.Count)
-            {
-                logger.LogWarning("Invalid specialization IDs provided for doctor {DoctorId}. Valid: {ValidCount}, Requested: {RequestedCount}",
-                    id, validSpecializationIds.Count, request.SpecializationIds.Count);
-                throw new ArgumentException("One or more specialization IDs are invalid.");
-            }
-
-            await doctorRepository.UpdateDoctorSpecializationsAsync(id, validSpecializationIds);
+            await doctorRepository.UpdateDoctorSpecializationsAsync(id, validSpecializations.Keys);
 
             await unitOfWork.SaveChangesAsync();
 
@@ -287,7 +279,7 @@ namespace MedNet.API.Services
                 Gender = updatedDoctor.Gender,
                 LicenseNumber = updatedDoctor.LicenseNumber,
                 YearsOfExperience = updatedDoctor.YearsOfExperience,
-                SpecializationIds = validSpecializationIds,
+                SpecializationIds = validSpecializations.Keys.ToList(),
             };
         }
 
@@ -308,6 +300,11 @@ namespace MedNet.API.Services
                 return null;
             }
 
+            // Store IDs before deletion to avoid tracking issues
+            var addressId = doctor.Address?.Id;
+            var contactId = doctor.Contact?.Id;
+            var userId = doctor.UserId;
+
             using var scope = new TransactionScope(
                 TransactionScopeOption.Required,
                 new TransactionOptions
@@ -323,19 +320,21 @@ namespace MedNet.API.Services
 
                 await doctorRepository.DeleteAsync(id);
 
-                if (doctor.Address != null)
+                // Manually delete Address and Contact (one-to-one, but Restrict to avoid cascade cycles)
+                if (addressId.HasValue)
                 {
-                    await addressService.DeleteAddressAsync(doctor.Address.Id);
+                    await addressService.DeleteAddressAsync(addressId.Value);
                 }
 
-                if (doctor.Contact != null)
+                if (contactId.HasValue)
                 {
-                    await contactService.DeleteContactAsync(doctor.Contact.Id);
+                    await contactService.DeleteContactAsync(contactId.Value);
                 }
 
-                if (!string.IsNullOrEmpty(doctor.UserId))
+                // Delete Identity user separately (not managed by EF Core)
+                if (!string.IsNullOrEmpty(userId))
                 {
-                    var identityResult = await userManagementService.DeleteUserByIdAsync(doctor.UserId);
+                    var identityResult = await userManagementService.DeleteUserByIdAsync(userId);
                     if (!identityResult.Succeeded)
                     {
                         var errors = string.Join(", ", identityResult.Errors.Select(e => e.Description));

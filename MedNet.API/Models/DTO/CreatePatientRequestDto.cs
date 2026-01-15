@@ -1,4 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using MedNet.API.Models.Enums;
+using MedNet.API.Attributes;
 
 namespace MedNet.API.Models.DTO
 {
@@ -15,7 +17,8 @@ namespace MedNet.API.Models.DTO
         public DateTime DateOfBirth { get; set; }
 
         [Required(ErrorMessage = "Gender is required.")]
-        public string Gender { get; set; }
+        [ValidEnum(ErrorMessage = "Gender must be either Male or Female.")]
+        public Gender Gender { get; set; }
 
         [Required(ErrorMessage = "Height is required.")]
         public double Height { get; set; }
@@ -28,7 +31,5 @@ namespace MedNet.API.Models.DTO
 
         [Required(ErrorMessage = "Contact is required.")]
         public CreateContactRequestDto Contact { get; set; } // Contact details will be filled from user registration
-
-
     }
 }

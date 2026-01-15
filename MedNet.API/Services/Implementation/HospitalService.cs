@@ -163,6 +163,8 @@ namespace MedNet.API.Services.Implementation
                 return null;
             }
 
+            await unitOfWork.SaveChangesAsync();
+
             logger.LogInformation("Hospital {HospitalId} updated successfully - Name: '{OldName}' → '{NewName}'",
                 id, oldName, updatedHospital.Name);
 
