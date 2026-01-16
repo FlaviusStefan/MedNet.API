@@ -370,6 +370,8 @@ namespace MedNet.API.Services.Implementation
                 _logger.LogInformation("Identity user created by admin for hospital: {Name}, UserId: {UserId}",
                     registerDto.Name, user.Id);
 
+                await _userManager.AddToRoleAsync(user, UserRole.Hospital.ToString());
+
                 var createHospitalDto = new CreateHospitalRequestDto
                 {
                     Name = registerDto.Name,
