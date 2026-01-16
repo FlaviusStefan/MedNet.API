@@ -308,8 +308,6 @@ namespace MedNet.API.Services.Implementation
                     LicenseNumber = registerDto.LicenseNumber,
                     Address = registerDto.Address,
                     SpecializationIds = registerDto.SpecializationIds,
-                    Email = registerDto.Email,
-                    Password = registerDto.Password,
                     Contact = new CreateContactRequestDto
                     {
                         Email = registerDto.Email,
