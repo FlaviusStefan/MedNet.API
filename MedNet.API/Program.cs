@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Text.Json.Serialization;
+using MedNet.API;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -130,6 +131,9 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // Service for authentication
 builder.Services.AddScoped<IAuthService, AuthService>();
+
+// AutoMapper
+builder.Services.AddAutoMapper(typeof(Program).Assembly);
 
 // Configure CORS policy
 builder.Services.AddCors(options =>
