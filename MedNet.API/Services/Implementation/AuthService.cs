@@ -251,12 +251,6 @@ namespace MedNet.API.Services.Implementation
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        public Task<string> RegisterDoctorAsync(RegisterDoctorDto registerDto)
-        {
-            _logger.LogWarning("RegisterDoctorAsync called but not implemented");
-            throw new NotImplementedException();
-        }
-
         public async Task<string> RegisterDoctorByAdminAsync(RegisterDoctorByAdminDto registerDto)
         {
             _logger.LogInformation("Admin creating doctor account for email: {Email}, License: {LicenseNumber}",
