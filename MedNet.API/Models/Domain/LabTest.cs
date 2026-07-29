@@ -1,4 +1,4 @@
-﻿namespace MedNet.API.Models
+﻿namespace MedNet.API.Models.Domain
 {
     public class LabTest
     {

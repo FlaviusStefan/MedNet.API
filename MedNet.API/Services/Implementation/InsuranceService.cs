@@ -1,5 +1,5 @@
 ﻿using MedNet.API.Exceptions;
-using MedNet.API.Models;
+using MedNet.API.Models.Domain;
 using MedNet.API.Models.DTO;
 using MedNet.API.Repositories.Interface;
 using MedNet.API.Services.Interface;

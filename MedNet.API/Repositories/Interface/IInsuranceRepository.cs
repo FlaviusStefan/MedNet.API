@@ -1,4 +1,4 @@
-﻿using MedNet.API.Models;
+﻿using MedNet.API.Models.Domain;
 
 namespace MedNet.API.Repositories.Interface
 {

@@ -1,6 +1,4 @@
-﻿using MedNet.API.Models.Domain;
-
-namespace MedNet.API.Models
+﻿namespace MedNet.API.Models.Domain
 {
     public class LabAnalysis
     {
