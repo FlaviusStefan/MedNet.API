@@ -5,10 +5,8 @@ using System.Transactions;
 using MedNet.API.Exceptions;
 using MedNet.API.Models.DTO;
 using MedNet.API.Models.DTO.Auth;
-using MedNet.API.Models.Enums;
 using MedNet.API.Services.Interface;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
 namespace MedNet.API.Services.Implementation

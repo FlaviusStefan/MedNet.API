@@ -1,16 +1,8 @@
-﻿using MedNet.API.Models.Domain;
-using MedNet.API.Models.DTO;
-using MedNet.API.Repositories.Interface;
-using MedNet.API.Services;
-using MedNet.API.Services.Implementation;
+﻿using MedNet.API.Models.DTO;
 using MedNet.API.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
 using System.Security.Claims;
-using System.Threading.Tasks;
 
 namespace MedNet.API.Controllers
 {

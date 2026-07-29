@@ -1,11 +1,7 @@
 ﻿using MedNet.API.Data;
 using MedNet.API.Models.Domain;
 using MedNet.API.Repositories.Interface;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
-using System.Data;
-using System.Numerics;
 
 namespace MedNet.API.Repositories.Implementation
 {

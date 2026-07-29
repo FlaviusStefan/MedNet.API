@@ -1,6 +1,5 @@
 ﻿using MedNet.API.Data;
 using MedNet.API.Repositories.Interface;
-using Microsoft.EntityFrameworkCore.Storage;
 
 namespace MedNet.API.Repositories.Implementation
 {

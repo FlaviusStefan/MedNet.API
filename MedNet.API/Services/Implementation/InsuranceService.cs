@@ -3,7 +3,6 @@ using MedNet.API.Models.Domain;
 using MedNet.API.Models.DTO;
 using MedNet.API.Repositories.Interface;
 using MedNet.API.Services.Interface;
-using Microsoft.Extensions.Logging;
 
 namespace MedNet.API.Services.Implementation
 {

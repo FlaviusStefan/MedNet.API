@@ -1,6 +1,6 @@
 ﻿using MedNet.API.Models.DTO;
 
-namespace MedNet.API.Services
+namespace MedNet.API.Services.Interface
 {
     public interface IAddressService
     {

@@ -2,9 +2,7 @@
 using MedNet.API.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System;
 using System.Security.Claims;
-using System.Threading.Tasks;
 
 namespace MedNet.API.Controllers
 {

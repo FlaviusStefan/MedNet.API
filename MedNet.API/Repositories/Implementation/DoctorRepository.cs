@@ -2,7 +2,6 @@
 using MedNet.API.Models.Domain;
 using MedNet.API.Repositories.Interface;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 
 namespace MedNet.API.Repositories.Implementation
 {

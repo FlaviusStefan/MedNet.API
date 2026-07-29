@@ -1,7 +1,5 @@
-﻿using MedNet.API.Models;
-using MedNet.API.Models.Domain;
+﻿using MedNet.API.Models.Domain;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel;
 
 namespace MedNet.API.Data
 {

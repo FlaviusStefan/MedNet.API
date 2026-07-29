@@ -1,5 +1,4 @@
-﻿using MedNet.API.Models.Domain;
-using MedNet.API.Models.DTO;
+﻿using MedNet.API.Models.DTO;
 
 namespace MedNet.API.Services.Interface
 {

@@ -1,5 +1,4 @@
 ﻿using MedNet.API.Models.Domain;
-using Microsoft.EntityFrameworkCore.Storage;
 
 namespace MedNet.API.Repositories.Interface
 {

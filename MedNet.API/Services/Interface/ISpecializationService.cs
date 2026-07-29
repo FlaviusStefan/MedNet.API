@@ -1,5 +1,4 @@
 ﻿using MedNet.API.Models.DTO;
-using Microsoft.EntityFrameworkCore.Storage;
 
 namespace MedNet.API.Services.Interface
 {

@@ -1,6 +1,6 @@
 ﻿using MedNet.API.Exceptions;
 using MedNet.API.Models.DTO;
-using MedNet.API.Services;
+using MedNet.API.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;

@@ -1,6 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Storage;
-
-namespace MedNet.API.Repositories.Interface
+﻿namespace MedNet.API.Repositories.Interface
 {
     public interface IUnitOfWork
     {

@@ -1,6 +1,5 @@
 ﻿using MedNet.API.Services.Interface;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Logging;
 
 namespace MedNet.API.Services.Implementation
 {
