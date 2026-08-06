@@ -8,7 +8,10 @@ namespace MedNet.API.Mappings
     {
         public LabAnalysisMappingProfile()
         {
+            CreateMap<LabTest, DisplayLabTestDto>();
             CreateMap<LabAnalysis, LabAnalysisDto>();
+            CreateMap<LabAnalysis, DisplayLabAnalysisDto>();
+            CreateMap<LabAnalysis, UpdatedLabAnalysisDto>();
         }
     }
 }

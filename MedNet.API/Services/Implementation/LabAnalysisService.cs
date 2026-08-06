@@ -1,4 +1,5 @@
-﻿using MedNet.API.Models.Domain;
+﻿using AutoMapper;
+using MedNet.API.Models.Domain;
 using MedNet.API.Models.DTO;
 using MedNet.API.Repositories.Interface;
 using MedNet.API.Services.Interface;
@@ -10,14 +11,18 @@ namespace MedNet.API.Services.Implementation
         private readonly ILabAnalysisRepository labAnalysisRepository;
         private readonly ILabTestService labTestService;
         private readonly IUnitOfWork unitOfWork;
+        private readonly IMapper mapper;
         private readonly ILogger<LabAnalysisService> logger;
-        public LabAnalysisService(ILabAnalysisRepository labAnalysisRepository, ILabTestService labTestService, ILogger<LabAnalysisService> logger, IUnitOfWork unitOfWork)
+
+        public LabAnalysisService(ILabAnalysisRepository labAnalysisRepository, ILabTestService labTestService, IMapper mapper, ILogger<LabAnalysisService> logger, IUnitOfWork unitOfWork)
         {
             this.labAnalysisRepository = labAnalysisRepository;
             this.labTestService = labTestService;
+            this.mapper = mapper;
             this.logger = logger;
             this.unitOfWork = unitOfWork;
         }
+
         public async Task<LabAnalysisDto> CreateLabAnalysisAsync(CreateLabAnalysisRequestDto request)
         {
             logger.LogInformation("Creating lab analysis for Patient {PatientId}, Type: {AnalysisType}, Tests: {TestCount}",
@@ -57,21 +62,7 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Lab analysis {AnalysisId} created successfully for Patient {PatientId} with {TestCount} tests - Type: {AnalysisType}",
                 labAnalysisWithTests.Id, labAnalysisWithTests.PatientId, labAnalysisWithTests.LabTests.Count, labAnalysisWithTests.AnalysisType);
 
-            return new LabAnalysisDto
-            {
-                Id = labAnalysisWithTests.Id,
-                PatientId = labAnalysisWithTests.PatientId,
-                AnalysisDate = labAnalysisWithTests.AnalysisDate,
-                AnalysisType = labAnalysisWithTests.AnalysisType,
-                LabTests = labAnalysisWithTests.LabTests.Select(t => new LabTestDto
-                {
-                    Id = t.Id,
-                    TestName = t.TestName,
-                    Result = t.Result,
-                    Units = t.Units,
-                    ReferenceRange = t.ReferenceRange
-                }).ToList()
-            };
+            return mapper.Map<LabAnalysisDto>(labAnalysisWithTests);
         }
 
         public async Task<IEnumerable<DisplayLabAnalysisDto>> GetAllLabAnalysesAsync()
@@ -79,21 +70,7 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Retrieving all lab analyses");
 
             var labAnalyses = await labAnalysisRepository.GetAllAsync();
-
-            var analysisList = labAnalyses.Select(labAnalysis => new DisplayLabAnalysisDto
-            {
-                Id = labAnalysis.Id,
-                PatientId = labAnalysis.PatientId,
-                AnalysisDate = labAnalysis.AnalysisDate,
-                AnalysisType = labAnalysis.AnalysisType,
-                LabTests = labAnalysis.LabTests.Select(lt => new DisplayLabTestDto
-                {
-                    TestName = lt.TestName,
-                    Result = lt.Result,
-                    Units = lt.Units,
-                    ReferenceRange = lt.ReferenceRange
-                }).ToList()
-            }).ToList();
+            var analysisList = mapper.Map<List<DisplayLabAnalysisDto>>(labAnalyses);
 
             logger.LogInformation("Retrieved {Count} lab analyses", analysisList.Count);
 
@@ -114,20 +91,7 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Lab analysis {AnalysisId} retrieved - Patient: {PatientId}, Type: {AnalysisType}, Tests: {TestCount}",
                 labAnalysis.Id, labAnalysis.PatientId, labAnalysis.AnalysisType, labAnalysis.LabTests.Count);
 
-            return new DisplayLabAnalysisDto
-            {
-                Id = labAnalysis.Id,
-                PatientId = labAnalysis.PatientId,
-                AnalysisDate = labAnalysis.AnalysisDate,
-                AnalysisType = labAnalysis.AnalysisType,
-                LabTests = labAnalysis.LabTests.Select(lt => new DisplayLabTestDto
-                {
-                    TestName = lt.TestName,
-                    Result = lt.Result,
-                    Units = lt.Units,
-                    ReferenceRange = lt.ReferenceRange
-                }).ToList()
-            };
+            return mapper.Map<DisplayLabAnalysisDto>(labAnalysis);
         }
 
         public async Task<UpdatedLabAnalysisDto?> UpdateLabAnalysisAsync(Guid id, UpdateLabAnalysisRequestDto request)
@@ -166,12 +130,7 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Lab analysis {AnalysisId} updated successfully - Type: '{OldType}' → '{NewType}', Date: {OldDate} → {NewDate}",
                 id, oldAnalysisType, updatedLabAnalysis.AnalysisType, oldAnalysisDate.ToShortDateString(), updatedLabAnalysis.AnalysisDate.ToShortDateString());
 
-            return new UpdatedLabAnalysisDto
-            {
-                Id = updatedLabAnalysis.Id,
-                AnalysisDate = updatedLabAnalysis.AnalysisDate,
-                AnalysisType = updatedLabAnalysis.AnalysisType
-            };
+            return mapper.Map<UpdatedLabAnalysisDto>(updatedLabAnalysis);
         }
 
         public async Task<string?> DeleteLabAnalysisAsync(Guid id)
