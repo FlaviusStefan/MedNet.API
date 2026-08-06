@@ -1,4 +1,5 @@
-﻿using MedNet.API.Models.Domain;
+﻿using AutoMapper;
+using MedNet.API.Models.Domain;
 using MedNet.API.Models.DTO;
 using MedNet.API.Repositories.Interface;
 using MedNet.API.Services.Interface;
@@ -10,12 +11,15 @@ namespace MedNet.API.Services.Implementation
         private readonly ILabTestRepository labTestRepository;
         private readonly IUnitOfWork unitOfWork;
         private readonly ILogger<LabTestService> logger;
+        private readonly IMapper mapper;
 
-        public LabTestService(ILabTestRepository labTestRepository, ILogger<LabTestService> logger, IUnitOfWork unitOfWork)
+
+        public LabTestService(ILabTestRepository labTestRepository, IUnitOfWork unitOfWork, ILogger<LabTestService> logger, IMapper mapper)
         {
             this.labTestRepository = labTestRepository;
-            this.logger = logger;
             this.unitOfWork = unitOfWork;
+            this.logger = logger;
+            this.mapper = mapper;
         }
 
         public async Task<LabTestDto> CreateLabTestAsync(CreateLabTestRequestDto request)
@@ -38,15 +42,7 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Lab test {TestId} created successfully for LabAnalysis {AnalysisId} - {TestName}: {Result} {Units}",
                 createdLabTest.Id, createdLabTest.LabAnalysisId, createdLabTest.TestName, createdLabTest.Result, createdLabTest.Units);
 
-            return new LabTestDto
-            {
-                Id = createdLabTest.Id,
-                LabAnalysisId = createdLabTest.LabAnalysisId,
-                TestName = createdLabTest.TestName,
-                Result = createdLabTest.Result,
-                Units = createdLabTest.Units,
-                ReferenceRange = createdLabTest.ReferenceRange
-            };
+            return mapper.Map<LabTestDto>(createdLabTest);
         }
 
         public async Task<IEnumerable<LabTestDto>> GetAllLabTestsAsync()
@@ -54,16 +50,7 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Retrieving all lab tests");
 
             var labTests = await labTestRepository.GetAllAsync();
-
-            var testList = labTests.Select(labTest => new LabTestDto
-            {
-                Id = labTest.Id,
-                LabAnalysisId = labTest.LabAnalysisId,
-                TestName = labTest.TestName,
-                Result = labTest.Result,
-                Units = labTest.Units,
-                ReferenceRange = labTest.ReferenceRange
-            }).ToList();
+            var testList = mapper.Map<List<LabTestDto>>(labTests);
 
             logger.LogInformation("Retrieved {Count} lab tests", testList.Count);
 
@@ -84,15 +71,7 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Lab test {TestId} retrieved - LabAnalysis: {AnalysisId}, Test: {TestName}, Result: {Result}",
                 labTest.Id, labTest.LabAnalysisId, labTest.TestName, labTest.Result);
 
-            return new LabTestDto
-            {
-                Id = labTest.Id,
-                LabAnalysisId = labTest.LabAnalysisId,
-                TestName = labTest.TestName,
-                Result = labTest.Result,
-                Units = labTest.Units,
-                ReferenceRange = labTest.ReferenceRange
-            };
+            return mapper.Map<LabTestDto>(labTest);
         }
 
         public async Task<LabTestDto> UpdateLabTestAsync(Guid id, UpdateLabTestRequestDto request)
@@ -132,15 +111,7 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Lab test {TestId} updated successfully - Test: '{OldName}' → '{NewName}', Result: '{OldResult}' → '{NewResult}'",
                 id, oldTestName, updatedLabTest.TestName, oldResult, updatedLabTest.Result);
 
-            return new LabTestDto
-            {
-                Id = updatedLabTest.Id,
-                LabAnalysisId = updatedLabTest.LabAnalysisId,
-                TestName = updatedLabTest.TestName,
-                Result = updatedLabTest.Result,
-                Units = updatedLabTest.Units,
-                ReferenceRange = updatedLabTest.ReferenceRange
-            };
+            return mapper.Map<LabTestDto>(updatedLabTest);
         }
 
         public async Task<string?> DeleteLabTestAsync(Guid id)

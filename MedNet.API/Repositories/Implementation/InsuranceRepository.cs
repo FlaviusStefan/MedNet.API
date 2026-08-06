@@ -1,4 +1,4 @@
-﻿using MedNet.API.Data;
+﻿ using MedNet.API.Data;
 using MedNet.API.Models.Domain;
 using MedNet.API.Repositories.Interface;
 using Microsoft.EntityFrameworkCore;
