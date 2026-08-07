@@ -8,6 +8,7 @@ namespace MedNet.API.Mappings
     {
         public InsuranceMappingProfile()
         {
+            CreateMap<Insurance, InsuranceDto>();
             CreateMap<Insurance, DisplayInsuranceDto>();
         }
     }

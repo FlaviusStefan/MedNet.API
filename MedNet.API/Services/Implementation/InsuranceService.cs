@@ -1,4 +1,5 @@
-﻿using MedNet.API.Exceptions;
+﻿using AutoMapper;
+using MedNet.API.Exceptions;
 using MedNet.API.Models.Domain;
 using MedNet.API.Models.DTO;
 using MedNet.API.Repositories.Interface;
@@ -10,11 +11,13 @@ namespace MedNet.API.Services.Implementation
     {
         private readonly IInsuranceRepository insuranceRepository;
         private readonly IUnitOfWork unitOfWork;
+        private readonly IMapper mapper;
         private readonly ILogger<InsuranceService> logger;
 
-        public InsuranceService(IInsuranceRepository insuranceRepository, ILogger<InsuranceService> logger, IUnitOfWork unitOfWork)
+        public InsuranceService(IInsuranceRepository insuranceRepository, IMapper mapper, ILogger<InsuranceService> logger, IUnitOfWork unitOfWork)
         {
             this.insuranceRepository = insuranceRepository;
+            this.mapper = mapper;
             this.logger = logger;
             this.unitOfWork = unitOfWork;
         }
@@ -27,7 +30,7 @@ namespace MedNet.API.Services.Implementation
                 throw new InvalidOperationException("PatientId cannot be null.");
             }
 
-            logger.LogInformation("Creating insurance for Patient {PatientId}, Provider: {Provider}, Policy: {PolicyNumber}", 
+            logger.LogInformation("Creating insurance for Patient {PatientId}, Provider: {Provider}, Policy: {PolicyNumber}",
                 request.PatientId.Value, request.Provider, request.PolicyNumber);
 
             var insurance = new Insurance
@@ -43,18 +46,10 @@ namespace MedNet.API.Services.Implementation
             await insuranceRepository.CreateAsync(insurance);
             await unitOfWork.SaveChangesAsync();
 
-            logger.LogInformation("Insurance {InsuranceId} created successfully for Patient {PatientId} - Provider: {Provider}", 
+            logger.LogInformation("Insurance {InsuranceId} created successfully for Patient {PatientId} - Provider: {Provider}",
                 insurance.Id, insurance.PatientId, insurance.Provider);
 
-            return new InsuranceDto
-            {
-                Id = insurance.Id,
-                PatientId = insurance.PatientId,
-                Provider = insurance.Provider,
-                PolicyNumber = insurance.PolicyNumber,
-                CoverageStartDate = insurance.CoverageStartDate,
-                CoverageEndDate = insurance.CoverageEndDate
-            };
+            return mapper.Map<InsuranceDto>(insurance);
         }
 
         public async Task<IEnumerable<InsuranceDto>> GetAllInsurancesAsync()
@@ -62,16 +57,7 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Retrieving all insurances");
 
             var insurances = await insuranceRepository.GetAllAsync();
-
-            var insuranceList = insurances.Select(insurance => new InsuranceDto
-            {
-                Id = insurance.Id,
-                PatientId = insurance.PatientId,
-                Provider = insurance.Provider,
-                PolicyNumber = insurance.PolicyNumber,
-                CoverageStartDate = insurance.CoverageStartDate,
-                CoverageEndDate = insurance.CoverageEndDate
-            }).ToList();
+            var insuranceList = mapper.Map<List<InsuranceDto>>(insurances);
 
             logger.LogInformation("Retrieved {Count} insurances", insuranceList.Count);
 
@@ -83,24 +69,16 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Retrieving insurance with ID: {InsuranceId}", id);
 
             var insurance = await insuranceRepository.GetById(id);
-            if(insurance is null)
+            if (insurance is null)
             {
                 logger.LogWarning("Insurance not found with ID: {InsuranceId}", id);
                 return null;
             }
 
-            logger.LogInformation("Insurance {InsuranceId} retrieved - Patient: {PatientId}, Provider: {Provider}", 
+            logger.LogInformation("Insurance {InsuranceId} retrieved - Patient: {PatientId}, Provider: {Provider}",
                 insurance.Id, insurance.PatientId, insurance.Provider);
 
-            return new InsuranceDto
-            {
-                Id = insurance.Id,
-                PatientId = insurance.PatientId,
-                Provider = insurance.Provider,
-                PolicyNumber = insurance.PolicyNumber,
-                CoverageStartDate = insurance.CoverageStartDate,
-                CoverageEndDate = insurance.CoverageEndDate
-            };
+            return mapper.Map<InsuranceDto>(insurance);
         }
 
         public async Task<IEnumerable<InsuranceDto>> GetInsurancesByPatientIdAsync(Guid patientId)
@@ -108,18 +86,9 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Retrieving insurances for Patient {PatientId}", patientId);
 
             var insurances = await insuranceRepository.GetAllByPatientIdAsync(patientId);
+            var insuranceList = mapper.Map<List<InsuranceDto>>(insurances);
 
-            var insuranceList = insurances.Select(insurance => new InsuranceDto
-            {
-                Id = insurance.Id,
-                PatientId = insurance.PatientId,
-                Provider = insurance.Provider,
-                PolicyNumber = insurance.PolicyNumber,
-                CoverageStartDate = insurance.CoverageStartDate,
-                CoverageEndDate = insurance.CoverageEndDate
-            }).ToList();
-
-            logger.LogInformation("Retrieved {Count} insurances for Patient {PatientId}", 
+            logger.LogInformation("Retrieved {Count} insurances for Patient {PatientId}",
                 insuranceList.Count, patientId);
 
             return insuranceList;
@@ -162,15 +131,7 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Insurance {InsuranceId} updated successfully - Provider: '{OldProvider}' → '{NewProvider}', Policy: '{OldPolicy}' → '{NewPolicy}'",
                 id, oldProvider, updatedInsurance.Provider, oldPolicyNumber, updatedInsurance.PolicyNumber);
 
-            return new InsuranceDto
-            {
-                Id = updatedInsurance.Id,
-                PatientId = updatedInsurance.PatientId,
-                Provider = updatedInsurance.Provider,
-                PolicyNumber = updatedInsurance.PolicyNumber,
-                CoverageStartDate = updatedInsurance.CoverageStartDate,
-                CoverageEndDate = updatedInsurance.CoverageEndDate
-            };
+            return mapper.Map<InsuranceDto>(updatedInsurance);
         }
 
         public async Task<string?> DeleteInsuranceAsync(Guid id)
@@ -186,12 +147,10 @@ namespace MedNet.API.Services.Implementation
 
             await unitOfWork.SaveChangesAsync();
 
-            logger.LogInformation("Insurance {InsuranceId} deleted successfully - Patient: {PatientId}, Provider: {Provider}", 
+            logger.LogInformation("Insurance {InsuranceId} deleted successfully - Patient: {PatientId}, Provider: {Provider}",
                 insurance.Id, insurance.PatientId, insurance.Provider);
 
             return $"Insurance with ID {insurance.Id} deleted successfully!";
-
-
         }
     }
 }
