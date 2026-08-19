@@ -14,9 +14,13 @@ namespace MedNet.API.Mappings
                 .ForMember(dest => dest.Qualifications, opt => opt.MapFrom(src => src.Qualifications));
 
             CreateMap<Doctor, CreatedDoctorDto>()
-                .ForMember(dest => dest.Specializations, opt => opt.MapFrom(
-                    src => src.DoctorSpecializations.Select(ds => ds.Specialization.Name).ToList()))
-                .ForMember(dest => dest.Qualifications, opt => opt.MapFrom(src => src.Qualifications));
+                .ForMember(dest => dest.Specializations, opt => opt.Ignore())
+                .ForMember(dest => dest.Qualifications, opt => opt.Ignore())
+                .ForMember(dest => dest.Address, opt => opt.Ignore())
+                .ForMember(dest => dest.Contact, opt => opt.Ignore());
+
+            CreateMap<Doctor, UpdatedDoctorDto>()
+                .ForMember(dest => dest.SpecializationIds, opt => opt.Ignore());
         }
     }
 }

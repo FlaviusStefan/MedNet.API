@@ -1,4 +1,5 @@
-﻿using MedNet.API.Exceptions;
+﻿using AutoMapper;
+using MedNet.API.Exceptions;
 using MedNet.API.Models.Domain;
 using MedNet.API.Models.DTO;
 using MedNet.API.Repositories.Interface;
@@ -16,6 +17,7 @@ namespace MedNet.API.Services
         private readonly IQualificationService qualificationService;
         private readonly IUserManagementService userManagementService;
         private readonly IUnitOfWork unitOfWork;
+        private readonly IMapper mapper;
         private readonly ILogger<DoctorService> logger;
 
         public DoctorService(
@@ -25,6 +27,7 @@ namespace MedNet.API.Services
             ISpecializationService specializationService,
             IQualificationService qualificationService,
             IUserManagementService userManagementService,
+            IMapper mapper,
             ILogger<DoctorService> logger,
             IUnitOfWork unitOfWork)
         {
@@ -34,6 +37,7 @@ namespace MedNet.API.Services
             this.specializationService = specializationService;
             this.qualificationService = qualificationService;
             this.userManagementService = userManagementService;
+            this.mapper = mapper;
             this.logger = logger;
             this.unitOfWork = unitOfWork;
         }
@@ -94,28 +98,18 @@ namespace MedNet.API.Services
                     createdQualifications.Add(qualificationDto);
                 }
 
-                logger.LogInformation("Created {Count} qualifications for doctor {DoctorId}",
-                    createdQualifications.Count, doctor.Id);
-
                 await unitOfWork.SaveChangesAsync();
 
                 logger.LogInformation("Doctor {DoctorId} created successfully - {FirstName} {LastName}, License: {LicenseNumber}, with {QualCount} qualifications",
                     doctor.Id, doctor.FirstName, doctor.LastName, doctor.LicenseNumber, createdQualifications.Count);
 
-                return new CreatedDoctorDto
-                {
-                    Id = doctor.Id,
-                    FirstName = doctor.FirstName,
-                    LastName = doctor.LastName,
-                    DateOfBirth = doctor.DateOfBirth,
-                    Gender = doctor.Gender,
-                    LicenseNumber = doctor.LicenseNumber,
-                    YearsOfExperience = doctor.YearsOfExperience,
-                    Address = addressDto,
-                    Contact = contactDto,
-                    Specializations = validSpecializations.Values.ToList(),
-                    Qualifications = createdQualifications
-                };
+                // Navigation properties not loaded after creation — set manually
+                var result = mapper.Map<CreatedDoctorDto>(doctor);
+                result.Address = addressDto;
+                result.Contact = contactDto;
+                result.Specializations = validSpecializations.Values.ToList();
+                result.Qualifications = createdQualifications;
+                return result;
             }
             catch (Exception ex)
             {
@@ -130,42 +124,7 @@ namespace MedNet.API.Services
             logger.LogInformation("Retrieving all doctors");
 
             var doctors = await doctorRepository.GetAllAsync();
-
-            var doctorList = doctors.Select(doctor => new DoctorResponseDto
-            {
-                Id = doctor.Id,
-                FirstName = doctor.FirstName,
-                LastName = doctor.LastName,
-                DateOfBirth = doctor.DateOfBirth,
-                Gender = doctor.Gender,
-                LicenseNumber = doctor.LicenseNumber,
-                YearsOfExperience = doctor.YearsOfExperience,
-                Address = doctor.Address != null ? new AddressResponseDto
-                {
-                    Street = doctor.Address.Street,
-                    StreetNr = doctor.Address.StreetNr,
-                    City = doctor.Address.City,
-                    State = doctor.Address.State,
-                    PostalCode = doctor.Address.PostalCode,
-                    Country = doctor.Address.Country
-                } : null,
-                Contact = doctor.Contact != null ? new ContactResponseDto
-                {
-                    Phone = doctor.Contact.Phone,
-                    Email = doctor.Contact.Email,
-                } : null,
-                Specializations = doctor.DoctorSpecializations
-                    .Select(ds => ds.Specialization.Name)
-                    .ToList(),
-                Qualifications = doctor.Qualifications
-                    .Select(q => new QualificationResponseDto
-                    {
-                        Degree = q.Degree,
-                        Institution = q.Institution,
-                        StudiedYears = q.StudiedYears,
-                        YearOfCompletion = q.YearOfCompletion
-                    }).ToList()
-            }).ToList();
+            var doctorList = mapper.Map<List<DoctorResponseDto>>(doctors);
 
             logger.LogInformation("Retrieved {Count} doctors", doctorList.Count);
 
@@ -177,7 +136,6 @@ namespace MedNet.API.Services
             logger.LogInformation("Retrieving doctor with ID: {DoctorId}", id);
 
             var doctor = await doctorRepository.GetById(id);
-
             if (doctor is null)
             {
                 logger.LogWarning("Doctor not found with ID: {DoctorId}", id);
@@ -187,41 +145,7 @@ namespace MedNet.API.Services
             logger.LogInformation("Doctor {DoctorId} retrieved - {FirstName} {LastName}, License: {LicenseNumber}, Specializations: {SpecCount}",
                 doctor.Id, doctor.FirstName, doctor.LastName, doctor.LicenseNumber, doctor.DoctorSpecializations.Count);
 
-            return new DoctorResponseDto
-            {
-                Id = doctor.Id,
-                FirstName = doctor.FirstName,
-                LastName = doctor.LastName,
-                DateOfBirth = doctor.DateOfBirth,
-                Gender = doctor.Gender,
-                LicenseNumber = doctor.LicenseNumber,
-                YearsOfExperience = doctor.YearsOfExperience,
-                Address = doctor.Address != null ? new AddressResponseDto
-                {
-                    Street = doctor.Address.Street,
-                    StreetNr = doctor.Address.StreetNr,
-                    City = doctor.Address.City,
-                    State = doctor.Address.State,
-                    PostalCode = doctor.Address.PostalCode,
-                    Country = doctor.Address.Country
-                } : null,
-                Contact = doctor.Contact != null ? new ContactResponseDto
-                {
-                    Phone = doctor.Contact.Phone,
-                    Email = doctor.Contact.Email,
-                } : null,
-                Specializations = doctor.DoctorSpecializations
-                    .Select(ds => ds.Specialization.Name)
-                    .ToList(),
-                Qualifications = doctor.Qualifications
-                    .Select(q => new QualificationResponseDto
-                    {
-                        Degree = q.Degree,
-                        Institution = q.Institution,
-                        StudiedYears = q.StudiedYears,
-                        YearOfCompletion = q.YearOfCompletion
-                    }).ToList()
-            };
+            return mapper.Map<DoctorResponseDto>(doctor);
         }
 
         public async Task<UpdatedDoctorDto?> UpdateDoctorAsync(Guid id, UpdateDoctorRequestDto request)
@@ -229,7 +153,6 @@ namespace MedNet.API.Services
             logger.LogInformation("Updating doctor with ID: {DoctorId}", id);
 
             var existingDoctor = await doctorRepository.GetById(id);
-
             if (existingDoctor is null)
             {
                 logger.LogWarning("Doctor not found for update with ID: {DoctorId}", id);
@@ -240,9 +163,7 @@ namespace MedNet.API.Services
             var oldExperience = existingDoctor.YearsOfExperience;
 
             var validSpecializations = await specializationService.ValidateSpecializationsAsync(request.SpecializationIds);
-            
-            logger.LogDebug("Validated {Count} specializations for doctor update {DoctorId}",
-                validSpecializations.Count, id);
+            logger.LogDebug("Validated {Count} specializations for doctor update {DoctorId}", validSpecializations.Count, id);
 
             var doctorToUpdate = new Doctor
             {
@@ -256,7 +177,6 @@ namespace MedNet.API.Services
             };
 
             var updatedDoctor = await doctorRepository.UpdateAsync(doctorToUpdate);
-
             if (updatedDoctor is null)
             {
                 logger.LogError("Failed to update doctor with ID: {DoctorId}", id);
@@ -264,23 +184,15 @@ namespace MedNet.API.Services
             }
 
             await doctorRepository.UpdateDoctorSpecializationsAsync(id, validSpecializations.Keys);
-
             await unitOfWork.SaveChangesAsync();
 
             logger.LogInformation("Doctor {DoctorId} updated successfully - {FirstName} {LastName}, License: {OldLicense} → {NewLicense}, Experience: {OldExp} → {NewExp} years",
                 id, updatedDoctor.FirstName, updatedDoctor.LastName, oldLicense, updatedDoctor.LicenseNumber, oldExperience, updatedDoctor.YearsOfExperience);
 
-            return new UpdatedDoctorDto
-            {
-                Id = updatedDoctor.Id,
-                FirstName = updatedDoctor.FirstName,
-                LastName = updatedDoctor.LastName,
-                DateOfBirth = updatedDoctor.DateOfBirth,
-                Gender = updatedDoctor.Gender,
-                LicenseNumber = updatedDoctor.LicenseNumber,
-                YearsOfExperience = updatedDoctor.YearsOfExperience,
-                SpecializationIds = validSpecializations.Keys.ToList(),
-            };
+            // SpecializationIds not on domain model — set manually
+            var result = mapper.Map<UpdatedDoctorDto>(updatedDoctor);
+            result.SpecializationIds = validSpecializations.Keys.ToList();
+            return result;
         }
 
         public async Task<string?> DeleteDoctorAsync(Guid id)
@@ -300,17 +212,13 @@ namespace MedNet.API.Services
                 return null;
             }
 
-            // Store IDs before deletion to avoid tracking issues
             var addressId = doctor.Address?.Id;
             var contactId = doctor.Contact?.Id;
             var userId = doctor.UserId;
 
             using var scope = new TransactionScope(
                 TransactionScopeOption.Required,
-                new TransactionOptions
-                {
-                    IsolationLevel = IsolationLevel.ReadCommitted
-                },
+                new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
                 TransactionScopeAsyncFlowOption.Enabled);
 
             try
@@ -320,18 +228,12 @@ namespace MedNet.API.Services
 
                 await doctorRepository.DeleteAsync(id);
 
-                // Manually delete Address and Contact (one-to-one, but Restrict to avoid cascade cycles)
                 if (addressId.HasValue)
-                {
                     await addressService.DeleteAddressAsync(addressId.Value);
-                }
 
                 if (contactId.HasValue)
-                {
                     await contactService.DeleteContactAsync(contactId.Value);
-                }
 
-                // Delete Identity user separately (not managed by EF Core)
                 if (!string.IsNullOrEmpty(userId))
                 {
                     var identityResult = await userManagementService.DeleteUserByIdAsync(userId);
@@ -344,7 +246,6 @@ namespace MedNet.API.Services
                 }
 
                 await unitOfWork.SaveChangesAsync();
-
                 scope.Complete();
 
                 logger.LogInformation("Doctor {DoctorId} deleted successfully - {FirstName} {LastName}, License: {LicenseNumber}",
