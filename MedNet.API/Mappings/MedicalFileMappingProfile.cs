@@ -8,6 +8,7 @@ namespace MedNet.API.Mappings
     {
         public MedicalFileMappingProfile()
         {
+            CreateMap<MedicalFile, MedicalFileDto>();
             CreateMap<MedicalFile, DisplayMedicalFileDto>();
         }
     }

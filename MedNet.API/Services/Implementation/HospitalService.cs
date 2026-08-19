@@ -1,4 +1,5 @@
-﻿using MedNet.API.Exceptions;
+﻿using AutoMapper;
+using MedNet.API.Exceptions;
 using MedNet.API.Models.Domain;
 using MedNet.API.Models.DTO;
 using MedNet.API.Repositories.Interface;
@@ -14,19 +15,22 @@ namespace MedNet.API.Services.Implementation
         private readonly IContactService contactService;
         private readonly IUserManagementService userManagementService;
         private readonly IUnitOfWork unitOfWork;
+        private readonly IMapper mapper;
         private readonly ILogger<HospitalService> logger;
 
         public HospitalService(
-            IHospitalRepository hospitalRepository, 
-            IAddressService addressService, 
-            IContactService contactService, 
-            ILogger<HospitalService> logger, 
-            IUserManagementService userManagementService, 
+            IHospitalRepository hospitalRepository,
+            IAddressService addressService,
+            IContactService contactService,
+            IMapper mapper,
+            ILogger<HospitalService> logger,
+            IUserManagementService userManagementService,
             IUnitOfWork unitOfWork)
         {
             this.hospitalRepository = hospitalRepository;
             this.addressService = addressService;
             this.contactService = contactService;
+            this.mapper = mapper;
             this.logger = logger;
             this.userManagementService = userManagementService;
             this.unitOfWork = unitOfWork;
@@ -34,8 +38,7 @@ namespace MedNet.API.Services.Implementation
 
         public async Task<HospitalDto> CreateHospitalAsync(CreateHospitalRequestDto request)
         {
-            logger.LogInformation("Creating hospital: {HospitalName}, UserId: {UserId}",
-                request.Name, request.UserId);
+            logger.LogInformation("Creating hospital: {HospitalName}, UserId: {UserId}", request.Name, request.UserId);
 
             try
             {
@@ -48,28 +51,23 @@ namespace MedNet.API.Services.Implementation
                     Name = request.Name,
                     UserId = request.UserId,
                     AddressId = addressDto.Id,
-                    ContactId = contactDto.Id,
+                    ContactId = contactDto.Id
                 };
 
                 await hospitalRepository.CreateAsync(hospital);
                 await unitOfWork.SaveChangesAsync();
 
-                logger.LogInformation("Hospital {HospitalId} created successfully - {HospitalName}",
-                    hospital.Id, hospital.Name);
+                logger.LogInformation("Hospital {HospitalId} created successfully - {HospitalName}", hospital.Id, hospital.Name);
 
-                return new HospitalDto
-                {
-                    Id = hospital.Id,
-                    Name = hospital.Name,
-                    Address = addressDto,
-                    Contact = contactDto
-                };
+                var result = mapper.Map<HospitalDto>(hospital);
+                result.Address = addressDto;
+                result.Contact = contactDto;
+                return result;
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to create hospital {HospitalName} with UserId: {UserId}",
-                    request.Name, request.UserId);
-                throw; 
+                logger.LogError(ex, "Failed to create hospital {HospitalName} with UserId: {UserId}", request.Name, request.UserId);
+                throw;
             }
         }
 
@@ -78,26 +76,7 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Retrieving all hospitals");
 
             var hospitals = await hospitalRepository.GetAllAsync();
-
-            var result = hospitals.Select(hospital => new HospitalResponseDto
-            {
-                Id = hospital.Id,
-                Name = hospital.Name,
-                Address = hospital.Address != null ? new AddressResponseDto
-                {
-                    Street = hospital.Address.Street,
-                    StreetNr = hospital.Address.StreetNr,
-                    City = hospital.Address.City,
-                    State = hospital.Address.State,
-                    PostalCode = hospital.Address.PostalCode,
-                    Country = hospital.Address.Country
-                } : null,
-                Contact = hospital.Contact != null ? new ContactResponseDto
-                {
-                    Phone = hospital.Contact.Phone,
-                    Email = hospital.Contact.Email
-                } : null
-            }).ToList();
+            var result = mapper.Map<List<HospitalResponseDto>>(hospitals);
 
             logger.LogInformation("Retrieved {Count} hospitals", result.Count);
 
@@ -109,35 +88,15 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Retrieving hospital with ID: {HospitalId}", id);
 
             var hospital = await hospitalRepository.GetById(id);
-
             if (hospital == null)
             {
                 logger.LogWarning("Hospital not found with ID: {HospitalId}", id);
                 return null;
             }
 
-            logger.LogInformation("Hospital {HospitalId} retrieved - {HospitalName}",
-                hospital.Id, hospital.Name);
+            logger.LogInformation("Hospital {HospitalId} retrieved - {HospitalName}", hospital.Id, hospital.Name);
 
-            return new HospitalResponseDto
-            {
-                Id = hospital.Id,
-                Name = hospital.Name,
-                Address = hospital.Address != null ? new AddressResponseDto
-                {
-                    Street = hospital.Address.Street,
-                    StreetNr = hospital.Address.StreetNr,
-                    City = hospital.Address.City,
-                    State = hospital.Address.State,
-                    PostalCode = hospital.Address.PostalCode,
-                    Country = hospital.Address.Country
-                } : null,
-                Contact = hospital.Contact != null ? new ContactResponseDto
-                {
-                    Phone = hospital.Contact.Phone,
-                    Email = hospital.Contact.Email
-                } : null
-            };
+            return mapper.Map<HospitalResponseDto>(hospital);
         }
 
         public async Task<HospitalDto?> UpdateHospitalAsync(Guid id, UpdateHospitalRequestDto request)
@@ -145,7 +104,6 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Updating hospital with ID: {HospitalId}", id);
 
             var existingHospital = await hospitalRepository.GetById(id);
-
             if (existingHospital == null)
             {
                 logger.LogWarning("Hospital not found for update with ID: {HospitalId}", id);
@@ -156,7 +114,6 @@ namespace MedNet.API.Services.Implementation
             existingHospital.Name = request.Name;
 
             var updatedHospital = await hospitalRepository.UpdateAsync(existingHospital);
-
             if (updatedHospital == null)
             {
                 logger.LogError("Failed to update hospital with ID: {HospitalId}", id);
@@ -165,14 +122,9 @@ namespace MedNet.API.Services.Implementation
 
             await unitOfWork.SaveChangesAsync();
 
-            logger.LogInformation("Hospital {HospitalId} updated successfully - Name: '{OldName}' → '{NewName}'",
-                id, oldName, updatedHospital.Name);
+            logger.LogInformation("Hospital {HospitalId} updated successfully - Name: '{OldName}' → '{NewName}'", id, oldName, updatedHospital.Name);
 
-            return new HospitalDto
-            {
-                Id = updatedHospital.Id,
-                Name = updatedHospital.Name,
-            };
+            return mapper.Map<HospitalDto>(updatedHospital);
         }
 
         public async Task<string?> DeleteHospitalAsync(Guid id)
@@ -194,28 +146,20 @@ namespace MedNet.API.Services.Implementation
 
             using var scope = new TransactionScope(
                 TransactionScopeOption.Required,
-                new TransactionOptions
-                { 
-                    IsolationLevel = IsolationLevel.ReadCommitted 
-                },
+                new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
                 TransactionScopeAsyncFlowOption.Enabled);
 
             try
             {
-                logger.LogDebug("Deleting hospital {HospitalId} - {HospitalName}",
-                    id, hospital.Name);
+                logger.LogDebug("Deleting hospital {HospitalId} - {HospitalName}", id, hospital.Name);
 
                 await hospitalRepository.DeleteAsync(id);
 
                 if (hospital.Address != null)
-                {
                     await addressService.DeleteAddressAsync(hospital.Address.Id);
-                }
 
                 if (hospital.Contact != null)
-                {
                     await contactService.DeleteContactAsync(hospital.Contact.Id);
-                }
 
                 if (!string.IsNullOrEmpty(hospital.UserId))
                 {
@@ -229,11 +173,9 @@ namespace MedNet.API.Services.Implementation
                 }
 
                 await unitOfWork.SaveChangesAsync();
-
                 scope.Complete();
 
-                logger.LogInformation("Hospital {HospitalId} deleted successfully - {HospitalName}",
-                    id, hospital.Name);
+                logger.LogInformation("Hospital {HospitalId} deleted successfully - {HospitalName}", id, hospital.Name);
 
                 return "Hospital deleted successfully!";
             }

@@ -1,4 +1,5 @@
-﻿using MedNet.API.Models.Domain;
+﻿using AutoMapper;
+using MedNet.API.Models.Domain;
 using MedNet.API.Models.DTO;
 using MedNet.API.Repositories.Interface;
 using MedNet.API.Services.Interface;
@@ -9,14 +10,17 @@ namespace MedNet.API.Services.Implementation
     {
         private readonly IMedicalFileRepository medicalFileRepository;
         private readonly IUnitOfWork unitOfWork;
+        private readonly IMapper mapper;
         private readonly ILogger<MedicalFileService> logger;
 
-        public MedicalFileService(IMedicalFileRepository medicalFileRepository, ILogger<MedicalFileService> logger, IUnitOfWork unitOfWork)
+        public MedicalFileService(IMedicalFileRepository medicalFileRepository, IMapper mapper, ILogger<MedicalFileService> logger, IUnitOfWork unitOfWork)
         {
             this.medicalFileRepository = medicalFileRepository;
+            this.mapper = mapper;
             this.logger = logger;
             this.unitOfWork = unitOfWork;
         }
+
         public async Task<MedicalFileDto> CreateMedicalFileAsync(CreateMedicalFileRequestDto request)
         {
             logger.LogInformation("Creating medical file for Patient {PatientId}, File: {FileName}, Type: {FileType}",
@@ -38,15 +42,7 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Medical file {FileId} created successfully for Patient {PatientId} - {FileName}",
                 medicalFile.Id, medicalFile.PatientId, medicalFile.FileName);
 
-            return new MedicalFileDto
-            {
-                Id = medicalFile.Id,
-                PatientId = medicalFile.PatientId,
-                FileName = medicalFile.FileName,
-                FileType = medicalFile.FileType,
-                FilePath = medicalFile.FilePath,
-                DateUploaded = medicalFile.DateUploaded
-            };
+            return mapper.Map<MedicalFileDto>(medicalFile);
         }
 
         public async Task<IEnumerable<MedicalFileDto>> GetAllMedicalFilesAsync()
@@ -54,16 +50,7 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Retrieving all medical files");
 
             var medicalFiles = await medicalFileRepository.GetAllAsync();
-
-            var fileList = medicalFiles.Select(medicalFile => new MedicalFileDto
-            {
-                Id = medicalFile.Id,
-                PatientId = medicalFile.PatientId,
-                FileName = medicalFile.FileName,
-                FileType = medicalFile.FileType,
-                FilePath = medicalFile.FilePath,
-                DateUploaded = medicalFile.DateUploaded
-            }).ToList();
+            var fileList = mapper.Map<List<MedicalFileDto>>(medicalFiles);
 
             logger.LogInformation("Retrieved {Count} medical files", fileList.Count);
 
@@ -75,7 +62,6 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Retrieving medical file with ID: {FileId}", id);
 
             var medicalFile = await medicalFileRepository.GetById(id);
-
             if (medicalFile is null)
             {
                 logger.LogWarning("Medical file not found with ID: {FileId}", id);
@@ -85,15 +71,7 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Medical file {FileId} retrieved - Patient: {PatientId}, File: {FileName}",
                 medicalFile.Id, medicalFile.PatientId, medicalFile.FileName);
 
-            return new MedicalFileDto
-            {
-                Id = medicalFile.Id,
-                PatientId = medicalFile.PatientId,
-                FileName = medicalFile.FileName,
-                FileType = medicalFile.FileType,
-                FilePath = medicalFile.FilePath,
-                DateUploaded = medicalFile.DateUploaded
-            };
+            return mapper.Map<MedicalFileDto>(medicalFile);
         }
 
         public async Task<IEnumerable<MedicalFileDto>> GetMedicalFilesByPatientIdAsync(Guid patientId)
@@ -101,16 +79,7 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Retrieving medical files for Patient {PatientId}", patientId);
 
             var medicalFiles = await medicalFileRepository.GetAllByPatientIdAsync(patientId);
-
-            var fileList = medicalFiles.Select(mf => new MedicalFileDto
-            {
-                Id = mf.Id,
-                PatientId = mf.PatientId,
-                FileName = mf.FileName,
-                FileType = mf.FileType,
-                FilePath = mf.FilePath,
-                DateUploaded = mf.DateUploaded
-            }).ToList();
+            var fileList = mapper.Map<List<MedicalFileDto>>(medicalFiles);
 
             logger.LogInformation("Retrieved {Count} medical files for Patient {PatientId}",
                 fileList.Count, patientId);
@@ -123,7 +92,7 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Updating medical file with ID: {FileId}", id);
 
             var existingMedicalFile = await medicalFileRepository.GetById(id);
-            if (existingMedicalFile is null)  
+            if (existingMedicalFile is null)
             {
                 logger.LogWarning("Medical file not found for update with ID: {FileId}", id);
                 return null;
@@ -142,8 +111,7 @@ namespace MedNet.API.Services.Implementation
             };
 
             var updatedMedicalFile = await medicalFileRepository.UpdateAsync(fileToUpdate);
-
-            if (updatedMedicalFile is null)  
+            if (updatedMedicalFile is null)
             {
                 logger.LogError("Failed to update medical file with ID: {FileId}", id);
                 return null;
@@ -154,15 +122,7 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Medical file {FileId} updated successfully - FileName: '{OldName}' → '{NewName}'",
                 id, oldFileName, updatedMedicalFile.FileName);
 
-            return new MedicalFileDto
-            {
-                Id = updatedMedicalFile.Id,
-                PatientId = updatedMedicalFile.PatientId,
-                FileName = updatedMedicalFile.FileName,
-                FileType = updatedMedicalFile.FileType,
-                FilePath = updatedMedicalFile.FilePath,
-                DateUploaded = updatedMedicalFile.DateUploaded
-            };
+            return mapper.Map<MedicalFileDto>(updatedMedicalFile);
         }
 
         public async Task<string?> DeleteMedicalFileAsync(Guid id)

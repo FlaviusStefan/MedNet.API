@@ -1,4 +1,5 @@
-﻿using MedNet.API.Models.Domain;
+﻿using AutoMapper;
+using MedNet.API.Models.Domain;
 using MedNet.API.Models.DTO;
 using MedNet.API.Repositories.Interface;
 using MedNet.API.Services.Interface;
@@ -9,11 +10,13 @@ namespace MedNet.API.Services.Implementation
     {
         private readonly ISpecializationRepository specializationRepository;
         private readonly IUnitOfWork unitOfWork;
+        private readonly IMapper mapper;
         private readonly ILogger<SpecializationService> logger;
 
-        public SpecializationService(ISpecializationRepository specializationRepository, ILogger<SpecializationService> logger, IUnitOfWork unitOfWork)
+        public SpecializationService(ISpecializationRepository specializationRepository, IMapper mapper, ILogger<SpecializationService> logger, IUnitOfWork unitOfWork)
         {
             this.specializationRepository = specializationRepository;
+            this.mapper = mapper;
             this.logger = logger;
             this.unitOfWork = unitOfWork;
         }
@@ -29,8 +32,7 @@ namespace MedNet.API.Services.Implementation
                 throw new ArgumentException("Name and Description are required.");
             }
 
-            logger.LogInformation("Creating specialization: {Name} - {Description}",
-                request.Name, request.Description);
+            logger.LogInformation("Creating specialization: {Name} - {Description}", request.Name, request.Description);
 
             var specialization = new Specialization
             {
@@ -42,15 +44,9 @@ namespace MedNet.API.Services.Implementation
             await specializationRepository.CreateAsync(specialization);
             await unitOfWork.SaveChangesAsync();
 
-            logger.LogInformation("Specialization {SpecializationId} created successfully - {Name}",
-                specialization.Id, specialization.Name);
+            logger.LogInformation("Specialization {SpecializationId} created successfully - {Name}", specialization.Id, specialization.Name);
 
-            return new SpecializationDto
-            {
-                Id = specialization.Id,
-                Name = specialization.Name,
-                Description = specialization.Description
-            };
+            return mapper.Map<SpecializationDto>(specialization);
         }
 
         public async Task<IEnumerable<SpecializationDto>> GetAllSpecializationsAsync()
@@ -58,13 +54,7 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Retrieving all specializations");
 
             var specializations = await specializationRepository.GetAllAsync();
-
-            var specializationList = specializations.Select(specialization => new SpecializationDto
-            {
-                Id = specialization.Id,
-                Name = specialization.Name,
-                Description = specialization.Description
-            }).ToList();
+            var specializationList = mapper.Map<List<SpecializationDto>>(specializations);
 
             logger.LogInformation("Retrieved {Count} specializations", specializationList.Count);
 
@@ -82,15 +72,9 @@ namespace MedNet.API.Services.Implementation
                 return null;
             }
 
-            logger.LogInformation("Specialization {SpecializationId} retrieved - {Name}",
-                specialization.Id, specialization.Name);
+            logger.LogInformation("Specialization {SpecializationId} retrieved - {Name}", specialization.Id, specialization.Name);
 
-            return new SpecializationDto
-            {
-                Id = specialization.Id,
-                Name = specialization.Name,
-                Description = specialization.Description
-            };
+            return mapper.Map<SpecializationDto>(specialization);
         }
 
         public async Task<IEnumerable<SpecializationDto>> GetSpecializationsByDoctorIdAsync(Guid doctorId)
@@ -98,35 +82,27 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Retrieving specializations for Doctor {DoctorId}", doctorId);
 
             var specializations = await specializationRepository.GetAllByDoctorIdAsync(doctorId);
+            var specializationList = mapper.Map<List<SpecializationDto>>(specializations);
 
-            var specializationList = specializations.Select(specialization => new SpecializationDto
-            {
-                Id = specialization.Id,
-                Name = specialization.Name,
-                Description = specialization.Description
-            }).ToList();
-
-            logger.LogInformation("Retrieved {Count} specializations for Doctor {DoctorId}",
-                specializationList.Count, doctorId);
+            logger.LogInformation("Retrieved {Count} specializations for Doctor {DoctorId}", specializationList.Count, doctorId);
 
             return specializationList;
         }
 
         public async Task<SpecializationDto?> UpdateSpecializationAsync(Guid id, UpdateSpecializationRequestDto request)
         {
-            if(request == null)
+            if (request == null)
                 throw new ArgumentNullException(nameof(request));
-            
-            if(string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.Description))
+
+            if (string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.Description))
             {
                 logger.LogWarning("UpdateSpecializationAsync called with invalid request for id {Id}", id);
                 throw new ArgumentException("Name and Description are required.");
             }
-            
+
             logger.LogInformation("Updating specialization with ID: {SpecializationId}", id);
 
             var existingSpecialization = await specializationRepository.GetById(id);
-
             if (existingSpecialization == null)
             {
                 logger.LogWarning("Specialization not found for update with ID: {SpecializationId}", id);
@@ -134,12 +110,10 @@ namespace MedNet.API.Services.Implementation
             }
 
             var oldName = existingSpecialization.Name;
-
             existingSpecialization.Name = request.Name;
             existingSpecialization.Description = request.Description;
 
             var updatedSpecialization = await specializationRepository.UpdateAsync(existingSpecialization);
-
             if (updatedSpecialization == null)
             {
                 logger.LogError("Failed to update specialization with ID: {SpecializationId}", id);
@@ -148,15 +122,9 @@ namespace MedNet.API.Services.Implementation
 
             await unitOfWork.SaveChangesAsync();
 
-            logger.LogInformation("Specialization {SpecializationId} updated successfully - Name: '{OldName}' → '{NewName}'",
-                id, oldName, updatedSpecialization.Name);
+            logger.LogInformation("Specialization {SpecializationId} updated successfully - Name: '{OldName}' → '{NewName}'", id, oldName, updatedSpecialization.Name);
 
-            return new SpecializationDto
-            {
-                Id = updatedSpecialization.Id,
-                Name = updatedSpecialization.Name,
-                Description = updatedSpecialization.Description
-            };
+            return mapper.Map<SpecializationDto>(updatedSpecialization);
         }
 
         public async Task<string?> DeleteSpecializationAsync(Guid id)
@@ -172,8 +140,7 @@ namespace MedNet.API.Services.Implementation
 
             await unitOfWork.SaveChangesAsync();
 
-            logger.LogInformation("Specialization {SpecializationId} deleted successfully - {Name}",
-                specialization.Id, specialization.Name);
+            logger.LogInformation("Specialization {SpecializationId} deleted successfully - {Name}", specialization.Id, specialization.Name);
 
             return $"Specialization '{specialization.Name}' (ID: {specialization.Id}) deleted successfully!";
         }
@@ -190,8 +157,7 @@ namespace MedNet.API.Services.Implementation
             if (validSpecializations.Count != specializationIds.Count())
             {
                 var invalidCount = specializationIds.Count() - validSpecializations.Count;
-                logger.LogWarning("Specialization validation failed - {InvalidCount} invalid IDs out of {TotalCount}",
-                    invalidCount, specializationIds.Count());
+                logger.LogWarning("Specialization validation failed - {InvalidCount} invalid IDs out of {TotalCount}", invalidCount, specializationIds.Count());
                 throw new ArgumentException("One or more specialization IDs are invalid.");
             }
 
