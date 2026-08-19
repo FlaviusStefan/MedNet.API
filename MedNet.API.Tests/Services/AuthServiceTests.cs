@@ -452,23 +452,6 @@ public class AuthServiceTests
 
     #endregion
 
-    #region RegisterDoctorAsync Tests
-
-    [Fact]
-    public void RegisterDoctorAsync_ShouldThrowNotImplementedException()
-    {
-        // Arrange
-        var registerDto = new RegisterDoctorDto();
-
-        // Act
-        Func<Task> act = async () => await _service.RegisterDoctorAsync(registerDto);
-
-        // Assert
-        act.Should().ThrowAsync<NotImplementedException>();
-    }
-
-    #endregion
-
     #region Logging Tests
 
     [Fact]

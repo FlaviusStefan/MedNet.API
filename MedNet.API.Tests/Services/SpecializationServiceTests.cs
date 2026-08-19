@@ -1,4 +1,5 @@
 using FluentAssertions;
+using AutoMapper;
 using MedNet.API.Models.Domain;
 using MedNet.API.Models.DTO;
 using MedNet.API.Repositories.Interface;
@@ -13,6 +14,7 @@ public class SpecializationServiceTests
     private readonly Mock<ISpecializationRepository> _mockRepository;
     private readonly Mock<IUnitOfWork> _mockUnitOfWork;
     private readonly Mock<ILogger<SpecializationService>> _mockLogger;
+    private readonly Mock<IMapper> _mockMapper;
     private readonly SpecializationService _service;
 
     public SpecializationServiceTests()
@@ -20,7 +22,28 @@ public class SpecializationServiceTests
         _mockRepository = new Mock<ISpecializationRepository>();
         _mockUnitOfWork = new Mock<IUnitOfWork>();
         _mockLogger = new Mock<ILogger<SpecializationService>>();
-        _service = new SpecializationService(_mockRepository.Object, _mockLogger.Object, _mockUnitOfWork.Object);
+        _mockMapper = new Mock<IMapper>();
+
+        // Default mapper setup — maps any Specialization to a SpecializationDto
+        _mockMapper
+            .Setup(m => m.Map<SpecializationDto>(It.IsAny<Specialization>()))
+            .Returns((Specialization s) => new SpecializationDto
+            {
+                Id = s.Id,
+                Name = s.Name,
+                Description = s.Description
+            });
+
+        _mockMapper
+            .Setup(m => m.Map<List<SpecializationDto>>(It.IsAny<IEnumerable<Specialization>>()))
+            .Returns((IEnumerable<Specialization> list) => list.Select(s => new SpecializationDto
+            {
+                Id = s.Id,
+                Name = s.Name,
+                Description = s.Description
+            }).ToList());
+
+        _service = new SpecializationService(_mockRepository.Object, _mockMapper.Object, _mockLogger.Object, _mockUnitOfWork.Object);
     }
 
     #region CreateSpecializationAsync Tests
