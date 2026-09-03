@@ -9,8 +9,13 @@ namespace MedNet.API.Mappings
         public LabAnalysisMappingProfile()
         {
             CreateMap<LabTest, DisplayLabTestDto>();
-            CreateMap<LabAnalysis, LabAnalysisDto>();
-            CreateMap<LabAnalysis, DisplayLabAnalysisDto>();
+
+            CreateMap<LabAnalysis, LabAnalysisDto>()
+                .ForMember(dest => dest.LabTests, opt => opt.MapFrom(src => src.LabTests));
+
+            CreateMap<LabAnalysis, DisplayLabAnalysisDto>()
+                .ForMember(dest => dest.LabTests, opt => opt.MapFrom(src => src.LabTests));
+
             CreateMap<LabAnalysis, UpdatedLabAnalysisDto>();
         }
     }

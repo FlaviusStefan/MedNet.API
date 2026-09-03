@@ -40,15 +40,19 @@ namespace MedNet.API.Repositories.Implementation
 
         public async Task<Hospital?> UpdateAsync(Hospital hospital)
         {
-            var existingHospital = await dbContext.Hospitals.FirstOrDefaultAsync(x => x.Id == hospital.Id);
+            var existingHospital = await dbContext.Hospitals
+                .Include(h => h.Address)
+                .Include(h => h.Contact)
+                .FirstOrDefaultAsync(x => x.Id == hospital.Id);
 
-            if (existingHospital != null)
+            if (existingHospital is null)
             {
-                dbContext.Entry(existingHospital).CurrentValues.SetValues(hospital);
-                return hospital;
+                return null;
             }
 
-            return null;
+            existingHospital.Name = hospital.Name;
+
+            return existingHospital;
         }
         public async Task<Hospital?> DeleteAsync(Guid id)
         {
