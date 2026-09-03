@@ -1,4 +1,5 @@
-﻿using MedNet.API.Exceptions;
+﻿using AutoMapper;
+using MedNet.API.Exceptions;
 using MedNet.API.Models.Domain;
 using MedNet.API.Models.DTO;
 using MedNet.API.Repositories.Interface;
@@ -17,6 +18,7 @@ namespace MedNet.API.Services.Implementation
         private readonly IMedicalFileService medicalFileService;
         private readonly IUserManagementService userManagementService;
         private readonly IUnitOfWork unitOfWork;
+        private readonly IMapper mapper;
         private readonly ILogger<PatientService> logger;
 
         public PatientService(IPatientRepository patientRepository,
@@ -27,7 +29,8 @@ namespace MedNet.API.Services.Implementation
             IMedicalFileService medicalFileService,
             IUserManagementService userManagementService,
             ILogger<PatientService> logger,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IMapper mapper)
         {
             this.patientRepository = patientRepository;
             this.addressService = addressService;
@@ -38,6 +41,7 @@ namespace MedNet.API.Services.Implementation
             this.userManagementService = userManagementService;
             this.logger = logger;
             this.unitOfWork = unitOfWork;
+            this.mapper = mapper;
         }
 
 
@@ -210,53 +214,7 @@ namespace MedNet.API.Services.Implementation
             logger.LogInformation("Successfully retrieved patient {PatientName} (ID: {PatientId}) with {InsuranceCount} insurances, {MedicationCount} medications, {FileCount} files",
                 $"{patient.FirstName} {patient.LastName}", patient.Id, patient.Insurances.Count, patient.Medications.Count, patient.MedicalFiles.Count);
 
-            return new PatientResponseDto
-            {
-                Id = patient.Id,
-                FirstName = patient.FirstName,
-                LastName = patient.LastName,
-                DateOfBirth = patient.DateOfBirth,
-                Gender = patient.Gender,
-                Height = patient.Height,
-                Weight = patient.Weight,
-                Address = patient.Address != null ? new AddressResponseDto
-                {
-                    Street = patient.Address.Street,
-                    StreetNr = patient.Address.StreetNr,
-                    City = patient.Address.City,
-                    State = patient.Address.State,
-                    PostalCode = patient.Address.PostalCode,
-                    Country = patient.Address.Country
-                } : null,
-                Contact = patient.Contact != null ? new ContactResponseDto
-                {
-                    Phone = patient.Contact.Phone,
-                    Email = patient.Contact.Email
-                } : null,
-                Insurances = patient.Insurances.Select(i => new DisplayInsuranceDto
-                {
-                    Id = i.Id,
-                    Provider = i.Provider,
-                    PolicyNumber = i.PolicyNumber,
-                    CoverageStartDate = i.CoverageStartDate,
-                    CoverageEndDate = i.CoverageEndDate
-                }).ToList(),
-                Medications = patient.Medications.Select(m => new DisplayMedicationDto
-                {
-                    Id = m.Id,
-                    Name = m.Name,
-                    Dosage = m.Dosage,
-                    Frequency = m.Frequency
-                }).ToList(),
-                MedicalFiles = patient.MedicalFiles.Select(mf => new DisplayMedicalFileDto
-                {
-                    Id = mf.Id,
-                    FileName = mf.FileName,
-                    FileType = mf.FileType,
-                    FilePath = mf.FilePath,
-                    DateUploaded = mf.DateUploaded
-                }).ToList()
-            };
+            return mapper.Map<PatientResponseDto>(patient);
         }
 
 
