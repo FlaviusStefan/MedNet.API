@@ -39,6 +39,11 @@ namespace MedNet.API.Controllers
 
                 return Ok(new { message = "Doctor successfully bound to hospital." });
             }
+            catch (ArgumentException ex)
+            {
+                logger.LogWarning("Bind operation failed for Admin {UserId}: {Message}", userId, ex.Message);
+                return NotFound(new { error = ex.Message });
+            }
             catch (CustomException ex)
             {
                 logger.LogWarning("Bind operation failed for Admin {UserId}: {Message}", userId, ex.Message);
@@ -98,6 +103,12 @@ namespace MedNet.API.Controllers
                 var doctors = await doctorHospitalService.GetDoctorsByHospitalAsync(hospitalId);
                 return Ok(doctors);
             }
+            catch (ArgumentException ex)
+            {
+                logger.LogWarning("Invalid request from user {UserId} retrieving doctors for Hospital {HospitalId}: {Message}",
+                    userId, hospitalId, ex.Message);
+                return NotFound(new { error = ex.Message });
+            }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error retrieving doctors for Hospital {HospitalId} by user {UserId}",
@@ -120,6 +131,12 @@ namespace MedNet.API.Controllers
             {
                 var hospitals = await doctorHospitalService.GetHospitalsByDoctorAsync(doctorId);
                 return Ok(hospitals);
+            }
+            catch (ArgumentException ex)
+            {
+                logger.LogWarning("Invalid request from user {UserId} retrieving hospitals for Doctor {DoctorId}: {Message}",
+                    userId, doctorId, ex.Message);
+                return NotFound(new { error = ex.Message });
             }
             catch (Exception ex)
             {
